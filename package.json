@@ -1,6 +1,6 @@
 {
-  "name": "operator-collection-sdk-vscode-extension",
-  "displayName": "Operator Collection SDK VS Code Extension",
+  "name": "operator-collection-sdk",
+  "displayName": "Operator Collection SDK",
   "description": "",
   "version": "0.0.1",
   "engines": {
@@ -14,8 +14,14 @@
   "contributes": {
     "commands": [
       {
-        "command": "operator-collection-sdk-vscode-extension.helloWorld",
-        "title": "Hello World"
+        "command": "operator-collection-sdk.createOperator",
+        "title": "Create Operator",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.redeployCollection",
+        "title": "Redeploy Collection",
+        "category": "OC-SDK"
       }
     ]
   },
