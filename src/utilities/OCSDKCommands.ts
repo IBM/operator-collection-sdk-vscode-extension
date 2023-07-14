@@ -17,11 +17,11 @@ export class OcSdkCommand {
         let output: string = "";
         childProcess.stdout?.on('data', data => {
             output = data;
-            console.log(`command output:\n${data}`);
+            console.log(`${data}`);
         });
         childProcess.stderr?.on('data', data => {
             output = data;
-            console.error(`command error:\n${data}`);
+            console.error(`${data}`);
         });
 
         return new Promise<string>((resolve: any, reject: any) =>{
@@ -42,17 +42,23 @@ export class OcSdkCommand {
     }
 
     public static async runCreateOperatorCommand(args: Array<string>, pwd: string): Promise<string> {
-        // let cmdArgs: string = `-e "`;
-        // for (var i = 0; i < args.length; i++) {
-        //     cmdArgs = cmdArgs.concat(`${args[i]} `);
-        // }
         process.env.ANSIBLE_JINJA2_NATIVE = "true";
+        process.env.PWD = pwd;
         const cmd: string = "ansible-playbook";
+        args.push(`-e "filepath=${pwd}"`);
         args = args.concat("ibm.operator_collection_sdk.create_operator");
         return this.run(cmd, pwd, args);
     }
 
+    public static async runDeleteOperatorCommand(pwd: string): Promise<string> {
+        process.env.PWD = pwd;
+        const cmd: string = "ansible-playbook";
+        let args: Array<string> = ["ibm.operator_collection_sdk.delete_operator"];
+        return this.run(cmd, pwd, args);
+    }
+
     public static async runRedeployCollectionCommand(pwd: string): Promise<string> {
+        process.env.PWD = pwd;
         const cmd: string = "ansible-playbook";
         let args: Array<string> = ["ibm.operator_collection_sdk.redeploy_collection"];
         return this.run(cmd, pwd, args);

@@ -3,6 +3,10 @@
 import * as vscode from 'vscode';
 import { OcSdkCommand } from './utilities/OCSDKCommands';
 import { error } from 'console';
+import * as path from 'path';
+
+
+type WorkSpaceOperators = {[key: string] : string};
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -10,34 +14,87 @@ export function activate(context: vscode.ExtensionContext) {
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "operator-collection-sdk" is now active!');
 
-	let createOperatorCommand = vscode.commands.registerCommand('operator-collection-sdk.createOperator', () => {
+	let createOperatorCommand = vscode.commands.registerCommand('operator-collection-sdk.createOperator', async () => {
 		let pwd = getCurrentWorkspaceRootFolder();
 		if (pwd === undefined) {
 			vscode.window.showInformationMessage("Unable to execute Create Operator command when workspace is empty");
 		} else {
-			requestOperatorInfo().then((result) => {
-				if (pwd !== undefined) {
-					OcSdkCommand.runCreateOperatorCommand(result, pwd.uri.fsPath);
-				}
+			let workspacePath = await selectOperatorInWorkspace(pwd).then((result) => {
+				return result;
 			});
+			if (workspacePath === undefined) {
+				vscode.window.showInformationMessage("Please select Operator in workspace to deploy");
+			} else {
+				let playbookArgs = await requestOperatorInfo().then((result) => {
+						return result;
+				});
+				workspacePath = path.parse(workspacePath).dir;
+				OcSdkCommand.runCreateOperatorCommand(playbookArgs, workspacePath);
+			};
 		}
 	});
 
-	let redeployCollectionCommand = vscode.commands.registerCommand('operator-collection-sdk.redeployCollection', () => {
+	let deleteOperatorCommand = vscode.commands.registerCommand('operator-collection-sdk.deleteOperator', async () => {
+		let pwd = getCurrentWorkspaceRootFolder();
+		if (pwd === undefined) {
+			vscode.window.showInformationMessage("Unable to execute Delete Operator command when workspace is empty");
+		} else {
+			let workspacePath = await selectOperatorInWorkspace(pwd).then((result) => {
+				return result;
+			});
+			if (workspacePath === undefined) {
+				vscode.window.showInformationMessage("Please select Operator in workspace to deploy");
+			} else {
+				workspacePath = path.parse(workspacePath).dir;
+				OcSdkCommand.runDeleteOperatorCommand(workspacePath);
+			}
+		}
+	});
+
+	let redeployCollectionCommand = vscode.commands.registerCommand('operator-collection-sdk.redeployCollection', async () => {
 		let pwd = getCurrentWorkspaceRootFolder();
 		if (pwd === undefined) {
 			vscode.window.showInformationMessage("Unable to execute Create Operator command when workspace is empty");
 		} else {
-			if (pwd !== undefined) {
-				OcSdkCommand.runRedeployCollectionCommand(pwd.uri.fsPath);
+			let workspacePath = await selectOperatorInWorkspace(pwd).then((result) => {
+				return result;
+			});
+			if (workspacePath === undefined) {
+				vscode.window.showInformationMessage("Please select Operator in workspace to deploy");
+			} else {
+				workspacePath = path.parse(workspacePath).dir;
+				OcSdkCommand.runRedeployCollectionCommand(workspacePath);
 			}
 		}
 	});
 
 	context.subscriptions.push(createOperatorCommand);
+	context.subscriptions.push(deleteOperatorCommand);
+	context.subscriptions.push(redeployCollectionCommand);
 }
 
-async function requestOperatorInfo(): Promise<any[]> {
+async function selectOperatorInWorkspace(workspace: vscode.WorkspaceFolder): Promise<string | undefined> {
+	let operatorsInWorkspace = await getOperatorsInWorkspace(workspace);
+	let operatorNames: Array<string> = [];
+	for (const operatorName in operatorsInWorkspace) {
+		operatorNames.push(operatorName);
+	}
+	const operatorSelected = await vscode.window.showQuickPick(operatorNames, {
+		canPickMany: false,
+		ignoreFocusOut: true,
+		placeHolder: "Select an Operator below",
+		title: "Available Operators in workspace"
+	}).then((result) => {
+		return result;
+	});
+	if (operatorSelected === undefined) {
+		return undefined;
+	}
+
+	return operatorsInWorkspace[operatorSelected];
+}
+
+async function requestOperatorInfo(): Promise<string[]> {
 	let args: Array<string> = [];
 	const zosEndpointType = await vscode.window.showInputBox({
 		prompt: "Enter what type (local/remote) of ZosEndpoint you want to create",
@@ -119,14 +176,32 @@ async function requestOperatorInfo(): Promise<any[]> {
 	}
 	return args;
 }
-
-export function getCurrentWorkspaceRootFolder(){
+/**
+ * Retrieve the current workspace root directory if it exists
+ * @returns — The vscode.WorkspaceFolder interface, or undefined if a directory doesn't exists
+ */
+function getCurrentWorkspaceRootFolder(): vscode.WorkspaceFolder | undefined {
     var editor = vscode.window.activeTextEditor;
 	if (editor !== undefined) {
 		const currentDocument = editor.document.uri;
 		return vscode.workspace.getWorkspaceFolder(currentDocument);
 	}
     return undefined;
+}
+
+/**
+ * Retrieve the list of Operator Collection names and workspace directories in the current workspace
+ * @returns — An array list of Operator names in the current workspace
+ */
+async function getOperatorsInWorkspace(workspace: vscode.WorkspaceFolder): Promise<WorkSpaceOperators> {
+	const wsOperators: WorkSpaceOperators = {};
+	for (const file of await vscode.workspace.findFiles("**/operator-config.*ml")) {
+		let data = await vscode.workspace.openTextDocument(file);
+		let operatorName = data.getText().split("name: ")[1].split("\n")[0];
+		wsOperators[operatorName] = file.fsPath;
+
+	}
+	return wsOperators;
 }
 
 // This method is called when your extension is deactivated
