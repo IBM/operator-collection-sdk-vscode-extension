@@ -1,6 +1,8 @@
 import * as child_process from 'child_process';
 
 export class OcSdkCommand {
+    constructor(private pwd: string | undefined) {}
+    
     /**
      * Executes the requested command
      * @param cmd - The command to be executed
@@ -8,15 +10,16 @@ export class OcSdkCommand {
      * @param args - The arguments to pass to the command
      * @returns - A Promise containing the the return code of the executed command
      */
-    private static async run(cmd: string, pwd: string | undefined, args?: Array<string> | undefined): Promise<any> {
+     private async run(cmd: string, args?: Array<string> | undefined): Promise<any> {
+        process.env.PWD = this.pwd;
         const options = {
-            cwd: pwd,
+            cwd: this.pwd,
             env: process.env,
             shell: true
         };
         
         let childProcess: child_process.ChildProcess;
-        if (args === undefined) {
+        if (!args) {
             childProcess = child_process.spawn(cmd, options);
         } else {
             childProcess = child_process.spawn(cmd, args, options);
@@ -52,13 +55,11 @@ export class OcSdkCommand {
      * @param pwd - The current working directory
      * @returns - A Promise container the return code of the command being executed
      */
-    public static async runCreateOperatorCommand(args: Array<string>, pwd: string): Promise<any> {
+    async runCreateOperatorCommand(args: Array<string>): Promise<any> {
         process.env.ANSIBLE_JINJA2_NATIVE = "true";
-        process.env.PWD = pwd;
         const cmd: string = "ansible-playbook";
-        args.push(`-e "filepath=${pwd}"`);
         args = args.concat("ibm.operator_collection_sdk.create_operator");
-        return this.run(cmd, pwd, args);
+        return this.run(cmd, args);
     }
 
      /**
@@ -66,8 +67,8 @@ export class OcSdkCommand {
      * @param pwd - The current working directory
      * @returns - A Promise container the return code of the command being executed
      */
-    public static async runDeleteOperatorCommand(pwd: string): Promise<string> {
-        return this.executeSimpleCommand(pwd, "ibm.operator_collection_sdk.delete_operator");
+    async runDeleteOperatorCommand(): Promise<string> {
+        return this.executeSimpleCommand("ibm.operator_collection_sdk.delete_operator");
     }
 
     /**
@@ -75,8 +76,8 @@ export class OcSdkCommand {
      * @param pwd - The current working directory
      * @returns - A Promise container the return code of the command being executed
      */
-    public static async runRedeployCollectionCommand(pwd: string): Promise<string> {
-        return this.executeSimpleCommand(pwd, "ibm.operator_collection_sdk.redeploy_collection");
+    async runRedeployCollectionCommand(): Promise<string> {
+        return this.executeSimpleCommand("ibm.operator_collection_sdk.redeploy_collection");
     }
 
      /**
@@ -84,8 +85,8 @@ export class OcSdkCommand {
      * @param pwd - The current working directory
      * @returns - A Promise container the return code of the command being executed
      */
-    public static async runRedeployOperatorCommand(pwd: string): Promise<string> {
-        return this.executeSimpleCommand(pwd, "ibm.operator_collection_sdk.redeploy_operator");
+    async runRedeployOperatorCommand(): Promise<string> {
+        return this.executeSimpleCommand("ibm.operator_collection_sdk.redeploy_operator");
     }
 
     /**
@@ -94,10 +95,9 @@ export class OcSdkCommand {
      * @param command - The command to execute
      * @returns - A Promise container the return code of the command being executed
      */
-    private static executeSimpleCommand(pwd: string, command: string): Promise<any> {
-        process.env.PWD = pwd;
+    private executeSimpleCommand(command: string): Promise<any> {
         const cmd: string = "ansible-playbook";
         let args: Array<string> = [command];
-        return this.run(cmd, pwd, args);
+        return this.run(cmd, args);
     }
 }
