@@ -139,6 +139,18 @@ export class KubernetesObj {
         return logsPath;
     }
 
+    public async getCustomResources(apiVersion: string, pluralKind: string): Promise<ObjectList> {
+        let customResources = await this.customObjectsApi.listNamespacedCustomObject(
+            "suboperator.zoscb.ibm.com",
+            apiVersion,
+            this.namespace,
+            pluralKind.toLowerCase()
+        );
+        let customResourcesString = JSON.stringify(customResources.body);
+        let customResourcesList: ObjectList = JSON.parse(customResourcesString);
+        return customResourcesList;
+    }
+
     public async getSubOperatorConfigs(operatorName: string): Promise<ObjectList> {
         return await this.getBrokerObjList(operatorName, "suboperatorconfigs");
     }

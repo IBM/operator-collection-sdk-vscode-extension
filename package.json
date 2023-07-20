@@ -19,65 +19,55 @@
         "command": "operator-collection-sdk.createOperator",
         "title": "Create Operator",
         "category": "OC-SDK",
-        "icon": {
-          "dark": "resources/icons/dark/start.svg",
-          "light": "resources/icons/light/start.svg"
-        }
+        "icon": "$(debug-start)"
       },
       {
         "command": "operator-collection-sdk.deleteOperator",
         "title": "Delete Operator",
         "category": "OC-SDK",
-        "icon": {
-          "dark": "resources/icons/dark/stop.svg",
-          "light": "resources/icons/light/stop.svg"
-        }
+        "icon": "$(debug-stop)"
       },
       {
         "command": "operator-collection-sdk.redeployCollection",
         "title": "Redeploy Collection",
         "category": "OC-SDK",
-        "icon": {
-          "dark": "resources/icons/dark/restart-collection.svg",
-          "light": "resources/icons/light/restart-collection.svg"
-        }
+        "icon": "$(debug-restart-frame)"
       },
       {
         "command": "operator-collection-sdk.redeployOperator",
         "title": "Redeploy Operator",
         "category": "OC-SDK",
         "when": "viewItem == operator-container",
-        "icon": {
-          "dark": "resources/icons/dark/restart-operator.svg",
-          "light": "resources/icons/light/restart-operator.svg"
-        }
+        "icon": "$(debug-restart)"
       },
       {
         "command": "operator-collection-sdk.downloadLogs",
         "title": "Download Logs",
         "category": "OC-SDK",
-        "icon": {
-          "dark": "resources/icons/dark/logs.svg",
-          "light": "resources/icons/light/logs.svg"
-        }
+        "icon": "$(file)"
       },
       {
         "command": "operator-collection-sdk.downloadVerboseLogs",
         "title": "Download Verbose Logs",
         "category": "OC-SDK",
-        "icon": {
-          "dark": "resources/icons/dark/debug-logs.svg",
-          "light": "resources/icons/light/debug-logs.svg"
-        }
+        "icon": "$(file-binary)"
+      },
+      {
+        "command": "operator-collection-sdk.openEditLink",
+        "title": "Edit",
+        "category": "OC-SDK",
+        "icon": "$(settings-edit)"
+      },
+      {
+        "command": "operator-collection-sdk.openAddLink",
+        "title": "Add",
+        "category": "OC-SDK",
+        "icon": "$(add)"
       },
       {
         "command": "operator-collection-sdk.openLink",
         "title": "Open Link",
-        "category": "OC-SDK",
-        "icon": {
-          "dark": "resources/icons/dark/link-external.svg",
-          "light": "resources/icons/light/link-external.svg"
-        }
+        "category": "OC-SDK"
       }
     ],
     "views": {
@@ -88,7 +78,11 @@
         },
         {
           "id": "operator-collection-sdk.resources",
-          "name": "Resources"
+          "name": "OpenShift Resources"
+        },
+        {
+          "id": "operator-collection-sdk.links",
+          "name": "Links"
         }
       ]
     },
@@ -97,7 +91,7 @@
         {
           "id": "operator-collection-sdk",
           "title": "Operator Collection SDK",
-          "icon": "resources/icons/dark/explorer.png"
+          "icon": "resources/icons/broker-logo.png"
         }
       ]
     },
@@ -134,8 +128,18 @@
           "group": "inline"
         },
         {
+          "command": "operator-collection-sdk.openEditLink",
+          "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object)",
+          "group": "inline"
+        },
+        {
+          "command": "operator-collection-sdk.openAddLink",
+          "when": "view == operator-collection-sdk.resources && viewItem == customresources",
+          "group": "inline"
+        },
+        {
           "command": "operator-collection-sdk.openLink",
-          "when": "view == operator-collection-sdk.resources && viewItem == zosendpoint-object",
+          "when": "view == operator-collection-sdk.links && viewItem == links",
           "group": "inline"
         }
       ]
