@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import * as k8s from '@kubernetes/client-node';
+import {ObjectStatus} from "../kubernetes/kubernetes";
 
 type Icons = {
     "dark": vscode.Uri,
@@ -59,6 +60,23 @@ export function getPodContainerStatusIconPath(containerStatus: k8s.V1ContainerSt
     }
 }
 
+export function getBrokerObjectStatusIconPath(status: ObjectStatus): Icons | undefined {
+    switch (status.phase) {
+        case "Successful": {
+            return getPassingIcons();
+        }
+        case "Failed": {
+            return getFailingIcons();
+        }
+        case "Pending": {
+            return getPendingIcons();
+        }
+        default: {
+            return undefined;
+        }
+    }
+}
+
 function getPassingIcons(): Icons {
     let icons: Icons = {
         dark: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "dark", "pass.svg"),
@@ -79,6 +97,14 @@ function getPendingIcons(): Icons {
     let icons: Icons = {
         dark: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "dark", "loading.svg"),
         light: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "light", "loading.svg")
+    };
+    return icons;
+}
+
+export function getRocketIcons(): Icons {
+    let icons: Icons = {
+        dark: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "dark", "rocket.svg"),
+        light: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "light", "rocket.svg")
     };
     return icons;
 }

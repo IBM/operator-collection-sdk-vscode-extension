@@ -60,6 +60,24 @@
           "dark": "resources/icons/dark/logs.svg",
           "light": "resources/icons/light/logs.svg"
         }
+      },
+      {
+        "command": "operator-collection-sdk.downloadVerboseLogs",
+        "title": "Download Verbose Logs",
+        "category": "OC-SDK",
+        "icon": {
+          "dark": "resources/icons/dark/debug-logs.svg",
+          "light": "resources/icons/light/debug-logs.svg"
+        }
+      },
+      {
+        "command": "operator-collection-sdk.openLink",
+        "title": "Open Link",
+        "category": "OC-SDK",
+        "icon": {
+          "dark": "resources/icons/dark/link-external.svg",
+          "light": "resources/icons/light/link-external.svg"
+        }
       }
     ],
     "views": {
@@ -107,7 +125,17 @@
         },
         {
           "command": "operator-collection-sdk.downloadLogs",
+          "when": "view == operator-collection-sdk.operators && (viewItem == operator-container || viewItem == operator-init-container)",
+          "group": "inline"
+        },
+        {
+          "command": "operator-collection-sdk.downloadVerboseLogs",
           "when": "view == operator-collection-sdk.operators && viewItem == operator-container",
+          "group": "inline"
+        },
+        {
+          "command": "operator-collection-sdk.openLink",
+          "when": "view == operator-collection-sdk.resources && viewItem == zosendpoint-object",
           "group": "inline"
         }
       ]

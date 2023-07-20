@@ -1,14 +1,12 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { OcSdkCommand } from './commands/ocSdkCommands';
 import {OperatorsTreeProvider} from './treeViews/providers/operatorProvider';
 import {ResourcesTreeProvider} from './treeViews/providers/resourceProvider';
 import {OperatorContainerItem} from "./treeViews/operatorItems/operatorContainerItem";
-
 import {initResources} from './treeViews/icons';
 import {KubernetesObj} from "./kubernetes/kubernetes";
 import * as path from 'path';
+import * as fs from "fs";
 
 
 type WorkSpaceOperators = {[key: string] : string};
@@ -22,6 +20,8 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.redeployCollection"));
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.redeployOperator"));
 	context.subscriptions.push(executeContainerLogDownloadCommand("operator-collection-sdk.downloadLogs"));
+	context.subscriptions.push(executeContainerLogDownloadCommand("operator-collection-sdk.downloadVerboseLogs"));
+	context.subscriptions.push(vscode.commands.registerCommand('operator-collection-sdk.openLink', (link: vscode.Uri) => vscode.env.openExternal(link)));
 }
 
 function executeContainerLogDownloadCommand(command: string): vscode.Disposable {
@@ -36,26 +36,53 @@ function executeContainerLogDownloadCommand(command: string): vscode.Disposable 
 				vscode.window.showErrorMessage("Unable to locace valid operator collection in workspace");
 			} else {
 				workspacePath = path.parse(workspacePath).dir;
-				const logsPath = await k8s.downloadContainerLogs(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name, workspacePath);
-				if (logsPath) {
-					try {
-						const logUri: vscode.Uri = vscode.Uri.parse(logsPath);
-						const textDocument = await vscode.workspace.openTextDocument(logUri);
-						await vscode.window.showTextDocument(textDocument, {
-							preview: false
-						  });
-						vscode.window.showInformationMessage("Container logs downloaded successfully");
-					} catch (e) {
-						vscode.window.showErrorMessage("Unable to download log");
+				switch(command) {
+					case "operator-collection-sdk.downloadLogs": {
+						const logsPath = await k8s.downloadContainerLogs(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name, workspacePath);
+						if (logsPath) {
+							try {
+								const logUri: vscode.Uri = vscode.Uri.parse(logsPath);
+								const textDocument = await vscode.workspace.openTextDocument(logUri);
+								await vscode.window.showTextDocument(textDocument, {
+									preview: false
+								});
+								vscode.window.showInformationMessage("Container logs downloaded successfully");
+							} catch (e) {
+								vscode.window.showErrorMessage(`Unable to download log: ${e}`);
+							}
+						} else {
+							vscode.window.showErrorMessage("Unable to download log");
+						}
+						break;
 					}
-				} else {
-					vscode.window.showErrorMessage("Unable to download log");
+					case "operator-collection-sdk.downloadVerboseLogs": {
+						const apiVersion = await getConvertedApiVersion(workspacePath);
+						const kind = await selectCustomResourceFromOperatorInWorkspace(workspacePath);
+						const crInstance = await selectCustomResourceInstance(workspacePath, k8s, apiVersion, kind!);
+						let logsPath: string | undefined = "";
+						if (kind && crInstance) {
+							logsPath = await k8s.downloadVerboseContainerLogs(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name, workspacePath, apiVersion, kind, crInstance);
+							if (logsPath) {
+								try {
+									const logUri: vscode.Uri = vscode.Uri.parse(logsPath);
+									const textDocument = await vscode.workspace.openTextDocument(logUri);
+									await vscode.window.showTextDocument(textDocument, {
+										preview: false
+									});
+									vscode.window.showInformationMessage("Container logs downloaded successfully");
+								} catch (e) {
+									vscode.window.showErrorMessage(`Unable to download log: ${e}`);
+								}
+							} else {
+								vscode.window.showErrorMessage("Unable to download log");
+							}
+						} else {
+							vscode.window.showErrorMessage("Unable to download log due to undefined kind and/or custom resource instance");
+						}
+					}
 				}
-				
 			}
-		}
-		
-		
+		}	
 	});
 }
 
@@ -158,8 +185,6 @@ async function selectOperatorInWorkspace(workspace: vscode.WorkspaceFolder, oper
 			ignoreFocusOut: true,
 			placeHolder: "Select an Operator below",
 			title: "Available Operators in workspace"
-		}).then((result) => {
-			return result;
 		});
 		if (!operatorSelected) {
 			return undefined;
@@ -171,6 +196,57 @@ async function selectOperatorInWorkspace(workspace: vscode.WorkspaceFolder, oper
 		return undefined;
 	}
 	
+}
+
+/**
+ * Select the Custom Resource Operator in the workspace to execute against (if multiple operators exist)
+ * @param workspace - The directory to the workspace folder
+ * @returns - A Promise containing the directory to the selected operator
+ */
+async function selectCustomResourceFromOperatorInWorkspace(pwd: string, operatorName?: string): Promise<string | undefined> {
+	let kinds = await getKindsInOperatorConfig(pwd);
+	if (kinds.length > 1) {
+		const kindSelected = await vscode.window.showQuickPick(kinds, {
+			canPickMany: false,
+			ignoreFocusOut: true,
+			placeHolder: "Select the Kind where the instance was created",
+			title: "Kinds available for this operator"
+		});
+		if (!kindSelected) {
+			return undefined;
+		}
+		return kindSelected;
+	} else if (kinds.length === 1) {
+		return kinds[0];
+	} else {
+		return undefined;
+	}
+}
+
+
+/**
+ * Select the Custom Resource Operator in the workspace to execute against (if multiple operators exist)
+ * @param workspace - The directory to the workspace folder
+ * @returns - A Promise containing the directory to the selected operator
+ */
+async function selectCustomResourceInstance(pwd: string, k8s: KubernetesObj, apiVersion: string, kind: string): Promise<string | undefined> {
+	let crInstanceNames = await k8s.listCustomResouceInstanceNames(apiVersion, kind);
+	if (crInstanceNames.length > 1) {
+		const instanceSelected = await vscode.window.showQuickPick(crInstanceNames, {
+			canPickMany: false,
+			ignoreFocusOut: true,
+			placeHolder: "Select the instance logs to display",
+			title: "List of instances in the current namespace"
+		});
+		if (!instanceSelected) {
+			return undefined;
+		}
+		return instanceSelected;
+	} else if (crInstanceNames.length === 1) {
+		return crInstanceNames[0];
+	} else {
+		return undefined;
+	}
 }
 
 /**
@@ -287,6 +363,70 @@ async function getOperatorsInWorkspace(workspace: vscode.WorkspaceFolder): Promi
 	}
 	return wsOperators;
 }
+
+/**
+ * Returns the converted API version in the kubernetes format
+ * @param pwd - the current working directory
+ * @returns - A Promise containing the converted API version
+ */
+async function getConvertedApiVersion(pwd: string): Promise<string> {
+	let operatorConfigFilePath: string = "";
+	if (fs.existsSync(path.join(pwd, "operator-config.yml"))) {
+		operatorConfigFilePath = path.join(pwd, "operator-config.yml");
+	} else if (fs.existsSync(path.join(pwd, "operator-config.yaml"))) {
+		operatorConfigFilePath = path.join(pwd, "operator-config.yaml");
+	} else {
+		vscode.window.showErrorMessage("operator-config file doesn't exist in workspace");
+	}
+	const operatorConfigUri: vscode.Uri = vscode.Uri.parse(operatorConfigFilePath);
+	let data = await vscode.workspace.openTextDocument(operatorConfigUri);
+	let apiVersion = data.getText().split("version: ")[1].split("\n")[0];
+	return convertApiVersion(apiVersion);
+}
+
+/**
+ * Convert API version to kubernetes format
+ * @param apiVersion - the operator-config API version
+ * @returns - A string containing the converted API version
+ */
+function convertApiVersion(apiVersion: string): string {
+	let version = apiVersion.toLowerCase();
+	let versionSplit = version.split(".");
+	let  refactoredVersion: string = "";
+	if (versionSplit.length === 3) {
+		refactoredVersion = `v${versionSplit[0]}minor${versionSplit[1]}patch${versionSplit[2]}`;
+	} else if (versionSplit.length === 4) {
+		refactoredVersion = `v${versionSplit[0]}minor${versionSplit[1]}patch${versionSplit[2]}-${versionSplit[3]}`;
+	}
+
+	return refactoredVersion;
+}
+
+/**
+ * Retrieve the list of Kinds in the operator-config.yml file in the workspace
+ * @returns — A promise containing the WorkSpaceOperators object
+ */
+async function getKindsInOperatorConfig(pwd: string): Promise<string[]> {
+	let kindNames: Array<string> = [];
+	let operatorConfigFilePath: string = "";
+	if (fs.existsSync(path.join(pwd, "operator-config.yml"))) {
+		operatorConfigFilePath = path.join(pwd, "operator-config.yml");
+	} else if (fs.existsSync(path.join(pwd, "operator-config.yaml"))) {
+		operatorConfigFilePath = path.join(pwd, "operator-config.yaml");
+	} else {
+		vscode.window.showErrorMessage("operator-config file doesn't exist in workspace");
+	}
+	const operatorConfigUri: vscode.Uri = vscode.Uri.parse(operatorConfigFilePath);
+	let data = await vscode.workspace.openTextDocument(operatorConfigUri);
+	kindNames = data.getText().split("kind: ").slice(1);
+	for (let i = 0; i < kindNames.length; i++) {
+		kindNames[i] = kindNames[i].split("\n")[0];
+	}
+	
+	return kindNames;
+}
+
+
 
 /**
  * Retrieve the list of Operator Collection names in the current workspace

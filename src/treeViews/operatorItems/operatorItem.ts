@@ -1,9 +1,11 @@
 import * as vscode from "vscode";
+import * as icons from "../icons";
 
 export class OperatorItem extends vscode.TreeItem {
     constructor(public readonly operatorDisplayName: string, public readonly operatorName: string) {
         super(`Operator: ${operatorDisplayName}`, vscode.TreeItemCollapsibleState.Collapsed);
 		this.contextValue = "operator";
+		this.iconPath = icons.getRocketIcons();
     }
 }
 

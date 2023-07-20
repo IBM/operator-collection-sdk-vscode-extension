@@ -1,13 +1,43 @@
 import * as k8s from '@kubernetes/client-node';
 import * as fs from "fs";
 import * as path from 'path';
+import {OcCpCommand} from "../commands/ocCpCommand";
 
+export interface ObjectList {
+    apiVersion: string;
+    items: Array<ObjectInstance>;
+}
+
+export interface ObjectInstance {
+    apiVersion: string;
+    kind: string;
+    metadata: ObjectMetadata;
+    status: ObjectStatus;
+}
+
+export interface ObjectMetadata {
+    name: string;
+    namespace: string;
+}
+
+export interface ObjectStatus {
+    phase: string;
+}
+
+interface RouteObject {
+    metadata: ObjectMetadata;
+    spec: RouteObjectSpec;
+}
+
+interface RouteObjectSpec {
+    host: string;
+}
 export class KubernetesObj {
     private coreV1Api: k8s.CoreV1Api;
-    private namespace: string = "";
+    private customObjectsApi: k8s.CustomObjectsApi;
+    public namespace: string = "";
     constructor() {
         const kc = new k8s.KubeConfig();
-        let defaultNamespace: string;
         if (fs.existsSync("/var/run/secrets/kubernetes.io/serviceaccount")) {
             kc.loadFromCluster();
             this.namespace = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/namespace').toString();
@@ -21,6 +51,7 @@ export class KubernetesObj {
             }
         }
         this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
+        this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
     }
 
     /**
@@ -100,4 +131,80 @@ export class KubernetesObj {
         }
         return logsPath;
     }
+
+    public async downloadVerboseContainerLogs(podName: string, containerName: string, workspacePath: string, apiVersion: string, kind: string, instanceName: string): Promise<string | undefined> {
+        const logsPath = path.join(workspacePath, `${podName}-${containerName}-verbose.log`);
+        const ocCmd = new OcCpCommand();
+        await ocCmd.runOcCpCommand(podName, this.namespace, containerName, logsPath, apiVersion, kind, instanceName);
+        return logsPath;
+    }
+
+    public async getSubOperatorConfigs(operatorName: string): Promise<ObjectList> {
+        return await this.getBrokerObjList(operatorName, "suboperatorconfigs");
+    }
+
+    public async getZosEndpoints(operatorName: string): Promise<ObjectList> {
+        // only retrieve endpoints mapped to SubOperatorConfig
+        return await this.getBrokerObjList(operatorName, "zosendpoints");
+    }
+
+    public async getOperatorCollections(operatorName: string): Promise<ObjectList> {
+        return await this.getBrokerObjList(operatorName, "operatorcollections");
+    }
+
+    private async getBrokerObjList(operatorName: string, objPlural: string): Promise<ObjectList> {
+        let objsString: string = "";
+        if (objPlural !== "zosendpoints") {
+            const labelSelector = `operator-name=${operatorName}`;
+            let objs = await this.customObjectsApi.listNamespacedCustomObject(
+                "zoscb.ibm.com",
+                "v2beta2",
+                this.namespace,
+                objPlural,
+                undefined, // pretty
+                undefined, // allowWatchBookmarks
+                undefined, // continue
+                undefined, // fieldSelector
+                labelSelector
+            );
+            objsString = JSON.stringify(objs.body);
+        } else {
+            let objs = await this.customObjectsApi.listNamespacedCustomObject(
+                "zoscb.ibm.com",
+                "v2beta2",
+                this.namespace,
+                objPlural
+            );
+            objsString = JSON.stringify(objs.body);
+        }
+        
+        let objsList: ObjectList = JSON.parse(objsString);
+        return objsList;
+    }
+
+    public async listCustomResouceInstanceNames(apiVersion: string, kind: string): Promise<string[]> {
+        let crInstanceNames: Array<string> = [];
+        const crInstances = await this.customObjectsApi.listNamespacedCustomObject(
+            "suboperator.zoscb.ibm.com",
+            apiVersion,
+            this.namespace,
+            `${kind.toLowerCase()}s`
+        );
+        let crInstacesString = JSON.stringify(crInstances.body);
+        let crInstanceList: ObjectList = JSON.parse(crInstacesString);
+        
+        for (let items of crInstanceList.items) {
+            crInstanceNames.push(items.metadata.name);
+        }
+        return crInstanceNames;
+    }
+
+    public async getOpenshifConsoleUrl(): Promise<string> {
+        let consoleRoute = await this.customObjectsApi.getNamespacedCustomObject("route.openshift.io", "v1", "openshift-console", "routes", "console");
+        let consoleRouteString = JSON.stringify(consoleRoute.body);
+        let routeObj: RouteObject = JSON.parse(consoleRouteString);
+        return routeObj.spec.host;
+    }
 }
+// https://console-openshift-console.zoscb-pentest-42d4bdeacfebc108744a5d18dc2f0439-0000.us-east.containers.appdomain.cloud/k8s/ns/latrell-test/clusterserviceversions/ibm-zoscb.v2.2.1/zoscb.ibm.com~v2beta2~ZosEndpoint/ibmcloud-vm/yaml
+// https://console-openshift-console.zoscb-pentest-42d4bdeacfebc108744a5d18dc2f0439-0000.us-east.containers.appdomain.cloud/k8s/ns/latrell-test/zoscb.ibm.com~v2beta2~ZosEndpoint/ibmcloud-vm/yaml

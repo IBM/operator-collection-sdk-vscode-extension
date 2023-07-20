@@ -6,7 +6,11 @@ import * as icons from "../icons";
 export class OperatorContainerItem extends vscode.TreeItem {
     constructor(public readonly podObj: k8s.V1Pod, public readonly containerStatus: k8s.V1ContainerStatus, public readonly operatorName: string) {
         super(`Container: ${containerStatus.name}`, vscode.TreeItemCollapsibleState.None);
-		this.contextValue = "operator-container";
+		if (containerStatus.name.startsWith("init")) {
+			this.contextValue = "operator-init-container";
+		} else {
+			this.contextValue = "operator-container";
+		}
 		this.iconPath = icons.getPodContainerStatusIconPath(containerStatus);
     }
 }
