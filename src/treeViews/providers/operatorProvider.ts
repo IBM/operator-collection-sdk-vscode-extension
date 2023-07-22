@@ -27,7 +27,7 @@ export class OperatorsTreeProvider implements vscode.TreeDataProvider<vscode.Tre
         if (element instanceof OperatorItem) {
           return getOperatorPodItems(this.operatorName);
         } else if (element instanceof OperatorPodItem) {
-          return getOperatorContainerItems(this.operatorName);
+          return getOperatorContainerItems(this.operatorName, element);
         }
     } else {
       // Get root operator items

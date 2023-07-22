@@ -22,9 +22,9 @@ export class OperatorPodItem extends OperatorTreeItem {
 export async function getOperatorPodItems(operatorName: string): Promise<OperatorPodItem[]> {
 	const operatorPodItems: Array<OperatorPodItem> = [];
 	const k8s = new KubernetesObj();
-	const containerStatus = await k8s.getOperatorContainerStatuses(operatorName);
 	const pods = await k8s.getOperatorPods(operatorName);
 	for (const pod of pods) {
+		const containerStatus = await k8s.getOperatorContainerStatuses(operatorName, pod);
 		operatorPodItems.push(new OperatorPodItem(pod, containerStatus));
 	}
 	return operatorPodItems;

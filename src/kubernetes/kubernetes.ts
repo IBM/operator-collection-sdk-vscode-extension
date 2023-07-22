@@ -102,22 +102,37 @@ export class KubernetesObj {
      * @param operatorName - operator name
      * @returns - Promise containing a list of Pod objects
      */
-    public async getOperatorContainerStatuses(operatorName: string): Promise<k8s.V1ContainerStatus[]> {
+    public async getOperatorContainerStatuses(operatorName: string, pod: k8s.V1Pod): Promise<k8s.V1ContainerStatus[]> {
         const containerStatuses: Array<k8s.V1ContainerStatus> = [];
-        const pods = await this.getOperatorPods(operatorName);
-        for (const pod of pods) {
-            if (pod.status?.initContainerStatuses) {
-                for (const initContainerStatus of pod.status?.initContainerStatuses) {
-                    containerStatuses.push(initContainerStatus);
+        if (pod.status?.initContainerStatuses) {
+            for (const initContainerStatus of pod.status?.initContainerStatuses) {
+                // if deletionTimestamp is set then this implies that the pod is temination
+                // which we should then set the status to "waiting".
+                if (pod.metadata?.deletionTimestamp && initContainerStatus.state) {
+                    this.setTerminatingStatus(initContainerStatus);
                 }
+                containerStatuses.push(initContainerStatus);
             }
-            if (pod.status?.containerStatuses) {
-                for (const containerStatus of pod.status?.containerStatuses) {
-                    containerStatuses.push(containerStatus);
+        }
+        if (pod.status?.containerStatuses) {
+            for (let containerStatus of pod.status?.containerStatuses) {
+                // if deletionTimestamp is set then this implies that the pod is temination
+                // which we should then set the status to "waiting".
+                if (pod.metadata?.deletionTimestamp && containerStatus.state) {
+                    this.setTerminatingStatus(containerStatus);
                 }
+                containerStatuses.push(containerStatus);
             }
         }
         return containerStatuses;
+    }
+
+    private setTerminatingStatus(containerStatus: k8s.V1ContainerStatus): void {
+        if (containerStatus.state) {
+            containerStatus.state.running = undefined;
+            containerStatus.state.terminated = undefined;
+            containerStatus.state.waiting = new k8s.V1ContainerState().waiting;
+        }
     }
 
     public async downloadContainerLogs(podName: string, containerName: string, workspacePath: string): Promise<string | undefined> {

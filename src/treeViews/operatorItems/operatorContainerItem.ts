@@ -3,6 +3,7 @@ import {KubernetesObj} from "../../kubernetes/kubernetes";
 import * as k8s from '@kubernetes/client-node';
 import * as icons from "../icons";
 import {OperatorTreeItem} from "./operatorTreeItems";
+import {OperatorPodItem} from "./operatorPodItem";
 
 export class OperatorContainerItem extends OperatorTreeItem {
     constructor(public readonly podObj: k8s.V1Pod, public readonly containerStatus: k8s.V1ContainerStatus, public readonly operatorName: string) {
@@ -16,14 +17,14 @@ export class OperatorContainerItem extends OperatorTreeItem {
     }
 }
 
-export async function getOperatorContainerItems(operatorName: string): Promise<OperatorContainerItem[]> {
+export async function getOperatorContainerItems(operatorName: string, podItem: OperatorPodItem): Promise<OperatorContainerItem[]> {
 	const operatorContainerItems: Array<OperatorContainerItem> = [];
 	const k8s = new KubernetesObj();
-	const pods = await k8s.getOperatorPods(operatorName);
-	const containerStatuses = await k8s.getOperatorContainerStatuses(operatorName);
+	const containerStatuses = await k8s.getOperatorContainerStatuses(operatorName, podItem.podObj);
 	for (const containerStatus of containerStatuses) {
-		operatorContainerItems.push(new OperatorContainerItem(pods[0], containerStatus, operatorName));
+		operatorContainerItems.push(new OperatorContainerItem(podItem.podObj, containerStatus, operatorName));
 	}
+	
 	return operatorContainerItems;
 }
 

@@ -58,7 +58,7 @@ export function getPodContainerStatusIcon(containerStatus: k8s.V1ContainerStatus
             return getFailingIcons();
         }
     } else {
-        return undefined;
+        return getPendingIcons();
     }
 }
 
