@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as util from "./utilities/util";
+import * as path from 'path';
 import { OcSdkCommand } from './commands/ocSdkCommands';
 import {OperatorsTreeProvider} from './treeViews/providers/operatorProvider';
 import {ResourcesTreeProvider} from './treeViews/providers/resourceProvider';
@@ -9,14 +11,18 @@ import {CustomResourceItem} from "./treeViews/resourceItems/customResourceItem";
 import {LinkItem} from "./treeViews/linkItems/linkItem";
 import {initResources} from './treeViews/icons';
 import {KubernetesObj} from "./kubernetes/kubernetes";
-import * as util from "./utilities/util";
-import * as path from 'path';
+
+import { OperatorItem } from './treeViews/operatorItems/operatorItem';
+import { OperatorPodItem } from './treeViews/operatorItems/operatorPodItem';
 
 export function activate(context: vscode.ExtensionContext) {
 	initResources(context);
-	vscode.window.registerTreeDataProvider('operator-collection-sdk.operators', new OperatorsTreeProvider());
-	vscode.window.registerTreeDataProvider('operator-collection-sdk.resources', new ResourcesTreeProvider());
-	vscode.window.registerTreeDataProvider('operator-collection-sdk.links', new LinksTreeProvider());
+	const operatorTreeProvider = new OperatorsTreeProvider();
+	const resourceTreeProvider = new ResourcesTreeProvider();
+	const linksTreeProvider = new LinksTreeProvider();
+	vscode.window.registerTreeDataProvider('operator-collection-sdk.operators', operatorTreeProvider);
+	vscode.window.registerTreeDataProvider('operator-collection-sdk.resources', resourceTreeProvider);
+	vscode.window.registerTreeDataProvider('operator-collection-sdk.links', linksTreeProvider);
 	context.subscriptions.push(executeSdkCommandWithUserInput("operator-collection-sdk.createOperator"));
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.deleteOperator"));
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.redeployCollection"));
@@ -26,16 +32,10 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openEditLink"));
 	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openAddLink"));
 	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openLink"));
-	context.subscriptions.push(executeRefreshCommand("operator-collection-sdk.refresh"));
-}
-
-function executeRefreshCommand(command: string): vscode.Disposable {
-	return vscode.commands.registerCommand(command, () => {
-		const operatorTreeProvider = new OperatorsTreeProvider();
-		const resourceTreeProvider = new ResourcesTreeProvider();
+	context.subscriptions.push(vscode.commands.registerCommand("operator-collection-sdk.refresh", () => {
 		operatorTreeProvider.refresh();
 		resourceTreeProvider.refresh();
-	});
+	}));
 }
 
 function executeOpenLinkCommand(command: string): vscode.Disposable {
@@ -133,8 +133,9 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 				switch(command) {
 					case "operator-collection-sdk.deleteOperator": {
 						vscode.window.showInformationMessage("Delete Operator request in progress");
-						ocSdkCommand.runDeleteOperatorCommand().then(() => {
-							vscode.commands.executeCommand('operator-collection-sdk.refresh');
+						const poll = util.pollRun(10);
+						const runDeleteOperatorCommand = ocSdkCommand.runDeleteOperatorCommand();
+						Promise.all([poll, runDeleteOperatorCommand]).then(() => {
 							vscode.window.showInformationMessage("Delete Operator command executed successfully");
 						}).catch((e) => {
 							vscode.window.showInformationMessage(`Failure executing Delete Operator command: RC ${e}`);
@@ -143,8 +144,9 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 					}
 					case "operator-collection-sdk.redeployCollection": {
 						vscode.window.showInformationMessage("Redeploy Collection request in progress");
-						ocSdkCommand.runRedeployCollectionCommand().then(() => {
-							vscode.commands.executeCommand('operator-collection-sdk.refresh');
+						const poll = util.pollRun(15);
+						const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand();
+						Promise.all([poll, runRedeployCollectionCommand]).then(() => {
 							vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
 						}).catch((e) => {
 							vscode.window.showInformationMessage(`Failure executing Redeploy Collection command: RC ${e}`);
@@ -153,7 +155,9 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 					}
 					case "operator-collection-sdk.redeployOperator": {
 						vscode.window.showInformationMessage("Redeploy Operator request in progress");
-						ocSdkCommand.runRedeployOperatorCommand().then(() => {
+						const poll = util.pollRun(25);
+						const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand();
+						Promise.all([poll, runRedeployOperatorCommand]).then(() => {
 							vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
 						}).catch((e) => {
 							vscode.window.showInformationMessage(`Failure executing Redeploy Operator command: RC ${e}`);
@@ -181,13 +185,15 @@ function executeSdkCommandWithUserInput(command: string): vscode.Disposable {
 			if (!workspacePath) {
 				vscode.window.showInformationMessage("Please select Operator in workspace to deploy");
 			} else {
-				switch(command) {
-					case "operator-collection-sdk.createOperator": {
-						let playbookArgs = await util.requestOperatorInfo();
+				if (command === "operator-collection-sdk.createOperator") {
+					let playbookArgs = await util.requestOperatorInfo();
+					if (playbookArgs) {
 						workspacePath = path.parse(workspacePath).dir;
 						let ocSdkCommand = new OcSdkCommand(workspacePath);
 						vscode.window.showInformationMessage("Create Operator request in progress");
-						ocSdkCommand.runCreateOperatorCommand(playbookArgs).then(() => {
+						const poll = util.pollRun(40);
+						const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs);
+						Promise.all([poll, runCreateOperatorCommand]).then(() => {
 							vscode.window.showInformationMessage("Create Operator command executed successfully");
 						}).catch((e) => {
 							vscode.window.showInformationMessage(`Failure executing Create Operator command: RC ${e}`);
@@ -198,7 +204,3 @@ function executeSdkCommandWithUserInput(command: string): vscode.Disposable {
 		}
 	});
 }
-
-
-// This method is called when your extension is deactivated
-export function deactivate() {}

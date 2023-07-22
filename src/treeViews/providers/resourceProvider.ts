@@ -4,38 +4,25 @@ import * as path from 'path';
 import {OperatorItem, getOperatorItems} from "../operatorItems/operatorItem";
 import {ResourceItem} from "../resourceItems/resourceItem";
 import {ZosEndpointItem} from "../resourceItems/zosendpointItem";
-import {ZosEndpointsItem, getZosEndpointsItem} from "../resourceItems/zosendpointsItem";
+import {getZosEndpointsItem} from "../resourceItems/zosendpointsItem";
 import {SubOperatorConfigItem} from "../resourceItems/subOperatorConfigItem";
-import {SubOperatorConfigsItem, getSubOperatorConfigsItem} from "../resourceItems/subOperatorConfigsItem";
+import {getSubOperatorConfigsItem} from "../resourceItems/subOperatorConfigsItem";
 import {OperatorCollectionItem} from "../resourceItems/operatorCollectionItem";
-import {OperatorCollectionsItem, getOperatorCollectionsItem} from "../resourceItems/operatorCollectionsItem";
+import {getOperatorCollectionsItem} from "../resourceItems/operatorCollectionsItem";
 import {CustomResourceItem} from "../resourceItems/customResourceItem";
-import {CustomResourcesItem, getCustomResourcesItem} from "../resourceItems/customResourcesItem";
+import {getCustomResourcesItem} from "../resourceItems/customResourcesItem";
 import {KubernetesObj} from "../../kubernetes/kubernetes";
+import {ResourceTreeItem} from "../resourceItems/resourceTreeItems";
 
-type ResourceTreeItems = 
-    | OperatorItem 
-    | ZosEndpointItem 
-    | ZosEndpointsItem 
-    | SubOperatorConfigItem 
-    | SubOperatorConfigsItem 
-    | OperatorCollectionItem
-    | OperatorCollectionsItem
-    | CustomResourceItem
-    | CustomResourcesItem;
-
-export class ResourcesTreeProvider implements vscode.TreeDataProvider<ResourceTreeItems> {
+export class ResourcesTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
     private operatorName: string = "";
-    private _onDidChangeTreeData = new vscode.EventEmitter<ResourceTreeItems | undefined | null | void>();
-    readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
-    
-    updateItem(item: ResourceTreeItems): void {
-        this._onDidChangeTreeData.fire(item);
-      }
-    
-    refresh(): void {
-        this._onDidChangeTreeData.fire();
-    }
+    private _onDidChangeTreeData: vscode.EventEmitter<ResourceTreeItem | undefined | void> = new vscode.EventEmitter<ResourceTreeItem | undefined | void>();
+	readonly onDidChangeTreeData: vscode.Event<ResourceTreeItem | undefined | void> = this._onDidChangeTreeData.event;
+
+
+	refresh(): void {
+		this._onDidChangeTreeData.fire();
+	}
     getTreeItem(element: ResourceItem): vscode.TreeItem {
         if (element instanceof OperatorItem) {
             this.operatorName = element.operatorName;
@@ -43,12 +30,12 @@ export class ResourcesTreeProvider implements vscode.TreeDataProvider<ResourceTr
         return element;
       }
     
-    async getChildren(element?: ResourceItem): Promise<ResourceTreeItems[]> {
+    async getChildren(element?: ResourceTreeItem): Promise<ResourceTreeItem[]> {
         if (element) {
             const k8s = new KubernetesObj();
             // Get operator children items
             if (element instanceof OperatorItem) {
-                let resourceItems: Array<ResourceTreeItems> = [];
+                let resourceItems: Array<ResourceTreeItem> = [];
                 resourceItems.push(new ZosEndpointItem());
                 resourceItems.push(new OperatorCollectionItem());
                 resourceItems.push(new SubOperatorConfigItem());

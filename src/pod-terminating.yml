@@ -1,0 +1,681 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  generateName: freemanlatrell-file-manager-operator-58bfddb874-
+  annotations:
+    openshift.io/scc: restricted-v2
+    cloudpakId: aaa504ecbb3744e2b8a4eeec21a0a107
+    cni.projectcalico.org/podIP: 172.30.222.239/32
+    olm.targetNamespaces: latrell-test
+    operatorframework.io/properties: >-
+      {"properties":[{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"DiscoverFiles","version":"v1minor0patch0"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"DiscoverFiles","version":"v1minor1patch12"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"DiscoverFiles","version":"v1minor1patch13"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"DiscoverFiles","version":"v1minor1patch3"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"DiscoverFiles","version":"v1minor1patch4"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"DiscoverFiles","version":"v1minor1patch5"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"File","version":"v1minor0patch0"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"File","version":"v1minor1patch12"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"File","version":"v1minor1patch13"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"File","version":"v1minor1patch3"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"File","version":"v1minor1patch4"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"File","version":"v1minor1patch5"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"FileMessage","version":"v1minor0patch0"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"FileMessage","version":"v1minor1patch12"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"FileMessage","version":"v1minor1patch13"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"FileMessage","version":"v1minor1patch3"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"FileMessage","version":"v1minor1patch4"}},{"type":"olm.gvk","value":{"group":"suboperator.zoscb.ibm.com","kind":"FileMessage","version":"v1minor1patch5"}},{"type":"olm.package","value":{"packageName":"freemanlatrell-file-manager-operator","version":"1.0.0"}}]}
+    productVersion: 2.2.1
+    productID: 32b4beffa9224463a96cfe8e8d35d3c5
+    productId: 32b4beffa9224463a96cfe8e8d35d3c5
+    cni.projectcalico.org/podIPs: 172.30.222.239/32
+    cloudpakName: IBM Z and Cloud Modernization Stack
+    cni.projectcalico.org/containerID: 5e682afd72ae9286fced19584b966f8cb0f1fae07dc10561cf99420f4bf5edfc
+    productChargedContainers: All
+    alm-examples: >-
+      [{"apiVersion":"suboperator.zoscb.ibm.com/v1minor0patch0","kind":"DiscoverFiles","metadata":{"name":"example"},"spec":{}},{"apiVersion":"suboperator.zoscb.ibm.com/v1minor0patch0","kind":"File","metadata":{"name":"example"},"spec":{}},{"apiVersion":"suboperator.zoscb.ibm.com/v1minor0patch0","kind":"FileMessage","metadata":{"name":"example"},"spec":{}}]
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+    cloudpakMetric: VIRTUAL_PROCESSOR_CORE
+    k8s.v1.cni.cncf.io/network-status: |-
+      [{
+          "name": "k8s-pod-network",
+          "ips": [
+              "172.30.222.239"
+          ],
+          "default": true,
+          "dns": {}
+      }]
+    k8s.v1.cni.cncf.io/networks-status: |-
+      [{
+          "name": "k8s-pod-network",
+          "ips": [
+              "172.30.222.239"
+          ],
+          "default": true,
+          "dns": {}
+      }]
+    productCloudpakRatio: '5:1'
+    olm.operatorNamespace: latrell-test
+    productName: IBM z/OS Cloud Broker
+    olm.operatorGroup: latrell-test-wdtbq
+    productMetric: CONNECTION
+  deletionTimestamp: '2023-07-22T20:40:47Z'
+  resourceVersion: '160339439'
+  name: freemanlatrell-file-manager-operator-58bfddb874-2hxlq
+  uid: 5fe5d73c-c2d0-4fb6-9ba7-5848b28697ed
+  deletionGracePeriodSeconds: 30
+  creationTimestamp: '2023-07-22T20:34:30Z'
+  managedFields:
+    - manager: kube-controller-manager
+      operation: Update
+      apiVersion: v1
+      time: '2023-07-22T20:34:30Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            'f:cloudpakName': {}
+            'f:olm.operatorNamespace': {}
+            'f:productName': {}
+            'f:productChargedContainers': {}
+            'f:alm-examples': {}
+            'f:cloudpakMetric': {}
+            'f:olm.operatorGroup': {}
+            'f:productCloudpakRatio': {}
+            'f:productMetric': {}
+            .: {}
+            'f:operatorframework.io/properties': {}
+            'f:cloudpakId': {}
+            'f:productID': {}
+            'f:productId': {}
+            'f:olm.targetNamespaces': {}
+            'f:productVersion': {}
+          'f:generateName': {}
+          'f:labels':
+            .: {}
+            'f:component': {}
+            'f:instance-name': {}
+            'f:managed-by': {}
+            'f:operator-domain': {}
+            'f:operator-name': {}
+            'f:operator-version': {}
+            'f:pod-template-hash': {}
+          'f:ownerReferences':
+            .: {}
+            'k:{"uid":"65b3b4c6-5e3a-49f6-bf06-55be20236245"}': {}
+        'f:spec':
+          'f:volumes':
+            .: {}
+            'k:{"name":"ansibletmp"}':
+              .: {}
+              'f:emptyDir':
+                .: {}
+                'f:sizeLimit': {}
+              'f:name': {}
+            'k:{"name":"collections"}':
+              .: {}
+              'f:emptyDir':
+                .: {}
+                'f:sizeLimit': {}
+              'f:name': {}
+            'k:{"name":"cp"}':
+              .: {}
+              'f:emptyDir':
+                .: {}
+                'f:sizeLimit': {}
+              'f:name': {}
+            'k:{"name":"hosts"}':
+              .: {}
+              'f:emptyDir':
+                .: {}
+                'f:sizeLimit': {}
+              'f:name': {}
+            'k:{"name":"init"}':
+              .: {}
+              'f:emptyDir':
+                .: {}
+                'f:sizeLimit': {}
+              'f:name': {}
+            'k:{"name":"sshconfig"}':
+              .: {}
+              'f:emptyDir':
+                .: {}
+                'f:sizeLimit': {}
+              'f:name': {}
+            'k:{"name":"tmp"}':
+              .: {}
+              'f:emptyDir':
+                .: {}
+                'f:sizeLimit': {}
+              'f:name': {}
+          'f:containers':
+            'k:{"name":"freemanlatrell-file-manager-operator"}':
+              'f:image': {}
+              'f:volumeMounts':
+                .: {}
+                'k:{"mountPath":"/etc/ansible"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+                'k:{"mountPath":"/etc/ssh"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+                'k:{"mountPath":"/opt"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+                'k:{"mountPath":"/opt/ansible"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+                  'f:readOnly': {}
+                'k:{"mountPath":"/opt/ansible/.ansible"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+                'k:{"mountPath":"/tmp/cp"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+              'f:terminationMessagePolicy': {}
+              .: {}
+              'f:resources': {}
+              'f:livenessProbe':
+                .: {}
+                'f:failureThreshold': {}
+                'f:httpGet':
+                  .: {}
+                  'f:path': {}
+                  'f:port': {}
+                  'f:scheme': {}
+                'f:initialDelaySeconds': {}
+                'f:periodSeconds': {}
+                'f:successThreshold': {}
+                'f:timeoutSeconds': {}
+              'f:env':
+                'k:{"name":"WATCHES_FILE"}':
+                  .: {}
+                  'f:name': {}
+                  'f:value': {}
+                'k:{"name":"ANSIBLE_INVENTORY"}':
+                  .: {}
+                  'f:name': {}
+                  'f:value': {}
+                'k:{"name":"SUBOPERATORCONFIG_NAME"}':
+                  .: {}
+                  'f:name': {}
+                  'f:value': {}
+                'k:{"name":"POD_NAME"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:fieldRef': {}
+                'k:{"name":"ANSIBLE_CONFIG"}':
+                  .: {}
+                  'f:name': {}
+                  'f:value': {}
+                .: {}
+                'k:{"name":"GO_ENV"}':
+                  .: {}
+                  'f:name': {}
+                  'f:value': {}
+                'k:{"name":"SOURCE_OPERATOR"}':
+                  .: {}
+                  'f:name': {}
+                  'f:value': {}
+                'k:{"name":"PERSISTENCE_AVAILABLE"}':
+                  .: {}
+                  'f:name': {}
+                  'f:value': {}
+                'k:{"name":"LOG_LEVEL"}':
+                  .: {}
+                  'f:name': {}
+                  'f:value': {}
+                'k:{"name":"SOURCE_NAMESPACE"}':
+                  .: {}
+                  'f:name': {}
+                  'f:value': {}
+                'k:{"name":"OPERATOR_CONDITION_NAME"}':
+                  .: {}
+                  'f:name': {}
+                  'f:value': {}
+                'k:{"name":"WATCH_NAMESPACE"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:fieldRef': {}
+              'f:readinessProbe':
+                .: {}
+                'f:exec':
+                  .: {}
+                  'f:command': {}
+                'f:failureThreshold': {}
+                'f:initialDelaySeconds': {}
+                'f:periodSeconds': {}
+                'f:successThreshold': {}
+                'f:timeoutSeconds': {}
+              'f:securityContext':
+                .: {}
+                'f:allowPrivilegeEscalation': {}
+                'f:capabilities':
+                  .: {}
+                  'f:drop': {}
+                'f:privileged': {}
+                'f:readOnlyRootFilesystem': {}
+                'f:runAsNonRoot': {}
+              'f:terminationMessagePath': {}
+              'f:imagePullPolicy': {}
+              'f:name': {}
+          'f:dnsPolicy': {}
+          'f:serviceAccount': {}
+          'f:restartPolicy': {}
+          'f:schedulerName': {}
+          'f:terminationGracePeriodSeconds': {}
+          'f:initContainers':
+            .: {}
+            'k:{"name":"init"}':
+              'f:image': {}
+              'f:volumeMounts':
+                .: {}
+                'k:{"mountPath":"/etc/ssh"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+                'k:{"mountPath":"/opt"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+                'k:{"mountPath":"/opt/ansible"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+                'k:{"mountPath":"/opt/ansible/.ansible"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+                'k:{"mountPath":"/tmp"}':
+                  .: {}
+                  'f:mountPath': {}
+                  'f:name': {}
+              'f:terminationMessagePolicy': {}
+              .: {}
+              'f:resources': {}
+              'f:command': {}
+              'f:env':
+                .: {}
+                'k:{"name":"WATCH_NAMESPACE"}':
+                  .: {}
+                  'f:name': {}
+                  'f:valueFrom':
+                    .: {}
+                    'f:fieldRef': {}
+              'f:securityContext':
+                .: {}
+                'f:allowPrivilegeEscalation': {}
+                'f:capabilities':
+                  .: {}
+                  'f:drop': {}
+                'f:privileged': {}
+                'f:readOnlyRootFilesystem': {}
+                'f:runAsNonRoot': {}
+              'f:terminationMessagePath': {}
+              'f:imagePullPolicy': {}
+              'f:name': {}
+          'f:imagePullSecrets':
+            .: {}
+            'k:{"name":"ibm-entitlement-key"}': {}
+          'f:serviceAccountName': {}
+          'f:enableServiceLinks': {}
+          'f:securityContext':
+            .: {}
+            'f:runAsNonRoot': {}
+          'f:affinity':
+            .: {}
+            'f:nodeAffinity':
+              .: {}
+              'f:requiredDuringSchedulingIgnoredDuringExecution': {}
+    - manager: calico
+      operation: Update
+      apiVersion: v1
+      time: '2023-07-22T20:34:31Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            'f:cni.projectcalico.org/containerID': {}
+            'f:cni.projectcalico.org/podIP': {}
+            'f:cni.projectcalico.org/podIPs': {}
+      subresource: status
+    - manager: multus
+      operation: Update
+      apiVersion: v1
+      time: '2023-07-22T20:34:31Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:metadata':
+          'f:annotations':
+            'f:k8s.v1.cni.cncf.io/network-status': {}
+            'f:k8s.v1.cni.cncf.io/networks-status': {}
+      subresource: status
+    - manager: kubelet
+      operation: Update
+      apiVersion: v1
+      time: '2023-07-22T20:35:01Z'
+      fieldsType: FieldsV1
+      fieldsV1:
+        'f:status':
+          'f:conditions':
+            'k:{"type":"ContainersReady"}':
+              .: {}
+              'f:lastProbeTime': {}
+              'f:lastTransitionTime': {}
+              'f:status': {}
+              'f:type': {}
+            'k:{"type":"Initialized"}':
+              .: {}
+              'f:lastProbeTime': {}
+              'f:lastTransitionTime': {}
+              'f:status': {}
+              'f:type': {}
+            'k:{"type":"Ready"}':
+              .: {}
+              'f:lastProbeTime': {}
+              'f:lastTransitionTime': {}
+              'f:status': {}
+              'f:type': {}
+          'f:containerStatuses': {}
+          'f:hostIP': {}
+          'f:initContainerStatuses': {}
+          'f:phase': {}
+          'f:podIP': {}
+          'f:podIPs':
+            .: {}
+            'k:{"ip":"172.30.222.239"}':
+              .: {}
+              'f:ip': {}
+          'f:startTime': {}
+      subresource: status
+  namespace: latrell-test
+  ownerReferences:
+    - apiVersion: apps/v1
+      kind: ReplicaSet
+      name: freemanlatrell-file-manager-operator-58bfddb874
+      uid: 65b3b4c6-5e3a-49f6-bf06-55be20236245
+      controller: true
+      blockOwnerDeletion: true
+  labels:
+    component: ansible-suboperator
+    instance-name: zoscloudbroker
+    managed-by: ibm-zos-cloud-broker
+    operator-domain: freemanlatrell
+    operator-name: file-manager
+    operator-version: 1.0.0
+    pod-template-hash: 58bfddb874
+spec:
+  restartPolicy: Always
+  initContainers:
+    - resources: {}
+      terminationMessagePath: /dev/termination-log
+      name: init
+      command:
+        - sh
+        - '-c'
+        - >-
+          set -x && curl -ksw "%{http_code}"
+          https://ibm-zoscb-manager-zoscloudbroker.latrell-test.svc.cluster.local:5000/api/collections/download/file-manager.freemanlatrell.1.0.0
+          --output /opt/ansible/file-manager.freemanlatrell.1.0.0.tar.gz && tar
+          -xvf /opt/ansible/file-manager.freemanlatrell.1.0.0.tar.gz && rm
+          /opt/ansible/file-manager.freemanlatrell.1.0.0.tar.gz && curl -ksw
+          "%{http_code}"
+          https://ibm-zoscb-manager-zoscloudbroker.latrell-test.svc.cluster.local:5000/api/suboperatorconfigs/download/file-manager.freemanlatrell.1.0.0-soc/${WATCH_NAMESPACE}/initfiles
+          --output /tmp/file-manager.freemanlatrell.1.0.0-initfiles.tar.gz &&
+          tar -xvf /tmp/file-manager.freemanlatrell.1.0.0-initfiles.tar.gz -C
+          /tmp && rsync -a
+          /tmp/file-manager.freemanlatrell.1.0.0-initfiles/credentials /opt &&
+          rsync -a /tmp/file-manager.freemanlatrell.1.0.0-initfiles/watches /opt
+          && /entrypoint -decrypt -install-dependencies && zoscb-encrypt license
+          --accept
+      env:
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        runAsUser: 1000660000
+        runAsNonRoot: true
+        readOnlyRootFilesystem: false
+        allowPrivilegeEscalation: false
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: collections
+          mountPath: /opt/ansible
+        - name: sshconfig
+          mountPath: /etc/ssh
+        - name: init
+          mountPath: /opt
+        - name: tmp
+          mountPath: /tmp
+        - name: ansibletmp
+          mountPath: /opt/ansible/.ansible
+        - name: kube-api-access-qrhd2
+          readOnly: true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      terminationMessagePolicy: File
+      image: >-
+        cp.icr.io/cp/zoscb/ansible-suboperator@sha256:8faf7034d0949b7ba83014f8eb704393f5b4140965ad6fb5641b8ffd3dc6425f
+  serviceAccountName: freemanlatrell-file-manager-operator
+  imagePullSecrets:
+    - name: ibm-entitlement-key
+  priority: 0
+  schedulerName: default-scheduler
+  enableServiceLinks: true
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                  - amd64
+                  - s390x
+  terminationGracePeriodSeconds: 30
+  preemptionPolicy: PreemptLowerPriority
+  nodeName: 10.190.130.254
+  securityContext:
+    seLinuxOptions:
+      level: 's0:c26,c5'
+    runAsNonRoot: true
+    fsGroup: 1000660000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - resources: {}
+      readinessProbe:
+        exec:
+          command:
+            - cat
+            - /tmp/ready
+        initialDelaySeconds: 10
+        timeoutSeconds: 10
+        periodSeconds: 15
+        successThreshold: 1
+        failureThreshold: 5
+      terminationMessagePath: /dev/termination-log
+      name: freemanlatrell-file-manager-operator
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 6789
+          scheme: HTTP
+        initialDelaySeconds: 50
+        timeoutSeconds: 10
+        periodSeconds: 30
+        successThreshold: 1
+        failureThreshold: 5
+      env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: WATCH_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: WATCHES_FILE
+          value: /opt/watches/watches.yaml
+        - name: ANSIBLE_CONFIG
+          value: /etc/ansible/ansible.cfg
+        - name: ANSIBLE_INVENTORY
+          value: /etc/ansible/plugins/inventory/csv_inventory.yaml
+        - name: PERSISTENCE_AVAILABLE
+          value: 'true'
+        - name: SOURCE_OPERATOR
+          value: zoscloudbroker
+        - name: SOURCE_NAMESPACE
+          value: latrell-test
+        - name: SUBOPERATORCONFIG_NAME
+          value: file-manager.freemanlatrell.1.0.0-soc
+        - name: GO_ENV
+          value: prod
+        - name: LOG_LEVEL
+          value: info
+        - name: OPERATOR_CONDITION_NAME
+          value: freemanlatrell-file-manager-operator.v1.0.0
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
+        privileged: false
+        runAsUser: 1000660000
+        runAsNonRoot: true
+        readOnlyRootFilesystem: false
+        allowPrivilegeEscalation: false
+      imagePullPolicy: IfNotPresent
+      volumeMounts:
+        - name: collections
+          readOnly: true
+          mountPath: /opt/ansible
+        - name: ansibletmp
+          mountPath: /opt/ansible/.ansible
+        - name: cp
+          mountPath: /tmp/cp
+        - name: hosts
+          mountPath: /etc/ansible
+        - name: sshconfig
+          mountPath: /etc/ssh
+        - name: init
+          mountPath: /opt
+        - name: kube-api-access-qrhd2
+          readOnly: true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      terminationMessagePolicy: File
+      image: >-
+        cp.icr.io/cp/zoscb/ansible-suboperator@sha256:8faf7034d0949b7ba83014f8eb704393f5b4140965ad6fb5641b8ffd3dc6425f
+  serviceAccount: freemanlatrell-file-manager-operator
+  volumes:
+    - name: collections
+      emptyDir:
+        sizeLimit: 128Mi
+    - name: ansibletmp
+      emptyDir:
+        sizeLimit: 128Mi
+    - name: hosts
+      emptyDir:
+        sizeLimit: 128Mi
+    - name: cp
+      emptyDir:
+        sizeLimit: 128Mi
+    - name: sshconfig
+      emptyDir:
+        sizeLimit: 128Mi
+    - name: init
+      emptyDir:
+        sizeLimit: 128Mi
+    - name: tmp
+      emptyDir:
+        sizeLimit: 128Mi
+    - name: kube-api-access-qrhd2
+      projected:
+        sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              name: kube-root-ca.crt
+              items:
+                - key: ca.crt
+                  path: ca.crt
+          - downwardAPI:
+              items:
+                - path: namespace
+                  fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+          - configMap:
+              name: openshift-service-ca.crt
+              items:
+                - key: service-ca.crt
+                  path: service-ca.crt
+        defaultMode: 420
+  dnsPolicy: ClusterFirst
+  tolerations:
+    - key: node.kubernetes.io/not-ready
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+    - key: node.kubernetes.io/unreachable
+      operator: Exists
+      effect: NoExecute
+      tolerationSeconds: 300
+status:
+  containerStatuses:
+    - restartCount: 0
+      started: true
+      ready: true
+      name: freemanlatrell-file-manager-operator
+      state:
+        running:
+          startedAt: '2023-07-22T20:34:38Z'
+      imageID: >-
+        cp.icr.io/cp/zoscb/ansible-suboperator@sha256:3c0c685148f647b18944ff3c4faac1fa059ef2f36c07af5a31352e67906d8d8b
+      image: >-
+        cp.icr.io/cp/zoscb/ansible-suboperator@sha256:8faf7034d0949b7ba83014f8eb704393f5b4140965ad6fb5641b8ffd3dc6425f
+      lastState: {}
+      containerID: 'cri-o://e1c953a9a2e513d14209de4240b8c1b1315bf0ffb8c6e50d6f0a65ed859e5bb3'
+  qosClass: BestEffort
+  podIPs:
+    - ip: 172.30.222.239
+  podIP: 172.30.222.239
+  hostIP: 10.190.130.254
+  startTime: '2023-07-22T20:34:30Z'
+  initContainerStatuses:
+    - name: init
+      state:
+        terminated:
+          exitCode: 0
+          reason: Completed
+          startedAt: '2023-07-22T20:34:32Z'
+          finishedAt: '2023-07-22T20:34:38Z'
+          containerID: >-
+            cri-o://3dc69260b3f2442e076ec589c50d8cab08e37071d5d71051e05c17eab9c9cdcc
+      lastState: {}
+      ready: true
+      restartCount: 0
+      image: >-
+        cp.icr.io/cp/zoscb/ansible-suboperator@sha256:8faf7034d0949b7ba83014f8eb704393f5b4140965ad6fb5641b8ffd3dc6425f
+      imageID: >-
+        cp.icr.io/cp/zoscb/ansible-suboperator@sha256:3c0c685148f647b18944ff3c4faac1fa059ef2f36c07af5a31352e67906d8d8b
+      containerID: 'cri-o://3dc69260b3f2442e076ec589c50d8cab08e37071d5d71051e05c17eab9c9cdcc'
+  conditions:
+    - type: Initialized
+      status: 'True'
+      lastProbeTime: null
+      lastTransitionTime: '2023-07-22T20:34:38Z'
+    - type: Ready
+      status: 'True'
+      lastProbeTime: null
+      lastTransitionTime: '2023-07-22T20:35:01Z'
+    - type: ContainersReady
+      status: 'True'
+      lastProbeTime: null
+      lastTransitionTime: '2023-07-22T20:35:01Z'
+    - type: PodScheduled
+      status: 'True'
+      lastProbeTime: null
+      lastTransitionTime: '2023-07-22T20:34:30Z'
+  phase: Running

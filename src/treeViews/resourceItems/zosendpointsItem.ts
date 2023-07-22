@@ -1,12 +1,13 @@
 import * as vscode from "vscode";
 import {KubernetesObj, ObjectInstance} from "../../kubernetes/kubernetes";
 import * as icons from "../icons";
+import {ResourceTreeItem} from "./resourceTreeItems";
 
-export class ZosEndpointsItem extends vscode.TreeItem {
+export class ZosEndpointsItem extends ResourceTreeItem {
     constructor(public readonly zosendpointObj: ObjectInstance, public readonly link: string) {
         super(zosendpointObj.metadata.name, vscode.TreeItemCollapsibleState.None);
         this.contextValue = "zosendpoint-object";
-        this.iconPath = icons.getBrokerObjectStatusIconPath(zosendpointObj.status);
+        this.iconPath = icons.getBrokerObjectStatusIcon(zosendpointObj.status);
     }
 }
 

@@ -11,7 +11,9 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:operator-collection-sdk.refresh"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -103,6 +105,13 @@
       ]
     },
     "menus": {
+      "view/title": [
+        {
+          "command": "operator-collection-sdk.refresh",
+          "when": "view == operator-collection-sdk.operators",
+          "group": "navigation"
+        }
+      ],
       "view/item/context": [
         {
           "command": "operator-collection-sdk.createOperator",
@@ -148,11 +157,6 @@
           "command": "operator-collection-sdk.openLink",
           "when": "view == operator-collection-sdk.links && viewItem == links",
           "group": "inline"
-        },
-        {
-          "command": "operator-collection-sdk.refresh",
-          "when": "view == operator-collection-sdk.operators || view == operator-collection-sdk.resources",
-          "group": "navigation"
         }
       ]
     }

@@ -1,13 +1,15 @@
 import * as vscode from "vscode";
 import * as icons from "../icons";
 import * as util from "../../utilities/util";
+import {OperatorTreeItem} from "./operatorTreeItems";
 
-export class OperatorItem extends vscode.TreeItem {
+export class OperatorItem extends OperatorTreeItem {
     constructor(public readonly operatorDisplayName: string, public readonly operatorName: string) {
         super(`Operator: ${operatorDisplayName}`, vscode.TreeItemCollapsibleState.Expanded);
 		this.contextValue = "operator";
 		this.iconPath = new vscode.ThemeIcon("rocket");;
     }
+	contextValue = "operator";
 }
 
 /**

@@ -2,8 +2,9 @@ import * as vscode from "vscode";
 import {KubernetesObj} from "../../kubernetes/kubernetes";
 import * as k8s from '@kubernetes/client-node';
 import * as icons from "../icons";
+import {OperatorTreeItem} from "./operatorTreeItems";
 
-export class OperatorContainerItem extends vscode.TreeItem {
+export class OperatorContainerItem extends OperatorTreeItem {
     constructor(public readonly podObj: k8s.V1Pod, public readonly containerStatus: k8s.V1ContainerStatus, public readonly operatorName: string) {
         super(`Container: ${containerStatus.name}`, vscode.TreeItemCollapsibleState.None);
 		if (containerStatus.name.startsWith("init")) {
@@ -11,7 +12,7 @@ export class OperatorContainerItem extends vscode.TreeItem {
 		} else {
 			this.contextValue = "operator-container";
 		}
-		this.iconPath = icons.getPodContainerStatusIconPath(containerStatus);
+		this.iconPath = icons.getPodContainerStatusIcon(containerStatus);
     }
 }
 

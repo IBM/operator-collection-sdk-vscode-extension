@@ -7,12 +7,14 @@ type Icons = {
     "light": vscode.Uri
 };
 
+type ThemeIcons = vscode.ThemeIcon | Icons | undefined;
+
 let _context: vscode.ExtensionContext;
 export function initResources(context: vscode.ExtensionContext) {
   _context = context;
 }
 
-export function getPodStatusIconPath(containerStatuses: Array<k8s.V1ContainerStatus>): vscode.ThemeIcon | Icons | undefined {
+export function getPodStatusIcon(containerStatuses: Array<k8s.V1ContainerStatus>): ThemeIcons {
     let runningContainers: number = 0;
     let failingContainers: number = 0;
     let pendingContainers: number = 0;
@@ -37,13 +39,13 @@ export function getPodStatusIconPath(containerStatuses: Array<k8s.V1ContainerSta
     } else if (failingContainers > 0) {
         return getFailingIcons();
     } else if (runningContainers > 0) {
-        return 
+        return getPassingIcons();
     } else {
         return undefined;
     }
 }
 
-export function getPodContainerStatusIconPath(containerStatus: k8s.V1ContainerStatus): vscode.ThemeIcon | Icons | undefined {
+export function getPodContainerStatusIcon(containerStatus: k8s.V1ContainerStatus): ThemeIcons {
     const containerState = containerStatus.state;
     if (containerState?.running) {
         return getPassingIcons();
@@ -60,7 +62,7 @@ export function getPodContainerStatusIconPath(containerStatus: k8s.V1ContainerSt
     }
 }
 
-export function getBrokerObjectStatusIconPath(status: ObjectStatus): vscode.ThemeIcon | Icons | undefined {
+export function getBrokerObjectStatusIcon(status: ObjectStatus): ThemeIcons {
     switch (status.phase) {
         case "Successful": {
             return getPassingIcons();
@@ -76,6 +78,8 @@ export function getBrokerObjectStatusIconPath(status: ObjectStatus): vscode.Them
         }
     }
 }
+
+export function getOperatorStatusIcon() {}
 
 function getPassingIcons(): Icons {
     let icons: Icons = {

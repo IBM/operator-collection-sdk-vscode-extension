@@ -231,33 +231,51 @@ export async function selectCustomResourceInstance(pwd: string, k8s: KubernetesO
  * Prompts the user for the necessary info to create a new operator
  * @returns - A Promise containing the args to pass to the playbook command
  */
-export async function requestOperatorInfo(): Promise<string[]> {
+export async function requestOperatorInfo(): Promise<string[] | undefined > {
 	let args: Array<string> = [];
-	const zosEndpointType = await vscode.window.showInputBox({
-		prompt: "Enter what type (local/remote) of ZosEndpoint you want to create",
-		value: 'remote',
-		ignoreFocusOut: true
-	}).then((result) => {
-		return result;
+
+	const options: Array<string> = ["remote", "local"];
+
+	const zosEndpointType = await vscode.window.showQuickPick(options, {
+		canPickMany: false,
+		ignoreFocusOut: true,
+		placeHolder: "Select an endpoint type below",
+		title: "Select the endpoint type (local or remote)"
 	});
 	
+	if (zosEndpointType === undefined) {
+		return undefined;
+	} else if (zosEndpointType === "") {
+		vscode.window.showErrorMessage("Endpoint type is required");
+		return undefined;
+	}
 	args.push(`-e "zosendpoint_type=${zosEndpointType}"`);
 	
 	const zosEndpointName = await vscode.window.showInputBox({
 		prompt: "Enter your ZosEndpoint name",
 		ignoreFocusOut: true
-	}).then((result) => {
-		return result;
 	});
+
+	if (zosEndpointName === undefined) {
+		return undefined;
+	} else if (zosEndpointName === "") {
+		vscode.window.showErrorMessage("ZosEndpoint Name is required");
+		return undefined;
+	}
 	
 	args.push(`-e "zosendpoint_name=${zosEndpointName}"`);
 
 	const zosEndpointHost = await vscode.window.showInputBox({
 		prompt: "Enter your ZosEndpoint host",
 		ignoreFocusOut: true
-	}).then((result) => {
-		return result;
 	});
+
+	if (zosEndpointHost === undefined) {
+		return undefined;
+	} else if (zosEndpointHost === "") {
+		vscode.window.showErrorMessage("ZosEndpoint host is required");
+		return undefined;
+	}
 
 	args.push(`-e "zosendpoint_host=${zosEndpointHost}"`);
 
@@ -265,33 +283,39 @@ export async function requestOperatorInfo(): Promise<string[]> {
 		prompt: "Enter your ZosEndpoint port",
 		value: '22',
 		ignoreFocusOut: true
-	}).then((result) => {
-		return result;
 	});
+
+	if (zosEndpointPort === undefined) {
+		return undefined;
+	} else if (zosEndpointPort === "") {
+		vscode.window.showErrorMessage("ZosEndpoint port is required");
+		return undefined;
+	}
 
 	args.push(`-e "zosendpoint_port=${zosEndpointPort}"`);
 
 	const zosEndpointUsername = await vscode.window.showInputBox({
-		prompt: "Enter you SSH Username for this endpoint (Skip if the zoscb-encrypt CLI isn't installed)",
+		prompt: "Enter you SSH Username for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
 		ignoreFocusOut: true
-	}).then((result) => {
-		return result;
 	});
 
-	if (!zosEndpointUsername) {
+	if (zosEndpointUsername === undefined) {
+		return undefined;
+	} else if (zosEndpointUsername === "") {
 		args.push(`-e "username="`);
 	} else {
 		args.push(`-e "username=${zosEndpointUsername}"`);
 	}
 	
 	const zosEndpointSSHKey = await vscode.window.showInputBox({
-		prompt: "Enter the path to your private SSH Key for this endpoint (Skip if the zoscb-encrypt CLI isn't installed)",
+		prompt: "Enter the path to your private SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
+		value: '~/.ssh/id_rsa',
 		ignoreFocusOut: true
-	}).then((result) => {
-		return result;
 	});
 
-	if (!zosEndpointSSHKey) {
+	if (zosEndpointSSHKey === undefined) {
+		return undefined;
+	} else if (zosEndpointSSHKey === "") {
 		args.push(`-e "ssh_key="`);
 	} else {
 		args.push(`-e "ssh_key=${zosEndpointSSHKey}"`);
@@ -299,14 +323,14 @@ export async function requestOperatorInfo(): Promise<string[]> {
 	
 
 	const zosEndpointPassphrase = await vscode.window.showInputBox({
-		prompt: "Enter the passphrase for the SSH Key for this endpoint (Skip if the zoscb-encrypt CLI isn't installed)",
+		prompt: "Enter the passphrase for the SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
 		password: true,
 		ignoreFocusOut: true
-	}).then((result) => {
-		return result;
 	});
 
-	if (!zosEndpointPassphrase) {
+	if (zosEndpointPassphrase === undefined) {
+		return undefined
+	} else if (zosEndpointPassphrase === "") {
 		args.push(`-e "passphrase="`);
 	} else {
 		args.push(`-e "passphrase=${zosEndpointPassphrase}"`);
@@ -329,26 +353,12 @@ export function validateOperatorConfig(document: vscode.TextDocument): boolean {
     }
 }
 
-// export function pollRun(attempts: number) {
-// 	let operatorProvider = new OperatorsTreeProvider();
-// 	// let resourceProvider = new ResourcesTreeProvider();
-// 	let i = 0;
-// 	const interval = setInterval(async (): Promise<void> => {
-// 		await updateAllItems(operatorProvider);
-// 		if (++i === attempts) {
-// 			clearInterval(interval);
-// 		}
-// 	}, 5000);
-// }
-
-// async function updateAllItems(item: OperatorsTreeProvider) {
-// 	const operatorItems = await getOperatorItems();
-// 	for (let operatorItem of operatorItems) {
-// 		item.updateItem(operatorItem);
-// 		const operatorPodItems = await getOperatorPodItems(operatorItem.operatorName);
-// 		for (let operatorPodItem of operatorPodItems) {
-// 			operatorPodItem.updatePodItem(operatorPodItem);
-// 			item.getChildren(operatorItem);
-// 		} 
-// 	} 
-// }
+export async function pollRun(attempts: number): Promise<void> {
+	let i = 0;
+	const interval = setInterval((): void => {
+		vscode.commands.executeCommand("operator-collection-sdk.refresh");
+		if (++i === attempts) {
+			clearInterval(interval);
+		}
+	}, 5000);
+}

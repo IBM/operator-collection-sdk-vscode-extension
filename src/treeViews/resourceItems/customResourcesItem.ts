@@ -1,12 +1,13 @@
 import * as vscode from "vscode";
 import {KubernetesObj, ObjectInstance} from "../../kubernetes/kubernetes";
 import * as icons from "../icons";
+import {ResourceTreeItem} from "./resourceTreeItems";
 
-export class CustomResourcesItem extends vscode.TreeItem {
+export class CustomResourcesItem extends ResourceTreeItem {
     constructor(public readonly customResourceObj: ObjectInstance, public readonly link: string) {
         super(customResourceObj.metadata.name, vscode.TreeItemCollapsibleState.None);
         this.contextValue = "operatorcollection-object";
-        this.iconPath = icons.getBrokerObjectStatusIconPath(customResourceObj.status);
+        this.iconPath = icons.getBrokerObjectStatusIcon(customResourceObj.status);
     }
 }
 
