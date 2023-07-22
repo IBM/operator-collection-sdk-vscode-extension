@@ -1,7 +1,12 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from "fs";
+import {setInterval} from "timers";
 import {KubernetesObj} from "../kubernetes/kubernetes";
+import {OperatorsTreeProvider} from "../treeViews/providers/operatorProvider";
+import {ResourcesTreeProvider} from "../treeViews/providers/resourceProvider";
+import {OperatorItem, getOperatorItems} from "../treeViews/operatorItems/operatorItem";
+import {OperatorPodItem, getOperatorPodItems} from "../treeViews/operatorItems/operatorPodItem";
 
 type WorkSpaceOperators = {[key: string] : string};
 
@@ -15,11 +20,9 @@ export enum Links {
  * Retrieve the current workspace root directory if it exists
  * @returns — The vscode.WorkspaceFolder interface, or undefined if a directory doesn't exists
  */
-export function getCurrentWorkspaceRootFolder(): vscode.WorkspaceFolder | undefined {
-    let editor = vscode.window.activeTextEditor;
-	if (editor) {
-		const currentDocument = editor.document.uri;
-		return vscode.workspace.getWorkspaceFolder(currentDocument);
+export function getCurrentWorkspaceRootFolder(): string | undefined {
+	if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders?.length > 0) {
+		return vscode.workspace.workspaceFolders[0].uri.path;
 	}
     return undefined;
 }
@@ -28,7 +31,7 @@ export function getCurrentWorkspaceRootFolder(): vscode.WorkspaceFolder | undefi
  * Retrieve the list of Operator Collection names and workspace directories in the current workspace
  * @returns — A promise containing the WorkSpaceOperators object
  */
-export async function getOperatorsInWorkspace(workspace: vscode.WorkspaceFolder): Promise<WorkSpaceOperators> {
+export async function getOperatorsInWorkspace(workspace: string): Promise<WorkSpaceOperators> {
 	const wsOperators: WorkSpaceOperators = {};
 	for (const file of await vscode.workspace.findFiles("**/operator-config.*ml")) {
 		let data = await vscode.workspace.openTextDocument(file);
@@ -134,7 +137,7 @@ function getOperatorConfigUri(pwd: string): vscode.Uri {
  * Retrieve the list of Operator Collection names in the current workspace
  * @returns — A promise containing the WorkSpaceOperators object
  */
-export async function getOperatorNamesInWorkspace(workspace: vscode.WorkspaceFolder): Promise<string[]> {
+export async function getOperatorNamesInWorkspace(workspace: string): Promise<string[]> {
 	let operatorsInWorkspace = await getOperatorsInWorkspace(workspace);
 	let operatorNames: Array<string> = [];
 	for (const operatorName in operatorsInWorkspace) {
@@ -148,7 +151,7 @@ export async function getOperatorNamesInWorkspace(workspace: vscode.WorkspaceFol
  * @param workspace - The directory to the workspace folder
  * @returns - A Promise containing the directory to the selected operator
  */
-export async function selectOperatorInWorkspace(workspace: vscode.WorkspaceFolder, operatorName?: string): Promise<string | undefined> {
+export async function selectOperatorInWorkspace(workspace: string, operatorName?: string): Promise<string | undefined> {
 	let operatorsInWorkspace = await getOperatorsInWorkspace(workspace);
 	if (operatorName) {
 		return operatorsInWorkspace[operatorName];
@@ -325,3 +328,27 @@ export function validateOperatorConfig(document: vscode.TextDocument): boolean {
         return false;
     }
 }
+
+// export function pollRun(attempts: number) {
+// 	let operatorProvider = new OperatorsTreeProvider();
+// 	// let resourceProvider = new ResourcesTreeProvider();
+// 	let i = 0;
+// 	const interval = setInterval(async (): Promise<void> => {
+// 		await updateAllItems(operatorProvider);
+// 		if (++i === attempts) {
+// 			clearInterval(interval);
+// 		}
+// 	}, 5000);
+// }
+
+// async function updateAllItems(item: OperatorsTreeProvider) {
+// 	const operatorItems = await getOperatorItems();
+// 	for (let operatorItem of operatorItems) {
+// 		item.updateItem(operatorItem);
+// 		const operatorPodItems = await getOperatorPodItems(operatorItem.operatorName);
+// 		for (let operatorPodItem of operatorPodItems) {
+// 			operatorPodItem.updatePodItem(operatorPodItem);
+// 			item.getChildren(operatorItem);
+// 		} 
+// 	} 
+// }

@@ -6,27 +6,32 @@ import {OperatorContainerItem, getOperatorContainerItems} from "../operatorItems
 type OperatorTreeItems = OperatorItem | OperatorPodItem | OperatorContainerItem;
 
 export class OperatorsTreeProvider implements vscode.TreeDataProvider<OperatorTreeItems> {
-    private operatorName: string = "";
-    getTreeItem(element: OperatorTreeItems): vscode.TreeItem {
-      if (element instanceof OperatorItem) {
-        this.operatorName = element.operatorName;
-      }
-      
-      return element;
-    }
+  private operatorName: string = "";
+   private _onDidChangeTreeData: vscode.EventEmitter<OperatorItem | undefined | void> = new vscode.EventEmitter<OperatorItem | undefined | void>();
+	readonly onDidChangeTreeData: vscode.Event<OperatorItem | undefined | void> = this._onDidChangeTreeData.event;
     
-    async getChildren(element?: OperatorTreeItems): Promise<OperatorTreeItems[]> {
-      if (element) {
-        // Get operator children items
+  refresh(): void {
+      this._onDidChangeTreeData.fire();
+  }
+  getTreeItem(element: OperatorTreeItems): vscode.TreeItem {
+    if (element instanceof OperatorItem) {
+      this.operatorName = element.operatorName;
+    }
+    return element;
+  }
+  
+  async getChildren(element?: OperatorTreeItems): Promise<OperatorTreeItems[]> {
+    if (element) {
+      // Get operator children items
         if (element instanceof OperatorItem) {
           return getOperatorPodItems(this.operatorName);
         } else if (element instanceof OperatorPodItem) {
           return getOperatorContainerItems(this.operatorName);
         }
         return [];
-      } else {
-        // Get root operator items
+    } else {
+      // Get root operator items
         return getOperatorItems();
-      }
-    } 
+    }
+  } 
 }

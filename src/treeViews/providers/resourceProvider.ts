@@ -26,6 +26,16 @@ type ResourceTreeItems =
 
 export class ResourcesTreeProvider implements vscode.TreeDataProvider<ResourceTreeItems> {
     private operatorName: string = "";
+    private _onDidChangeTreeData = new vscode.EventEmitter<ResourceTreeItems | undefined | null | void>();
+    readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+    
+    updateItem(item: ResourceTreeItems): void {
+        this._onDidChangeTreeData.fire(item);
+      }
+    
+    refresh(): void {
+        this._onDidChangeTreeData.fire();
+    }
     getTreeItem(element: ResourceItem): vscode.TreeItem {
         if (element instanceof OperatorItem) {
             this.operatorName = element.operatorName;

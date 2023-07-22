@@ -12,7 +12,6 @@ import {KubernetesObj} from "./kubernetes/kubernetes";
 import * as util from "./utilities/util";
 import * as path from 'path';
 
-
 export function activate(context: vscode.ExtensionContext) {
 	initResources(context);
 	vscode.window.registerTreeDataProvider('operator-collection-sdk.operators', new OperatorsTreeProvider());
@@ -27,16 +26,23 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openEditLink"));
 	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openAddLink"));
 	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openLink"));
+	context.subscriptions.push(executeRefreshCommand("operator-collection-sdk.refresh"));
 }
 
+function executeRefreshCommand(command: string): vscode.Disposable {
+	return vscode.commands.registerCommand(command, () => {
+		const operatorTreeProvider = new OperatorsTreeProvider();
+		const resourceTreeProvider = new ResourcesTreeProvider();
+		operatorTreeProvider.refresh();
+		resourceTreeProvider.refresh();
+	});
+}
 
 function executeOpenLinkCommand(command: string): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (args: ZosEndpointsItem | CustomResourceItem | LinkItem) => {
 		let linkUri = vscode.Uri.parse(args.link);
 		let res = await vscode.env.openExternal(linkUri);
-		if (res) {
-			vscode.window.showInformationMessage("Successfully opened external link");
-		} else {
+		if (!res) {
 			vscode.window.showErrorMessage("Failure opening external link");
 		}
 	});
@@ -49,7 +55,7 @@ function executeContainerLogDownloadCommand(command: string): vscode.Disposable 
 		if (!pwd) {
 			vscode.window.showErrorMessage("Unable to execute command when workspace is empty");
 		} else {
-			let workspacePath = await util.selectOperatorInWorkspace(pwd!, containerItemArgs.operatorName);
+			let workspacePath = await util.selectOperatorInWorkspace(pwd, containerItemArgs.operatorName);
 			if (!workspacePath) {
 				vscode.window.showErrorMessage("Unable to locace valid operator collection in workspace");
 			} else {
@@ -128,6 +134,7 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 					case "operator-collection-sdk.deleteOperator": {
 						vscode.window.showInformationMessage("Delete Operator request in progress");
 						ocSdkCommand.runDeleteOperatorCommand().then(() => {
+							vscode.commands.executeCommand('operator-collection-sdk.refresh');
 							vscode.window.showInformationMessage("Delete Operator command executed successfully");
 						}).catch((e) => {
 							vscode.window.showInformationMessage(`Failure executing Delete Operator command: RC ${e}`);
@@ -137,6 +144,7 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 					case "operator-collection-sdk.redeployCollection": {
 						vscode.window.showInformationMessage("Redeploy Collection request in progress");
 						ocSdkCommand.runRedeployCollectionCommand().then(() => {
+							vscode.commands.executeCommand('operator-collection-sdk.refresh');
 							vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
 						}).catch((e) => {
 							vscode.window.showInformationMessage(`Failure executing Redeploy Collection command: RC ${e}`);

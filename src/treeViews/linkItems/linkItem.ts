@@ -7,12 +7,6 @@ export class LinkItem extends vscode.TreeItem {
         super(name, vscode.TreeItemCollapsibleState.None);
         this.contextValue = "links";
         this.description = description;
-        this.resourceUri = vscode.Uri.parse(this.link);
         this.iconPath = icon;
-        this.command = {
-            command: "operator-collection-sdk.openLink",
-			title: "open",
-            arguments: [this.resourceUri]
-        };
     }
 }
