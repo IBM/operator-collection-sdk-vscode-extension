@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import {KubernetesObj, ObjectInstance} from "../../kubernetes/kubernetes";
 import * as icons from "../icons";
 import {ResourceTreeItem} from "./resourceTreeItems";
+import * as util from '../../utilities/util';
 
 export class ZosEndpointsItem extends ResourceTreeItem {
     constructor(public readonly zosendpointObj: ObjectInstance, public readonly link: string) {
@@ -17,7 +18,7 @@ export async function getZosEndpointsItem(operatorName: string): Promise<ZosEndp
     const consoleUrl = await k8s.getOpenshifConsoleUrl();
 	const zosendpointList = await k8s.getZosEndpoints(operatorName);
 	for (const zosendpoint of zosendpointList.items) {
-        let zosendpointUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/zoscb.ibm.com~v2beta2~ZosEndpoint/${zosendpoint.metadata.name}/yaml`;
+        let zosendpointUrl = await k8s.getResourceUrl(util.ZosCloudBrokerKinds.zosEndpoint, util.zosCloudBrokerGroup, util.zosEndpointApiVersion, zosendpoint.metadata.name);
 		zosendpointItems.push(new ZosEndpointsItem(zosendpoint, zosendpointUrl));
 	}
 	return zosendpointItems;

@@ -79,8 +79,6 @@ export function getBrokerObjectStatusIcon(status: ObjectStatus): ThemeIcons {
     }
 }
 
-export function getOperatorStatusIcon() {}
-
 function getPassingIcons(): Icons {
     let icons: Icons = {
         dark: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "dark", "pass.svg"),

@@ -1,6 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import * as fs from "fs";
 import * as path from 'path';
+import * as util from '../utilities/util';
 import {OcCpCommand} from "../commands/ocCpCommand";
 
 export interface ObjectList {
@@ -232,6 +233,71 @@ export class KubernetesObj {
         let routeObj: RouteObject = JSON.parse(consoleRouteString);
         return routeObj.spec.host;
     }
+
+    private async getZosCloudBrokerCsvName(): Promise<string | undefined> {
+        const labelSelector = `operators.coreos.com/ibm-zoscb.${this.namespace}=`;
+        return this.customObjectsApi.listNamespacedCustomObject(
+            util.clusterServiceVersionGroup,
+            util.clusterServiceVersionApiVersion,
+            this.namespace,
+            "clusterserviceversions",
+            undefined, // pretty
+            undefined, // allowWatchBookmarks
+            undefined, // continue
+            undefined, // fieldSelector
+            labelSelector,
+        ).then((res) => {
+            let csvInstacesString = JSON.stringify(res.body);
+            let csvInstanceList: ObjectList = JSON.parse(csvInstacesString);
+            if (csvInstanceList.items.length > 0) {
+                return csvInstanceList.items[0].metadata.name;
+            } else {
+                return undefined;
+            }
+        }).catch((e) => {
+            console.log(`Failure retrieving ClusterServiceVersion. Status code ${e.response.statusCode}`);
+            return undefined;
+        });
+        
+    }
+
+    private async isCustomResourceOperatorInstalled(csvName: string): Promise<boolean | undefined> {
+        return this. customObjectsApi.getNamespacedCustomObject(
+            util.clusterServiceVersionGroup,
+            util.clusterServiceVersionApiVersion,
+            this.namespace,
+            "clusterserviceversions",
+            csvName
+        ).then((res) => {
+            if (res.response.statusCode === 200) {
+                return true;
+            }
+        }).catch((e) => {
+            console.log(`Failure retrieving ClusterServiceVersion: ${e}`);
+            return false;
+        });
+    }
+
+    public async getResourceUrl(kind: string, group: string, version: string, name: string, operatorCsvName?: string): Promise<string> {
+        let consoleUrl = await this.getOpenshifConsoleUrl();
+        if (kind === util.ZosCloudBrokerKinds.zosEndpoint || kind === util.ZosCloudBrokerKinds.subOperatorConfig || kind === util.ZosCloudBrokerKinds.operatorCollection) {
+            const zosCloudBrokerCsvName = await this.getZosCloudBrokerCsvName();
+            if (zosCloudBrokerCsvName) {
+                return `https://${consoleUrl}/k8s/ns/${this.namespace}/clusterserviceversions/${zosCloudBrokerCsvName}/${group}~${version}~${kind}/${name}`;
+            } else {
+                return `https://${consoleUrl}/k8s/ns/${this.namespace}/${group}~${version}~${kind}/${name}/yaml`;
+            }
+        } else {
+            if (operatorCsvName) {
+                const customResourceCsvInstalled = await this.isCustomResourceOperatorInstalled(operatorCsvName);
+                if (customResourceCsvInstalled) {
+                    return `https://${consoleUrl}/k8s/ns/${this.namespace}/clusterserviceversions/${operatorCsvName}/${group}~${version}~${kind}/${name}`;
+                } else {
+                    return `https://${consoleUrl}/k8s/ns/${this.namespace}/${group}~${version}~${kind}/${name}/yaml`; 
+                }
+            } else {
+                return `https://${consoleUrl}/k8s/ns/${this.namespace}/${group}~${version}~${kind}/${name}/yaml`; 
+            }
+        }
+    }
 }
-// https://console-openshift-console.zoscb-pentest-42d4bdeacfebc108744a5d18dc2f0439-0000.us-east.containers.appdomain.cloud/k8s/ns/latrell-test/clusterserviceversions/ibm-zoscb.v2.2.1/zoscb.ibm.com~v2beta2~ZosEndpoint/ibmcloud-vm/yaml
-// https://console-openshift-console.zoscb-pentest-42d4bdeacfebc108744a5d18dc2f0439-0000.us-east.containers.appdomain.cloud/k8s/ns/latrell-test/zoscb.ibm.com~v2beta2~ZosEndpoint/ibmcloud-vm/yaml

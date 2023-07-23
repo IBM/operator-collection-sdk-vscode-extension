@@ -11,9 +11,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:operator-collection-sdk.refresh"
-  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -56,9 +54,9 @@
       },
       {
         "command": "operator-collection-sdk.openEditLink",
-        "title": "Edit",
+        "title": "Preview/Edit",
         "category": "OC-SDK",
-        "icon": "$(settings-edit)"
+        "icon": "$(eye)"
       },
       {
         "command": "operator-collection-sdk.openAddLink",

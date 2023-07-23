@@ -3,10 +3,6 @@ import * as path from 'path';
 import * as fs from "fs";
 import {setInterval} from "timers";
 import {KubernetesObj} from "../kubernetes/kubernetes";
-import {OperatorsTreeProvider} from "../treeViews/providers/operatorProvider";
-import {ResourcesTreeProvider} from "../treeViews/providers/resourceProvider";
-import {OperatorItem, getOperatorItems} from "../treeViews/operatorItems/operatorItem";
-import {OperatorPodItem, getOperatorPodItems} from "../treeViews/operatorItems/operatorPodItem";
 
 type WorkSpaceOperators = {[key: string] : string};
 
@@ -15,6 +11,20 @@ export enum Links {
 	issues = 'https://github.com/IBM/operator-collection-sdk/issues',
 	tutorial = 'https://github.com/IBM/operator-collection-sdk/blob/main/docs/tutorial.md',
 }
+
+export enum ZosCloudBrokerKinds {
+	zosEndpoint = "ZosEndpoint",
+	subOperatorConfig = "SubOperatorConfig",
+	operatorCollection = "OperatorCollection"
+}
+
+export const zosCloudBrokerGroup: string =  "zoscb.ibm.com";
+export const clusterServiceVersionGroup: string =  "operators.coreos.com";
+export const customResourceGroup: string =  "suboperator.zoscb.ibm.com";
+export const clusterServiceVersionApiVersion: string = "v1alpha1";
+export const zosEndpointApiVersion: string =  "v2beta2";
+export const subOperatorConfigApiVersion: string =  "v2beta2";
+export const operatorCollectionApiVersion: string =  "v2beta2";
 
 /**
  * Retrieve the current workspace root directory if it exists
@@ -329,7 +339,7 @@ export async function requestOperatorInfo(): Promise<string[] | undefined > {
 	});
 
 	if (zosEndpointPassphrase === undefined) {
-		return undefined
+		return undefined;
 	} else if (zosEndpointPassphrase === "") {
 		args.push(`-e "passphrase="`);
 	} else {
