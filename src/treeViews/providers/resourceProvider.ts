@@ -47,7 +47,7 @@ export class ResourcesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
                 }
                 return resourceItems;
             } else if (element instanceof ZosEndpointItem) {
-                return getZosEndpointsItem(element.parentOperator.operatorName);
+                return getZosEndpointsItem();
             } else if (element instanceof OperatorCollectionItem) {
                 return getOperatorCollectionsItem(element.parentOperator.operatorName);
             } else if (element instanceof SubOperatorConfigItem) {

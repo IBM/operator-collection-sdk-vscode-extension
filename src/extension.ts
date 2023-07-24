@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 import * as util from "./utilities/util";
 import * as path from 'path';
-import * as icons from "./treeViews/icons";
 import { OcSdkCommand } from './commands/ocSdkCommands';
 import {OperatorsTreeProvider} from './treeViews/providers/operatorProvider';
 import {OperatorItem} from './treeViews/operatorItems/operatorItem';
 import {ResourcesTreeProvider} from './treeViews/providers/resourceProvider';
+import {OpenShiftTreeProvider} from './treeViews/providers/openshiftProvider';
 import {LinksTreeProvider} from './treeViews/providers/linkProvider';
 import {OperatorContainerItem} from "./treeViews/operatorItems/operatorContainerItem";
 import {ZosEndpointsItem} from "./treeViews/resourceItems/zosendpointsItem";
@@ -13,15 +13,22 @@ import {CustomResourceItem} from "./treeViews/resourceItems/customResourceItem";
 import {LinkItem} from "./treeViews/linkItems/linkItem";
 import {initResources} from './treeViews/icons';
 import {KubernetesObj} from "./kubernetes/kubernetes";
+import {OcCommand} from "./commands/ocCommand";
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 	initResources(context);
 	const operatorTreeProvider = new OperatorsTreeProvider();
 	const resourceTreeProvider = new ResourcesTreeProvider();
 	const linksTreeProvider = new LinksTreeProvider();
+	const openshiftTreeProvider = new OpenShiftTreeProvider();
+	const k8s = new KubernetesObj();
+	const userLoggedIntoOCP = await k8s.isUserLoggedIntoOCP();
+	vscode.commands.executeCommand("setContext", "operator-collection-sdk.loggedIn", userLoggedIntoOCP);
 	vscode.window.registerTreeDataProvider('operator-collection-sdk.operators', operatorTreeProvider);
 	vscode.window.registerTreeDataProvider('operator-collection-sdk.resources', resourceTreeProvider);
 	vscode.window.registerTreeDataProvider('operator-collection-sdk.links', linksTreeProvider);
+	vscode.window.registerTreeDataProvider('operator-collection-sdk.openshiftClusterInfo', openshiftTreeProvider);
+	context.subscriptions.push(signIn("operator-collection-sdk.login"));
 	context.subscriptions.push(executeSdkCommandWithUserInput("operator-collection-sdk.createOperator"));
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.deleteOperator"));
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.redeployCollection"));
@@ -38,6 +45,26 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand("operator-collection-sdk.resourceRefresh", () => {
 		resourceTreeProvider.refresh();
 	}));
+	context.subscriptions.push(vscode.commands.registerCommand("operator-collection-sdk.openshiftInfoRefresh", () => {
+		openshiftTreeProvider.refresh();
+		operatorTreeProvider.refresh();
+		resourceTreeProvider.refresh();
+	}));
+}
+
+function signIn(command: string): vscode.Disposable {
+	return vscode.commands.registerCommand(command, async () => {
+		const args = await util.requestLogInInfo();
+		const ocCmd = new OcCommand();
+		if (args) {
+			ocCmd.runOcLoginCommand(args).then((res) => {
+				vscode.window.showInformationMessage("Successfully logged into OpenShift cluster");
+				vscode.commands.executeCommand("operator-collection-sdk.openshiftInfoRefresh");
+			}).catch((e) => {
+				vscode.window.showErrorMessage(`Failure logging into OpenShift cluster: ${e}`);
+			});
+		}
+	});
 }
 
 function executeOpenLinkCommand(command: string): vscode.Disposable {
@@ -132,7 +159,6 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 			if (workspacePath) {
 				workspacePath = path.parse(workspacePath).dir;
 				let ocSdkCommand = new OcSdkCommand(workspacePath);
-				operatorItemArg.iconPath = icons.getPendingIcons();
 				switch(command) {
 					case "operator-collection-sdk.deleteOperator": {
 						vscode.window.showInformationMessage("Delete Operator request in progress");
@@ -168,7 +194,6 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 						break;
 					}
 				}
-				operatorItemArg.iconPath = icons.getRocketIcons();
 			}
 		}
 	});

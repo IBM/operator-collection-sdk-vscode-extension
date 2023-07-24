@@ -1,8 +1,9 @@
+import * as vscode from 'vscode';
 import * as k8s from '@kubernetes/client-node';
 import * as fs from "fs";
 import * as path from 'path';
 import * as util from '../utilities/util';
-import {OcCpCommand} from "../commands/ocCpCommand";
+import {OcCommand} from "../commands/ocCommand";
 
 export interface ObjectList {
     apiVersion: string;
@@ -37,6 +38,7 @@ export class KubernetesObj {
     private coreV1Api: k8s.CoreV1Api;
     private customObjectsApi: k8s.CustomObjectsApi;
     public namespace: string = "";
+    public openshiftServerURL: string | undefined  = "";
     constructor() {
         const kc = new k8s.KubeConfig();
         if (fs.existsSync("/var/run/secrets/kubernetes.io/serviceaccount")) {
@@ -51,8 +53,32 @@ export class KubernetesObj {
                 }
             }
         }
+
+        this.openshiftServerURL = kc.getCurrentCluster()?.server;
         this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
         this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
+    }
+
+    /**
+     * Validate if user is logged into an OCP Cluster
+     * @returns - A promise containing a boolean
+     */
+    public async isUserLoggedIntoOCP(): Promise<boolean> {
+        return this.coreV1Api.listNamespacedPod(this.namespace).then((res) => {
+            if (res.response.statusCode !== 401) {
+                return true;
+            } else {
+                vscode.window.showWarningMessage("Log in to an OpenShift Cluster to use this extension");
+                return false;
+            }
+        }).catch((e) => {
+            if (e.response.statusCode === 401) {
+                vscode.window.showWarningMessage("Log in to an OpenShift Cluster to use this extension");
+                return false;
+            } else {
+                return true;
+            }
+        });
     }
 
     /**
@@ -136,9 +162,19 @@ export class KubernetesObj {
         }
     }
 
+    /**
+     * Download the container logs
+     * @param podName - The pod name where the container resides
+     * @param containerName - The container name within the pod
+     * @param workspacePath - The current workspace path
+     * @returns - A promise containing the path to the container log
+     */
     public async downloadContainerLogs(podName: string, containerName: string, workspacePath: string): Promise<string | undefined> {
         const logs = await this.coreV1Api.readNamespacedPodLog(podName, this.namespace, containerName);
-        const logsPath = path.join(workspacePath, `${podName}-${containerName}.log`);
+        if (! fs.existsSync(path.join(workspacePath, ".openshiftLogs"))) {
+            fs.mkdirSync(path.join(workspacePath, ".openshiftLogs"));
+        }
+        const logsPath = path.join(workspacePath, ".openshiftLogs", `${podName}-${containerName}.log`);
         try {
             fs.writeFileSync(logsPath, Buffer.from(logs.body));
         } catch (err) {
@@ -148,13 +184,32 @@ export class KubernetesObj {
         return logsPath;
     }
 
+    /**
+     * Download the verbose container logs
+     * @param podName - The pod name where the container resides
+     * @param containerName - The container name within the pod
+     * @param workspacePath - The current workspace path
+     * @param apiVersion - The resource API version
+     * @param kind - The resource Kind
+     * @param instanceName - The resource instance name
+     * @returns - A promise containing the path to the container log
+     */
     public async downloadVerboseContainerLogs(podName: string, containerName: string, workspacePath: string, apiVersion: string, kind: string, instanceName: string): Promise<string | undefined> {
-        const logsPath = path.join(workspacePath, `${podName}-${containerName}-verbose.log`);
-        const ocCmd = new OcCpCommand();
+        if (! fs.existsSync(path.join(workspacePath, ".openshiftLogs"))) {
+            fs.mkdirSync(path.join(workspacePath, ".openshiftLogs"));
+        }
+        const logsPath = path.join(workspacePath, ".openshiftLogs", `${podName}-${containerName}-verbose.log`);
+        const ocCmd = new OcCommand();
         await ocCmd.runOcCpCommand(podName, this.namespace, containerName, logsPath, apiVersion, kind, instanceName);
         return logsPath;
     }
 
+    /**
+     * Retrieve the Customer Resource List
+     * @param apiVersion - The custom resource API version
+     * @param pluralKind - The plural Kind name
+     * @returns - A promise containing a list of Custom Resources found in the namespace
+     */
     public async getCustomResources(apiVersion: string, pluralKind: string): Promise<ObjectList> {
         let customResources = await this.customObjectsApi.listNamespacedCustomObject(
             "suboperator.zoscb.ibm.com",
@@ -167,22 +222,36 @@ export class KubernetesObj {
         return customResourcesList;
     }
 
+    /**
+     * Retrieve the SubOpeatorConfigs in the namespce with the current operator-name label
+     * @param operatorName - The name of the operator created by the SubOperatorConfig
+     * @returns - A promise containing a list of SubOperatorConfigs found in the namespace
+     */
     public async getSubOperatorConfigs(operatorName: string): Promise<ObjectList> {
         return await this.getBrokerObjList(operatorName, "suboperatorconfigs");
     }
 
-    public async getZosEndpoints(operatorName: string): Promise<ObjectList> {
+    /**
+     * Retrieve the ZosEndpoints in the namespce
+     * @returns - A promise containing a list of ZosEndpoints found in the namespace
+     */
+    public async getZosEndpoints(): Promise<ObjectList> {
         // only retrieve endpoints mapped to SubOperatorConfig
-        return await this.getBrokerObjList(operatorName, "zosendpoints");
+        return await this.getBrokerObjList("zosendpoints");
     }
 
+    /**
+     * Retrieve the OperatorCollection in the namespce
+     * @param operatorName - The name of the operator create by the OperatorCollection
+     * @returns 
+     */
     public async getOperatorCollections(operatorName: string): Promise<ObjectList> {
         return await this.getBrokerObjList(operatorName, "operatorcollections");
     }
 
-    private async getBrokerObjList(operatorName: string, objPlural: string): Promise<ObjectList> {
+    private async getBrokerObjList(objPlural: string, operatorName?: string): Promise<ObjectList> {
         let objsString: string = "";
-        if (objPlural !== "zosendpoints") {
+        if (objPlural !== "zosendpoints" && operatorName) {
             const labelSelector = `operator-name=${operatorName}`;
             let objs = await this.customObjectsApi.listNamespacedCustomObject(
                 "zoscb.ibm.com",
@@ -210,6 +279,12 @@ export class KubernetesObj {
         return objsList;
     }
 
+    /**
+     * Retrieve a list of Custom Resource instance names in the current namespace
+     * @param apiVersion - The custom resource API version
+     * @param kind - The custom resource Kind
+     * @returns - A promise containing a list of Custom Resource instance names
+     */
     public async listCustomResouceInstanceNames(apiVersion: string, kind: string): Promise<string[]> {
         let crInstanceNames: Array<string> = [];
         const crInstances = await this.customObjectsApi.listNamespacedCustomObject(
@@ -227,6 +302,10 @@ export class KubernetesObj {
         return crInstanceNames;
     }
 
+    /**
+     * Retrieves the OpenShift dashboard URL
+     * @returns - A promise containing the OpenShift dashboard URL
+     */
     public async getOpenshifConsoleUrl(): Promise<string> {
         let consoleRoute = await this.customObjectsApi.getNamespacedCustomObject("route.openshift.io", "v1", "openshift-console", "routes", "console");
         let consoleRouteString = JSON.stringify(consoleRoute.body);

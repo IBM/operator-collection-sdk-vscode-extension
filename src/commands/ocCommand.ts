@@ -1,6 +1,6 @@
 import * as child_process from 'child_process';
 
-export class OcCpCommand {
+export class OcCommand {
     /**
      * Executes the requested command
      * @param cmd - The command to be executed
@@ -61,5 +61,17 @@ export class OcCpCommand {
             containerName
         ];
         return this.run(args);
+    }
+
+    /**
+     * Executes the oc login command
+     * @param serverURL 
+     * @param token 
+     * @returns 
+     */
+    async runOcLoginCommand(args: Array<string>): Promise<any> {
+        const logInArg: Array<string> = ["login"];
+        const finalArgs = logInArg.concat(args);
+        return this.run(finalArgs);
     }
 }

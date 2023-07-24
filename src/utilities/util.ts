@@ -239,7 +239,7 @@ export async function selectCustomResourceInstance(pwd: string, k8s: KubernetesO
 
 /**
  * Prompts the user for the necessary info to create a new operator
- * @returns - A Promise containing the args to pass to the playbook command
+ * @returns - A Promise containing the list of parameters to pass to the command
  */
 export async function requestOperatorInfo(): Promise<string[] | undefined > {
 	let args: Array<string> = [];
@@ -345,6 +345,42 @@ export async function requestOperatorInfo(): Promise<string[] | undefined > {
 	} else {
 		args.push(`-e "passphrase=${zosEndpointPassphrase}"`);
 	}
+	return args;
+}
+
+/**
+ * Prompts the user for the necessary info to log in to an OpenShift cluster
+ * @returns - A Promise containing the list of parameters to pass to the command
+ */
+export async function requestLogInInfo(): Promise<string[] | undefined > {
+	let args: Array<string> = [];
+	
+	const serverURL = await vscode.window.showInputBox({
+		prompt: "Enter your OpenShift Server URL",
+		ignoreFocusOut: true
+	});
+
+	if (serverURL === undefined) {
+		return undefined;
+	} else if (serverURL === "") {
+		vscode.window.showErrorMessage("OpenShift server URL is required to log in");
+		return undefined;
+	}
+
+	args.push(`--server="${serverURL}"`);
+	const token = await vscode.window.showInputBox({
+		prompt: "Enter your OpenShift token",
+		password: true,
+		ignoreFocusOut: true
+	});
+
+	if (token === undefined) {
+		return undefined;
+	} else if (token === "") {
+		vscode.window.showErrorMessage("OpenShift token is required to log in");
+		return undefined;
+	}
+	args.push(`--token="${token}"`);
 	return args;
 }
 
