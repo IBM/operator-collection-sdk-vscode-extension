@@ -191,7 +191,7 @@ export async function selectOperatorInWorkspace(workspace: string, operatorName?
  * @param workspace - The directory to the workspace folder
  * @returns - A Promise containing the directory to the selected operator
  */
-export async function selectCustomResourceFromOperatorInWorkspace(pwd: string, operatorName?: string): Promise<string | undefined> {
+export async function selectCustomResourceFromOperatorInWorkspace(pwd: string): Promise<string | undefined> {
 	let kinds = await getKindsInOperatorConfig(pwd);
 	if (kinds.length > 1) {
 		const kindSelected = await vscode.window.showQuickPick(kinds, {

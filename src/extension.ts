@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
 import * as util from "./utilities/util";
 import * as path from 'path';
+import * as icons from "./treeViews/icons";
 import { OcSdkCommand } from './commands/ocSdkCommands';
 import {OperatorsTreeProvider} from './treeViews/providers/operatorProvider';
+import {OperatorItem} from './treeViews/operatorItems/operatorItem';
 import {ResourcesTreeProvider} from './treeViews/providers/resourceProvider';
 import {LinksTreeProvider} from './treeViews/providers/linkProvider';
 import {OperatorContainerItem} from "./treeViews/operatorItems/operatorContainerItem";
@@ -11,9 +13,6 @@ import {CustomResourceItem} from "./treeViews/resourceItems/customResourceItem";
 import {LinkItem} from "./treeViews/linkItems/linkItem";
 import {initResources} from './treeViews/icons';
 import {KubernetesObj} from "./kubernetes/kubernetes";
-
-import { OperatorItem } from './treeViews/operatorItems/operatorItem';
-import { OperatorPodItem } from './treeViews/operatorItems/operatorPodItem';
 
 export function activate(context: vscode.ExtensionContext) {
 	initResources(context);
@@ -36,6 +35,9 @@ export function activate(context: vscode.ExtensionContext) {
 		operatorTreeProvider.refresh();
 		resourceTreeProvider.refresh();
 	}));
+	context.subscriptions.push(vscode.commands.registerCommand("operator-collection-sdk.resourceRefresh", () => {
+		resourceTreeProvider.refresh();
+	}));
 }
 
 function executeOpenLinkCommand(command: string): vscode.Disposable {
@@ -55,7 +57,7 @@ function executeContainerLogDownloadCommand(command: string): vscode.Disposable 
 		if (!pwd) {
 			vscode.window.showErrorMessage("Unable to execute command when workspace is empty");
 		} else {
-			let workspacePath = await util.selectOperatorInWorkspace(pwd, containerItemArgs.operatorName);
+			let workspacePath = await util.selectOperatorInWorkspace(pwd, containerItemArgs.parentOperator.operatorName);
 			if (!workspacePath) {
 				vscode.window.showErrorMessage("Unable to locace valid operator collection in workspace");
 			} else {
@@ -121,7 +123,7 @@ function executeContainerLogDownloadCommand(command: string): vscode.Disposable 
  * @returns - The vscode.Disposable class
  */
 function executeSimpleSdkCommand(command: string): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async () => {
+	return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem) => {
 		let pwd = util.getCurrentWorkspaceRootFolder();
 		if (!pwd) {
 			vscode.window.showErrorMessage("Unable to execute command when workspace is empty");
@@ -130,6 +132,7 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 			if (workspacePath) {
 				workspacePath = path.parse(workspacePath).dir;
 				let ocSdkCommand = new OcSdkCommand(workspacePath);
+				operatorItemArg.iconPath = icons.getPendingIcons();
 				switch(command) {
 					case "operator-collection-sdk.deleteOperator": {
 						vscode.window.showInformationMessage("Delete Operator request in progress");
@@ -165,6 +168,7 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 						break;
 					}
 				}
+				operatorItemArg.iconPath = icons.getRocketIcons();
 			}
 		}
 	});

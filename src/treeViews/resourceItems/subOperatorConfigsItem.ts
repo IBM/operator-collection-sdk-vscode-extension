@@ -15,7 +15,6 @@ export class SubOperatorConfigsItem extends ResourceTreeItem {
 export async function getSubOperatorConfigsItem(operatorName: string): Promise<SubOperatorConfigsItem[]> {
 	const subOperatorConfigItems: Array<SubOperatorConfigsItem> = [];
 	const k8s = new KubernetesObj();
-    const consoleUrl = await k8s.getOpenshifConsoleUrl();
 	const subOperatorConfigList = await k8s.getSubOperatorConfigs(operatorName);
 	for (const subOperatorConfig of subOperatorConfigList.items) {
         let subOperatorConfigUrl = await k8s.getResourceUrl(util.ZosCloudBrokerKinds.subOperatorConfig, util.zosCloudBrokerGroup, util.subOperatorConfigApiVersion, subOperatorConfig.metadata.name);

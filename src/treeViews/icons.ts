@@ -79,7 +79,7 @@ export function getBrokerObjectStatusIcon(status: ObjectStatus): ThemeIcons {
     }
 }
 
-function getPassingIcons(): Icons {
+export function getPassingIcons(): Icons {
     let icons: Icons = {
         dark: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "dark", "pass.svg"),
         light: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "light", "pass.svg")
@@ -87,7 +87,7 @@ function getPassingIcons(): Icons {
     return icons;
 }
 
-function getFailingIcons(): Icons {
+export function getFailingIcons(): ThemeIcons {
     let icons: Icons = {
         dark: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "dark", "error.svg"),
         light: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "light", "error.svg")
@@ -95,6 +95,10 @@ function getFailingIcons(): Icons {
     return icons;
 }
 
-function getPendingIcons(): vscode.ThemeIcon {
+export function getPendingIcons(): ThemeIcons {
     return new vscode.ThemeIcon("loading~spin");
+}
+
+export function getRocketIcons(): ThemeIcons {
+    return new vscode.ThemeIcon("rocket");
 }

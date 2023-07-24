@@ -66,13 +66,19 @@
       },
       {
         "command": "operator-collection-sdk.openLink",
-        "title": "Open Link",
+        "title": "View Documentation",
         "category": "OC-SDK",
-        "icon": "$(link-external)"
+        "icon": "$(eye)"
       },
       {
         "command": "operator-collection-sdk.refresh",
         "title": "Refresh",
+        "category": "OC-SDK",
+        "icon": "$(extensions-refresh)"
+      },
+      {
+        "command": "operator-collection-sdk.resourceRefresh",
+        "title": "OpenShift Resource Refresh",
         "category": "OC-SDK",
         "icon": "$(extensions-refresh)"
       }
@@ -107,6 +113,11 @@
         {
           "command": "operator-collection-sdk.refresh",
           "when": "view == operator-collection-sdk.operators",
+          "group": "navigation"
+        },
+        {
+          "command": "operator-collection-sdk.resourceRefresh",
+          "when": "view == operator-collection-sdk.resources",
           "group": "navigation"
         }
       ],

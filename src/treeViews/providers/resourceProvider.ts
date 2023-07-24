@@ -15,7 +15,6 @@ import {KubernetesObj} from "../../kubernetes/kubernetes";
 import {ResourceTreeItem} from "../resourceItems/resourceTreeItems";
 
 export class ResourcesTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-    private operatorName: string = "";
     private _onDidChangeTreeData: vscode.EventEmitter<ResourceTreeItem | undefined | void> = new vscode.EventEmitter<ResourceTreeItem | undefined | void>();
 	readonly onDidChangeTreeData: vscode.Event<ResourceTreeItem | undefined | void> = this._onDidChangeTreeData.event;
 
@@ -24,9 +23,6 @@ export class ResourcesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
 		this._onDidChangeTreeData.fire();
 	}
     getTreeItem(element: ResourceItem): vscode.TreeItem {
-        if (element instanceof OperatorItem) {
-            this.operatorName = element.operatorName;
-          }
         return element;
       }
     
@@ -36,33 +32,26 @@ export class ResourcesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
             // Get operator children items
             if (element instanceof OperatorItem) {
                 let resourceItems: Array<ResourceTreeItem> = [];
-                resourceItems.push(new ZosEndpointItem());
-                resourceItems.push(new OperatorCollectionItem());
-                resourceItems.push(new SubOperatorConfigItem());
-                const pwd = util.getCurrentWorkspaceRootFolder();
-                if (pwd) {
-                    let workspacePath = await util.selectOperatorInWorkspace(pwd, this.operatorName);
-                    if (workspacePath) {
-                        workspacePath = path.parse(workspacePath).dir;
-                        const consoleUrl = await k8s.getOpenshifConsoleUrl();
-                        const apiVersion = await util.getConvertedApiVersion(workspacePath);
-                        const operatorCsvName = await util.getOperatorCSVName(workspacePath);
-                        const kinds = await util.getKindsInOperatorConfig(workspacePath);
-                        if (apiVersion && operatorCsvName) {
-                            for (const kind of kinds) {
-                                const createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/clusterserviceversions/${operatorCsvName}/suboperator.zoscb.ibm.com~${apiVersion}~${kind}/~new`;
-                                resourceItems.push(new CustomResourceItem(kind, apiVersion, operatorCsvName, createCustomResourceUrl));
-                            }
-                        }
-                    } 
+                resourceItems.push(new ZosEndpointItem(element));
+                resourceItems.push(new OperatorCollectionItem(element));
+                resourceItems.push(new SubOperatorConfigItem(element));
+                const consoleUrl = await k8s.getOpenshifConsoleUrl();
+                const apiVersion = await util.getConvertedApiVersion(element.workspacePath);
+                const operatorCsvName = await util.getOperatorCSVName(element.workspacePath);
+                const kinds = await util.getKindsInOperatorConfig(element.workspacePath);
+                if (apiVersion && operatorCsvName) {
+                    for (const kind of kinds) {
+                        const createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/clusterserviceversions/${operatorCsvName}/${util.customResourceGroup}~${apiVersion}~${kind}/~new`;
+                        resourceItems.push(new CustomResourceItem(kind, apiVersion, operatorCsvName, createCustomResourceUrl));
+                    }
                 }
                 return resourceItems;
             } else if (element instanceof ZosEndpointItem) {
-                return getZosEndpointsItem(this.operatorName);
+                return getZosEndpointsItem(element.parentOperator.operatorName);
             } else if (element instanceof OperatorCollectionItem) {
-                return getOperatorCollectionsItem(this.operatorName);
+                return getOperatorCollectionsItem(element.parentOperator.operatorName);
             } else if (element instanceof SubOperatorConfigItem) {
-                return getSubOperatorConfigsItem(this.operatorName);
+                return getSubOperatorConfigsItem(element.parentOperator.operatorName);
             } else if (element instanceof CustomResourceItem) {
                 return getCustomResourcesItem(element.apiVersion, element.kind, element.operatorCsvName);
             }
