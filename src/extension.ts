@@ -147,9 +147,7 @@ function executeContainerLogDownloadCommand(command: string): vscode.Disposable 
 								} else {
 									vscode.window.showErrorMessage("Unable to download log");
 								}
-							} else {
-								vscode.window.showErrorMessage("Unable to download log due to undefined kind and/or custom resource instance");
-							}
+							} 
 						} else {
 							vscode.window.showErrorMessage("Unable to download log due to undefined version in operator-config");
 						}
@@ -237,7 +235,7 @@ function executeSdkCommandWithUserInput(command: string): vscode.Disposable {
 		}
 		if (workspacePath) {
 			if (command === "operator-collection-sdk.createOperator") {
-				let playbookArgs = await util.requestOperatorInfo();
+				let playbookArgs = await util.requestOperatorInfo(workspacePath);
 				if (playbookArgs) {
 					let ocSdkCommand = new OcSdkCommand(workspacePath);
 					vscode.window.showInformationMessage("Create Operator request in progress");

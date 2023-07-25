@@ -351,6 +351,11 @@ export class KubernetesObj {
             let crInstacesString = JSON.stringify(res.body);
             let crInstanceList: ObjectList = JSON.parse(crInstacesString);
             
+            if (crInstanceList.items.length  === 0) {
+                vscode.window.showInformationMessage(`Verbose logs unavailable: No instances exists for the ${kind} kind`);
+                return undefined;
+            }
+            
             for (let items of crInstanceList.items) {
                 crInstanceNames.push(items.metadata.name);
             }

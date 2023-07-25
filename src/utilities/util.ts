@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from "fs";
@@ -25,6 +26,7 @@ export const clusterServiceVersionApiVersion: string = "v1alpha1";
 export const zosEndpointApiVersion: string =  "v2beta2";
 export const subOperatorConfigApiVersion: string =  "v2beta2";
 export const operatorCollectionApiVersion: string =  "v2beta2";
+
 
 /**
  * Retrieve the current workspace root directory if it exists
@@ -241,12 +243,40 @@ export async function selectCustomResourceInstance(pwd: string, k8s: KubernetesO
 	}
 }
 
+interface OperatorVariables {
+	zosendpoint_type: string,
+	zosendpoint_name: string,
+	zosendpoint_host: string,
+	zosendpoint_port: string,
+	username: string,
+	ssh_key: string,
+	passphrase?: string;
+};
+
 /**
  * Prompts the user for the necessary info to create a new operator
  * @returns - A Promise containing the list of parameters to pass to the command
  */
-export async function requestOperatorInfo(): Promise<string[] | undefined > {
+export async function requestOperatorInfo(workspacePath: string): Promise<string[] | undefined > {
 	let args: Array<string> = [];
+	const yesNoOptions: Array<string> = ["Yes", "No"];
+	let useExtraVarsFile: string | undefined = "";
+	const extraVarsFilePath = path.join(workspacePath, "ocsdk-extra-vars.json");
+	if (fs.existsSync(extraVarsFilePath)) {
+		useExtraVarsFile = await vscode.window.showQuickPick(yesNoOptions, {
+			canPickMany: false,
+			ignoreFocusOut: true,
+			placeHolder: "Use existing extra vars file?",
+			title: "Use existing extra vars file to bypass prompts?"
+		});
+	}
+
+	if (useExtraVarsFile === undefined) {
+		return undefined;
+	} else if (useExtraVarsFile.toLowerCase() === "yes") {
+		args.push(`--extra-vars "@${extraVarsFilePath}"`);
+		return args;
+	}
 
 	const options: Array<string> = ["remote", "local"];
 
@@ -348,6 +378,38 @@ export async function requestOperatorInfo(): Promise<string[] | undefined > {
 		args.push(`-e "passphrase="`);
 	} else {
 		args.push(`-e "passphrase=${zosEndpointPassphrase}"`);
+	}
+
+	const saveToFile = await vscode.window.showQuickPick(yesNoOptions, {
+		canPickMany: false,
+		ignoreFocusOut: true,
+		placeHolder: "Store variables to file",
+		title: "Would you like to store these variables to a file to bypass prompts later?"
+	});
+
+	if (saveToFile === undefined) {
+		return undefined;
+	}
+
+	let operatorVariables: OperatorVariables = {
+		zosendpoint_type: zosEndpointType,
+		zosendpoint_name: zosEndpointName,
+		zosendpoint_host: zosEndpointHost,
+		zosendpoint_port: zosEndpointPort,
+		username: zosEndpointUsername,
+		ssh_key: zosEndpointSSHKey,
+	};
+	if (saveToFile.toLowerCase() === "yes") {
+		if (zosEndpointPassphrase === "") { // only store passphrase variable if it's empty
+			operatorVariables.passphrase = "";
+		}
+		const stringData = JSON.stringify(operatorVariables, null, 2);
+		try {
+			fs.writeFileSync(extraVarsFilePath, stringData);
+		} catch (e) {
+			console.error("Failure storing variables to file");
+		}
+		
 	}
 	return args;
 }
