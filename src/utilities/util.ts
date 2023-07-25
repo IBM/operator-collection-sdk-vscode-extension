@@ -218,20 +218,24 @@ export async function selectCustomResourceFromOperatorInWorkspace(pwd: string): 
  * @returns - A Promise containing the directory to the selected operator
  */
 export async function selectCustomResourceInstance(pwd: string, k8s: KubernetesObj, apiVersion: string, kind: string): Promise<string | undefined> {
-	let crInstanceNames = await k8s.listCustomResouceInstanceNames(apiVersion, kind);
-	if (crInstanceNames.length > 1) {
-		const instanceSelected = await vscode.window.showQuickPick(crInstanceNames, {
-			canPickMany: false,
-			ignoreFocusOut: true,
-			placeHolder: "Select the instance logs to display",
-			title: "List of instances in the current namespace"
-		});
-		if (!instanceSelected) {
+	const crInstanceNames = await k8s.listCustomResouceInstanceNames(apiVersion, kind);
+	if (crInstanceNames) {
+		if (crInstanceNames.length > 1) {
+			const instanceSelected = await vscode.window.showQuickPick(crInstanceNames, {
+				canPickMany: false,
+				ignoreFocusOut: true,
+				placeHolder: "Select the instance logs to display",
+				title: "List of instances in the current namespace"
+			});
+			if (!instanceSelected) {
+				return undefined;
+			}
+			return instanceSelected;
+		} else if (crInstanceNames.length === 1) {
+			return crInstanceNames[0];
+		} else {
 			return undefined;
 		}
-		return instanceSelected;
-	} else if (crInstanceNames.length === 1) {
-		return crInstanceNames[0];
 	} else {
 		return undefined;
 	}
@@ -346,6 +350,27 @@ export async function requestOperatorInfo(): Promise<string[] | undefined > {
 		args.push(`-e "passphrase=${zosEndpointPassphrase}"`);
 	}
 	return args;
+}
+
+export async function generateProjectDropDown(): Promise<string | undefined> {
+	const args: Array<string> = [];
+	const k8s = new KubernetesObj();
+	const namespaceList = await k8s.getNamespaceList();
+	if (namespaceList) {
+		const namespaceSelection = await vscode.window.showQuickPick(namespaceList, {
+			canPickMany: false,
+			ignoreFocusOut: true,
+			placeHolder: "Select a Project",
+			title: "Update the current Project"
+		});
+		
+		if (!namespaceSelection) {
+			return undefined;
+		}
+		return namespaceSelection;
+	} else {
+		return undefined;
+	}
 }
 
 /**

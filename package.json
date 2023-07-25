@@ -84,7 +84,13 @@
       },
       {
         "command": "operator-collection-sdk.login",
-        "title": "Log in to OpenShift"
+        "title": "Log in to new OpenShift cluster",
+        "icon": "$(log-in)"
+      },
+      {
+        "command": "operator-collection-sdk.updateProject",
+        "title": "Update OpenShift Project",
+        "icon": "$(edit)"
       }
     ],
     "views": {
@@ -180,6 +186,16 @@
         {
           "command": "operator-collection-sdk.openLink",
           "when": "view == operator-collection-sdk.links && viewItem == links",
+          "group": "inline"
+        },
+        {
+          "command": "operator-collection-sdk.login",
+          "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-cluster",
+          "group": "inline"
+        },
+        {
+          "command": "operator-collection-sdk.updateProject",
+          "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-namespace",
           "group": "inline"
         }
       ]

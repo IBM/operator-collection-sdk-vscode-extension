@@ -17,9 +17,11 @@ export async function getZosEndpointsItem(): Promise<ZosEndpointsItem[]> {
 	const k8s = new KubernetesObj();
     const consoleUrl = await k8s.getOpenshifConsoleUrl();
 	const zosendpointList = await k8s.getZosEndpoints();
-	for (const zosendpoint of zosendpointList.items) {
-        let zosendpointUrl = await k8s.getResourceUrl(util.ZosCloudBrokerKinds.zosEndpoint, util.zosCloudBrokerGroup, util.zosEndpointApiVersion, zosendpoint.metadata.name);
-		zosendpointItems.push(new ZosEndpointsItem(zosendpoint, zosendpointUrl));
-	}
+    if (zosendpointList) {
+        for (const zosendpoint of zosendpointList.items) {
+            let zosendpointUrl = await k8s.getResourceUrl(util.ZosCloudBrokerKinds.zosEndpoint, util.zosCloudBrokerGroup, util.zosEndpointApiVersion, zosendpoint.metadata.name);
+            zosendpointItems.push(new ZosEndpointsItem(zosendpoint, zosendpointUrl));
+        }
+    }
 	return zosendpointItems;
 }

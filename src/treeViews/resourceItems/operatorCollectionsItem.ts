@@ -17,9 +17,11 @@ export async function getOperatorCollectionsItem(operatorName: string): Promise<
 	const k8s = new KubernetesObj();
     const consoleUrl = await k8s.getOpenshifConsoleUrl();
 	const operatorCollectionList = await k8s.getOperatorCollections(operatorName);
-	for (const operatorCollection of operatorCollectionList.items) {
-        let operatorCollectionUrl = await k8s.getResourceUrl(util.ZosCloudBrokerKinds.operatorCollection, util.zosCloudBrokerGroup, util.operatorCollectionApiVersion, operatorCollection.metadata.name);
-		operatorCollectionItems.push(new OperatorCollectionsItem(operatorCollection, operatorCollectionUrl));
-	}
+    if (operatorCollectionList) {
+        for (const operatorCollection of operatorCollectionList.items) {
+            let operatorCollectionUrl = await k8s.getResourceUrl(util.ZosCloudBrokerKinds.operatorCollection, util.zosCloudBrokerGroup, util.operatorCollectionApiVersion, operatorCollection.metadata.name);
+            operatorCollectionItems.push(new OperatorCollectionsItem(operatorCollection, operatorCollectionUrl));
+        }
+    }
 	return operatorCollectionItems;
 }

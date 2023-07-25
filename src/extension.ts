@@ -29,6 +29,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.window.registerTreeDataProvider('operator-collection-sdk.links', linksTreeProvider);
 	vscode.window.registerTreeDataProvider('operator-collection-sdk.openshiftClusterInfo', openshiftTreeProvider);
 	context.subscriptions.push(signIn("operator-collection-sdk.login"));
+	context.subscriptions.push(updateProject("operator-collection-sdk.updateProject"));
 	context.subscriptions.push(executeSdkCommandWithUserInput("operator-collection-sdk.createOperator"));
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.deleteOperator"));
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.redeployCollection"));
@@ -52,16 +53,31 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 }
 
+function updateProject(command: string): vscode.Disposable {
+	return vscode.commands.registerCommand(command, async () => {
+		const namespace = await util.generateProjectDropDown();
+		const ocCmd = new OcCommand();
+		if (namespace) {
+			ocCmd.runOcProjectCommand(namespace).then(() => {
+				vscode.window.showInformationMessage("Successfully updating Project on OpenShift cluster");
+				vscode.commands.executeCommand("operator-collection-sdk.openshiftInfoRefresh");
+			}).catch((e) => {
+				vscode.window.showErrorMessage(`Failure updating Project on OpenShift cluster: ${e}`);
+			});
+		}
+	});
+}
+
 function signIn(command: string): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async () => {
 		const args = await util.requestLogInInfo();
 		const ocCmd = new OcCommand();
 		if (args) {
-			ocCmd.runOcLoginCommand(args).then((res) => {
+			ocCmd.runOcLoginCommand(args).then(() => {
 				vscode.window.showInformationMessage("Successfully logged into OpenShift cluster");
 				vscode.commands.executeCommand("operator-collection-sdk.openshiftInfoRefresh");
-			}).catch((e) => {
-				vscode.window.showErrorMessage(`Failure logging into OpenShift cluster: ${e}`);
+			}).catch(() => {
+				vscode.window.showErrorMessage(`Failure logging into OpenShift cluster`);
 			});
 		}
 	});
@@ -151,48 +167,51 @@ function executeContainerLogDownloadCommand(command: string): vscode.Disposable 
  */
 function executeSimpleSdkCommand(command: string): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem) => {
-		let pwd = util.getCurrentWorkspaceRootFolder();
-		if (!pwd) {
-			vscode.window.showErrorMessage("Unable to execute command when workspace is empty");
+		let workspacePath: string | undefined = "";
+		if (operatorItemArg) {
+			workspacePath = operatorItemArg.workspacePath;
 		} else {
-			let workspacePath = await util.selectOperatorInWorkspace(pwd);
-			if (workspacePath) {
-				workspacePath = path.parse(workspacePath).dir;
-				let ocSdkCommand = new OcSdkCommand(workspacePath);
-				switch(command) {
-					case "operator-collection-sdk.deleteOperator": {
-						vscode.window.showInformationMessage("Delete Operator request in progress");
-						const poll = util.pollRun(10);
-						const runDeleteOperatorCommand = ocSdkCommand.runDeleteOperatorCommand();
-						Promise.all([poll, runDeleteOperatorCommand]).then(() => {
-							vscode.window.showInformationMessage("Delete Operator command executed successfully");
-						}).catch((e) => {
-							vscode.window.showInformationMessage(`Failure executing Delete Operator command: RC ${e}`);
-						});
-						break;
-					}
-					case "operator-collection-sdk.redeployCollection": {
-						vscode.window.showInformationMessage("Redeploy Collection request in progress");
-						const poll = util.pollRun(15);
-						const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand();
-						Promise.all([poll, runRedeployCollectionCommand]).then(() => {
-							vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
-						}).catch((e) => {
-							vscode.window.showInformationMessage(`Failure executing Redeploy Collection command: RC ${e}`);
-						});
-						break;
-					}
-					case "operator-collection-sdk.redeployOperator": {
-						vscode.window.showInformationMessage("Redeploy Operator request in progress");
-						const poll = util.pollRun(25);
-						const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand();
-						Promise.all([poll, runRedeployOperatorCommand]).then(() => {
-							vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
-						}).catch((e) => {
-							vscode.window.showInformationMessage(`Failure executing Redeploy Operator command: RC ${e}`);
-						});
-						break;
-					}
+			let pwd = util.getCurrentWorkspaceRootFolder();
+			if (pwd) {
+				workspacePath = await util.selectOperatorInWorkspace(pwd);
+				workspacePath = path.parse(workspacePath!).dir;
+			}
+		}
+		if (workspacePath) {
+			let ocSdkCommand = new OcSdkCommand(workspacePath);
+			switch(command) {
+				case "operator-collection-sdk.deleteOperator": {
+					vscode.window.showInformationMessage("Delete Operator request in progress");
+					const poll = util.pollRun(10);
+					const runDeleteOperatorCommand = ocSdkCommand.runDeleteOperatorCommand();
+					Promise.all([poll, runDeleteOperatorCommand]).then(() => {
+						vscode.window.showInformationMessage("Delete Operator command executed successfully");
+					}).catch((e) => {
+						vscode.window.showInformationMessage(`Failure executing Delete Operator command: RC ${e}`);
+					});
+					break;
+				}
+				case "operator-collection-sdk.redeployCollection": {
+					vscode.window.showInformationMessage("Redeploy Collection request in progress");
+					const poll = util.pollRun(15);
+					const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand();
+					Promise.all([poll, runRedeployCollectionCommand]).then(() => {
+						vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
+					}).catch((e) => {
+						vscode.window.showInformationMessage(`Failure executing Redeploy Collection command: RC ${e}`);
+					});
+					break;
+				}
+				case "operator-collection-sdk.redeployOperator": {
+					vscode.window.showInformationMessage("Redeploy Operator request in progress");
+					const poll = util.pollRun(25);
+					const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand();
+					Promise.all([poll, runRedeployOperatorCommand]).then(() => {
+						vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
+					}).catch((e) => {
+						vscode.window.showInformationMessage(`Failure executing Redeploy Operator command: RC ${e}`);
+					});
+					break;
 				}
 			}
 		}
@@ -205,31 +224,32 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
  * @returns - The vscode.Disposable class
  */
 function executeSdkCommandWithUserInput(command: string): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async () => {
-		let pwd = util.getCurrentWorkspaceRootFolder();
-		if (!pwd) {
-			vscode.window.showErrorMessage("Unable to execute Create Operator command when workspace is empty");
+	return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem) => {
+		let workspacePath: string | undefined = "";
+		if (operatorItemArg) {
+			workspacePath = operatorItemArg.workspacePath;
 		} else {
-			let workspacePath = await util.selectOperatorInWorkspace(pwd);
-			if (!workspacePath) {
-				vscode.window.showInformationMessage("Please select Operator in workspace to deploy");
-			} else {
-				if (command === "operator-collection-sdk.createOperator") {
-					let playbookArgs = await util.requestOperatorInfo();
-					if (playbookArgs) {
-						workspacePath = path.parse(workspacePath).dir;
-						let ocSdkCommand = new OcSdkCommand(workspacePath);
-						vscode.window.showInformationMessage("Create Operator request in progress");
-						const poll = util.pollRun(40);
-						const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs);
-						Promise.all([poll, runCreateOperatorCommand]).then(() => {
-							vscode.window.showInformationMessage("Create Operator command executed successfully");
-						}).catch((e) => {
-							vscode.window.showInformationMessage(`Failure executing Create Operator command: RC ${e}`);
-						});
-					}
-				}
-			};
+			let pwd = util.getCurrentWorkspaceRootFolder();
+			if (pwd) {
+				workspacePath = await util.selectOperatorInWorkspace(pwd);
+				workspacePath = path.parse(workspacePath!).dir;
+			}
 		}
+		if (workspacePath) {
+			if (command === "operator-collection-sdk.createOperator") {
+				let playbookArgs = await util.requestOperatorInfo();
+				if (playbookArgs) {
+					let ocSdkCommand = new OcSdkCommand(workspacePath);
+					vscode.window.showInformationMessage("Create Operator request in progress");
+					const poll = util.pollRun(40);
+					const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs);
+					Promise.all([poll, runCreateOperatorCommand]).then(() => {
+						vscode.window.showInformationMessage("Create Operator command executed successfully");
+					}).catch((e) => {
+						vscode.window.showInformationMessage(`Failure executing Create Operator command: RC ${e}`);
+					});
+				}
+			}
+		};
 	});
 }

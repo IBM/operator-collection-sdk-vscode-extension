@@ -23,9 +23,11 @@ export async function getOperatorPodItems(parentOperator: OperatorItem): Promise
 	const operatorPodItems: Array<OperatorPodItem> = [];
 	const k8s = new KubernetesObj();
 	const pods = await k8s.getOperatorPods(parentOperator.operatorName);
-	for (const pod of pods) {
-		const containerStatus = await k8s.getOperatorContainerStatuses(parentOperator.operatorName, pod);
-		operatorPodItems.push(new OperatorPodItem(pod, containerStatus, parentOperator));
+	if (pods) {
+		for (const pod of pods) {
+			const containerStatus = await k8s.getOperatorContainerStatuses(parentOperator.operatorName, pod);
+			operatorPodItems.push(new OperatorPodItem(pod, containerStatus, parentOperator));
+		}
 	}
 	return operatorPodItems;
 }

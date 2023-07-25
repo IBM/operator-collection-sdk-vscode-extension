@@ -74,4 +74,15 @@ export class OcCommand {
         const finalArgs = logInArg.concat(args);
         return this.run(finalArgs);
     }
+
+    /**
+     * Executes the oc login command
+     * @param serverURL 
+     * @param token 
+     * @returns 
+     */
+    async runOcProjectCommand(project: string): Promise<any> {
+        const args: Array<string> = ["project", project];
+        return this.run(args);
+    }
 }

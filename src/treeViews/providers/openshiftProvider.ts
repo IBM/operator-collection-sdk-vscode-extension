@@ -23,8 +23,8 @@ export class OpenShiftTreeProvider implements vscode.TreeDataProvider<vscode.Tre
         if (!element && userLoggedIntoOCP) {
 
            
-            links.push(new OpenShiftItem("OpenShift Cluster", k8s.openshiftServerURL, new vscode.ThemeIcon("book")));
-            links.push(new OpenShiftItem("OpenShift Namespace", k8s.namespace, new vscode.ThemeIcon("bug")));
+            links.push(new OpenShiftItem("OpenShift Cluster", k8s.openshiftServerURL, new vscode.ThemeIcon("cloud"), "openshift-cluster"));
+            links.push(new OpenShiftItem("OpenShift Namespace", k8s.namespace, new vscode.ThemeIcon("account"), "openshift-namespace"));
         }
 
         return links;
