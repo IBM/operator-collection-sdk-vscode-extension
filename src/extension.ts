@@ -10,6 +10,7 @@ import {LinksTreeProvider} from './treeViews/providers/linkProvider';
 import {OperatorContainerItem} from "./treeViews/operatorItems/operatorContainerItem";
 import {ZosEndpointsItem} from "./treeViews/resourceItems/zosendpointsItem";
 import {CustomResourceItem} from "./treeViews/resourceItems/customResourceItem";
+import {CustomResourcesItem} from "./treeViews/resourceItems/customResourcesItem";
 import {LinkItem} from "./treeViews/linkItems/linkItem";
 import {initResources} from './treeViews/icons';
 import {KubernetesObj} from "./kubernetes/kubernetes";
@@ -45,8 +46,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.deleteOperator"));
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.redeployCollection"));
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.redeployOperator"));
-	context.subscriptions.push(executeContainerLogDownloadCommand("operator-collection-sdk.downloadLogs"));
-	context.subscriptions.push(executeContainerLogDownloadCommand("operator-collection-sdk.downloadVerboseLogs"));
+	context.subscriptions.push(deleteCustomResource("operator-collection-sdk.deleteCustomResource", k8s));
+	context.subscriptions.push(executeContainerLogDownloadCommand("operator-collection-sdk.downloadLogs", k8s));
+	context.subscriptions.push(executeContainerLogDownloadCommand("operator-collection-sdk.downloadVerboseLogs", k8s));
 	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openEditLink"));
 	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openAddLink"));
 	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openLink"));
@@ -125,9 +127,8 @@ function executeOpenLinkCommand(command: string): vscode.Disposable {
 	});
 }
 
-function executeContainerLogDownloadCommand(command: string): vscode.Disposable {
+function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (containerItemArgs: OperatorContainerItem) => {
-		const k8s = new KubernetesObj();
 		const pwd = util.getCurrentWorkspaceRootFolder();
 		if (!pwd) {
 			vscode.window.showErrorMessage("Unable to execute command when workspace is empty");
@@ -281,5 +282,20 @@ function executeSdkCommandWithUserInput(command: string): vscode.Disposable {
 				}
 			}
 		};
+	});
+}
+
+function deleteCustomResource(command: string, k8s: KubernetesObj) {
+	return vscode.commands.registerCommand(command, async (customResourcArg: CustomResourcesItem) => {
+		const name = customResourcArg.customResourceObj.metadata.name
+		const apiVersion = customResourcArg.customResourceObj.apiVersion.split("/")[1];
+		const kind = customResourcArg.customResourceObj.kind;
+		const deleteSuccessful = await k8s.deleteCustomResource(name, apiVersion, kind);
+		if (deleteSuccessful) {
+			vscode.window.showInformationMessage(`Successfully deleted ${kind} resource`);
+			vscode.commands.executeCommand("operator-collection-sdk.resourceRefresh");
+		} else {
+			vscode.window.showErrorMessage(`Failed to delete ${kind} resource`);
+		}
 	});
 }

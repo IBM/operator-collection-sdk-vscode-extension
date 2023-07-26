@@ -98,6 +98,12 @@
         "command": "operator-collection-sdk.install",
         "title": "Install the IBM Operator Collection SDK",
         "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.deleteCustomResource",
+        "title": "Delete Custom Resource",
+        "category": "OC-SDK",
+        "icon": "$(trash)"
       }
     ],
     "views": {
@@ -203,6 +209,11 @@
         {
           "command": "operator-collection-sdk.openLink",
           "when": "view == operator-collection-sdk.links && viewItem == links",
+          "group": "inline"
+        },
+        {
+          "command": "operator-collection-sdk.deleteCustomResource",
+          "when": "view == operator-collection-sdk.resources && viewItem == operatorcollection-object",
           "group": "inline"
         },
         {

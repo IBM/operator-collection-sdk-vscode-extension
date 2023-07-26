@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as k8s from '@kubernetes/client-node';
-import {ObjectStatus} from "../kubernetes/kubernetes";
+import {ObjectInstance, ObjectStatus} from "../kubernetes/kubernetes";
 
 type Icons = {
     "dark": vscode.Uri,
@@ -62,8 +62,11 @@ export function getPodContainerStatusIcon(containerStatus: k8s.V1ContainerStatus
     }
 }
 
-export function getBrokerObjectStatusIcon(status: ObjectStatus): ThemeIcons {
-    switch (status.phase) {
+export function getBrokerObjectStatusIcon(customResourceObj: ObjectInstance): ThemeIcons {
+    if (customResourceObj.metadata.deletionTimestamp) {
+        return getPendingIcons();
+    }
+    switch (customResourceObj.status.phase) {
         case "Successful": {
             return getPassingIcons();
         }

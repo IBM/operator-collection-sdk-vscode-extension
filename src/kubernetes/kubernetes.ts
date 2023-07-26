@@ -20,6 +20,7 @@ export interface ObjectInstance {
 export interface ObjectMetadata {
     name: string;
     namespace: string;
+    deletionTimestamp?: string;
 }
 
 export interface ObjectStatus {
@@ -219,7 +220,7 @@ export class KubernetesObj {
     }
 
     /**
-     * Retrieve the Customer Resource List
+     * Retrieve the Custom Resource List
      * @param apiVersion - The custom resource API version
      * @param kind - The custom resource Kind
      * @returns - A promise containing a list of Custom Resources found in the namespace
@@ -242,6 +243,33 @@ export class KubernetesObj {
                 console.error(msg);
                 vscode.window.showErrorMessage(msg);
                 return undefined;
+            }
+        });
+    }
+
+    /**
+     * Delete the Custom Resource List
+     * @param apiVersion - The custom resource API version
+     * @param kind - The custom resource Kind
+     * @returns - A promise containing a list of Custom Resources found in the namespace
+     */
+    public async deleteCustomResource(name: string, apiVersion: string, kind: string): Promise<boolean> {
+        return this.customObjectsApi.deleteNamespacedCustomObject(
+            "suboperator.zoscb.ibm.com",
+            apiVersion,
+            this.namespace,
+            `${kind.toLowerCase()}s`,
+            name
+        ).then(() => {
+            return true;
+        }).catch((e) => {
+            if (e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+                return false;
+            } else {
+                const msg = `Failure deleting Custom Resource object. ${e.body}`;
+                console.error(msg);
+                vscode.window.showErrorMessage(msg);
+                return false;
             }
         });
     }

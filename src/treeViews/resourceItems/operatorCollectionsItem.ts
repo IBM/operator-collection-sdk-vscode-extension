@@ -8,14 +8,13 @@ export class OperatorCollectionsItem extends ResourceTreeItem {
     constructor(public readonly subOperatorConfigObj: ObjectInstance, public readonly link: string) {
         super(subOperatorConfigObj.metadata.name, vscode.TreeItemCollapsibleState.None);
         this.contextValue = "operatorcollection-object";
-        this.iconPath = icons.getBrokerObjectStatusIcon(subOperatorConfigObj.status);
+        this.iconPath = icons.getBrokerObjectStatusIcon(subOperatorConfigObj);
     }
 }
 
 export async function getOperatorCollectionsItem(operatorName: string): Promise<OperatorCollectionsItem[]> {
 	const operatorCollectionItems: Array<OperatorCollectionsItem> = [];
 	const k8s = new KubernetesObj();
-    const consoleUrl = await k8s.getOpenshifConsoleUrl();
 	const operatorCollectionList = await k8s.getOperatorCollections(operatorName);
     if (operatorCollectionList) {
         for (const operatorCollection of operatorCollectionList.items) {

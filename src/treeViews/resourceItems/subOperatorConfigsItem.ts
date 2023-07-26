@@ -8,7 +8,7 @@ export class SubOperatorConfigsItem extends ResourceTreeItem {
     constructor(public readonly subOperatorConfigObj: ObjectInstance, public readonly link: string) {
         super(subOperatorConfigObj.metadata.name, vscode.TreeItemCollapsibleState.None);
         this.contextValue = "suboperatorconfig-object";
-        this.iconPath = icons.getBrokerObjectStatusIcon(subOperatorConfigObj.status);
+        this.iconPath = icons.getBrokerObjectStatusIcon(subOperatorConfigObj);
     }
 }
 
