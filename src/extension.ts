@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import * as util from "./utilities/util";
 import * as path from 'path';
-import {OcSdkCommand} from './commands/ocSdkCommands';
 import {OperatorsTreeProvider} from './treeViews/providers/operatorProvider';
 import {OperatorItem} from './treeViews/operatorItems/operatorItem';
 import {ResourcesTreeProvider} from './treeViews/providers/resourceProvider';
@@ -15,32 +14,35 @@ import {LinkItem} from "./treeViews/linkItems/linkItem";
 import {initResources} from './treeViews/icons';
 import {KubernetesObj} from "./kubernetes/kubernetes";
 import {OcCommand} from "./commands/ocCommand";
+import {OcSdkCommand} from './commands/ocSdkCommands';
+import {Session} from "./utilities/session";
 
 export async function activate(context: vscode.ExtensionContext) {
 	initResources(context);
-	const operatorTreeProvider = new OperatorsTreeProvider();
-	const resourceTreeProvider = new ResourcesTreeProvider();
-	const linksTreeProvider = new LinksTreeProvider();
-	const openshiftTreeProvider = new OpenShiftTreeProvider();
 	const k8s = new KubernetesObj();
 	const ocSdkCmd = new OcSdkCommand();
 	const ocCmd = new OcCommand();
-	const userLoggedIntoOCP = await k8s.isUserLoggedIntoOCP();
-	let isOcSDKinstalled: boolean = true;
-	try {
-		await ocSdkCmd.runCollectionVerifyCommand(true);
-	} catch(e) {
-		vscode.window.showWarningMessage("Install the IBM Operator Collection SDK use this extension");
-		isOcSDKinstalled = false;
-	}
+	const session = new Session();
+
+	const isOcSDKinstalled = await session.validateOcSDKInstallation();
+	const userLoggedIntoOCP = await session.validateOpenShiftAccess();
+
+
+
+	const operatorTreeProvider = new OperatorsTreeProvider(session);
+	const resourceTreeProvider = new ResourcesTreeProvider(session);
+	const openshiftTreeProvider = new OpenShiftTreeProvider(session);
+	const linksTreeProvider = new LinksTreeProvider();
+
+	
 	vscode.commands.executeCommand("setContext", "operator-collection-sdk.sdkInstalled", isOcSDKinstalled);
 	vscode.commands.executeCommand("setContext", "operator-collection-sdk.loggedIn", userLoggedIntoOCP);
 	vscode.window.registerTreeDataProvider('operator-collection-sdk.operators', operatorTreeProvider);
 	vscode.window.registerTreeDataProvider('operator-collection-sdk.resources', resourceTreeProvider);
 	vscode.window.registerTreeDataProvider('operator-collection-sdk.links', linksTreeProvider);
 	vscode.window.registerTreeDataProvider('operator-collection-sdk.openshiftClusterInfo', openshiftTreeProvider);
-	context.subscriptions.push(signIn("operator-collection-sdk.login", ocCmd));
-	context.subscriptions.push(installOcSdk("operator-collection-sdk.install", ocSdkCmd));
+	context.subscriptions.push(signIn("operator-collection-sdk.login", ocCmd, session));
+	context.subscriptions.push(installOcSdk("operator-collection-sdk.install", ocSdkCmd, session));
 	context.subscriptions.push(updateProject("operator-collection-sdk.updateProject", ocCmd));
 	context.subscriptions.push(executeSdkCommandWithUserInput("operator-collection-sdk.createOperator"));
 	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.deleteOperator"));
@@ -66,20 +68,22 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 }
 
-function installOcSdk(command: string, ocSdkCmd: OcSdkCommand): vscode.Disposable {
+function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async () => {
-		let isOcSDKinstalled: boolean = true;
 		try {
 			await ocSdkCmd.runCollectionVerifyCommand(true);
+			session.ocSdkInstalled = true;
 		} catch(e) {
 			vscode.window.showWarningMessage("Install the IBM Operator Collection SDK use this extension");
-			isOcSDKinstalled = false;
+			session.ocSdkInstalled = false;
 		}
-		if (isOcSDKinstalled) {
+		if (session.ocSdkInstalled) {
 			vscode.window.showInformationMessage("IBM Operator Collection SDK already installed");
+			vscode.commands.executeCommand("operator-collection-sdk.refresh");
 		} else {
 			vscode.window.showInformationMessage("Installing the IBM Operator Collection SDK");
 			ocSdkCmd.installOcSDKCommand().then(()=> {
+				session.ocSdkInstalled = true;
 				vscode.window.showInformationMessage("Successfully installed the IBM Operator Collection SDK");
 				vscode.commands.executeCommand("operator-collection-sdk.refresh");
 			}).catch((e) => {
@@ -103,14 +107,16 @@ function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
 	});
 }
 
-function signIn(command: string, ocCmd: OcCommand): vscode.Disposable {
+function signIn(command: string, ocCmd: OcCommand, session: Session): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async () => {
 		const args = await util.requestLogInInfo();
 		if (args) {
 			ocCmd.runOcLoginCommand(args).then(() => {
+				session.loggedIntoOpenShift = true;
 				vscode.window.showInformationMessage("Successfully logged into OpenShift cluster");
 				vscode.commands.executeCommand("operator-collection-sdk.refreshAll");
 			}).catch(() => {
+				session.loggedIntoOpenShift = false;
 				vscode.window.showErrorMessage(`Failure logging into OpenShift cluster`);
 			});
 		}

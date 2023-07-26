@@ -36,8 +36,8 @@ interface RouteObjectSpec {
     host: string;
 }
 export class KubernetesObj {
-    private coreV1Api: k8s.CoreV1Api;
-    private customObjectsApi: k8s.CustomObjectsApi;
+    public coreV1Api: k8s.CoreV1Api;
+    public customObjectsApi: k8s.CustomObjectsApi;
     public namespace: string = "";
     public openshiftServerURL: string | undefined  = "";
     constructor() {

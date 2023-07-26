@@ -13,7 +13,7 @@ import {CustomResourceItem} from "../resourceItems/customResourceItem";
 import {getCustomResourcesItem} from "../resourceItems/customResourcesItem";
 import {KubernetesObj} from "../../kubernetes/kubernetes";
 import {ResourceTreeItem} from "../resourceItems/resourceTreeItems";
-import {OcSdkCommand} from '../../commands/ocSdkCommands';
+import {Session} from "../../utilities/session";
 
 type TreeItem = ResourceTreeItem | undefined | void;
 
@@ -21,7 +21,7 @@ export class ResourcesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
     private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> = new vscode.EventEmitter<TreeItem>();
 	readonly onDidChangeTreeData: vscode.Event<TreeItem> = this._onDidChangeTreeData.event;
 
-
+    constructor(private readonly session: Session){}
 	refresh(): void {
 		this._onDidChangeTreeData.fire();
 	}
@@ -30,18 +30,9 @@ export class ResourcesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
       }
     
     async getChildren(element?: ResourceTreeItem): Promise<ResourceTreeItem[]> {
-        const ocSdkCmd = new OcSdkCommand();
         let resourceItems: Array<ResourceTreeItem> = [];
         const k8s = new KubernetesObj();
-        let isOcSDKinstalled: boolean = true;
-
-        try {
-            await ocSdkCmd.runCollectionVerifyCommand(true);
-        } catch(e) {
-            isOcSDKinstalled = false;
-        }
-        const userLoggedIntoOCP = await k8s.isUserLoggedIntoOCP();
-        if (userLoggedIntoOCP && isOcSDKinstalled) {
+        if (this.session.loggedIntoOpenShift && this.session.ocSdkInstalled) {
             if (element) {
                 // Get operator children items
                 if (element instanceof OperatorItem) {

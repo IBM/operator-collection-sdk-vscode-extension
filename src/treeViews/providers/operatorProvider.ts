@@ -3,14 +3,15 @@ import {OperatorItem, getOperatorItems} from "../operatorItems/operatorItem";
 import {OperatorPodItem, getOperatorPodItems} from "../operatorItems/operatorPodItem";
 import {getOperatorContainerItems} from "../operatorItems/operatorContainerItem";
 import {OperatorTreeItem} from "../operatorItems/operatorTreeItems";
-import {OcSdkCommand} from '../../commands/ocSdkCommands';
-import {KubernetesObj} from "../../kubernetes/kubernetes";
+import {Session} from "../../utilities/session";
 
 type TreeItem = OperatorTreeItem | undefined | void;
 
 export class OperatorsTreeProvider implements vscode.TreeDataProvider<OperatorTreeItem> {
   private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> = new vscode.EventEmitter<TreeItem>();
 	readonly onDidChangeTreeData: vscode.Event<TreeItem> = this._onDidChangeTreeData.event;
+
+  constructor(private readonly session: Session){}
 
 	refresh(): void {
 		this._onDidChangeTreeData.fire();
@@ -22,17 +23,8 @@ export class OperatorsTreeProvider implements vscode.TreeDataProvider<OperatorTr
   
   async getChildren(element?: OperatorTreeItem): Promise<OperatorTreeItem[]> {
     const operatorTreeItems: Array<OperatorTreeItem> = [];
-    const ocSdkCmd = new OcSdkCommand();
-    const k8s = new KubernetesObj();
-    let isOcSDKinstalled: boolean = true;
 
-    try {
-      await ocSdkCmd.runCollectionVerifyCommand(true);
-    } catch(e) {
-        isOcSDKinstalled = false;
-    }
-    const userLoggedIntoOCP = await k8s.isUserLoggedIntoOCP();
-    if (userLoggedIntoOCP && isOcSDKinstalled) {
+    if (this.session.loggedIntoOpenShift && this.session.ocSdkInstalled) {
       if (element) {
         // Get operator children items
           if (element instanceof OperatorItem) {
