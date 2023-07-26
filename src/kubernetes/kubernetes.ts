@@ -64,20 +64,11 @@ export class KubernetesObj {
      * @returns - A promise containing a boolean
      */
     public async isUserLoggedIntoOCP(): Promise<boolean> {
-        return this.coreV1Api.listNamespacedPod(this.namespace).then((res) => {
-            if (res.response.statusCode !== 401) {
-                return true;
-            } else {
-                vscode.window.showWarningMessage("Log in to an OpenShift Cluster to use this extension");
-                return false;
-            }
-        }).catch((e) => {
-            if (e.response.statusCode === 401) {
-                vscode.window.showWarningMessage("Log in to an OpenShift Cluster to use this extension");
-                return false;
-            } else {
-                return true;
-            }
+        return this.coreV1Api.listNamespacedPod(this.namespace).then(() => {
+            return true;
+        }).catch(() => {
+            vscode.window.showWarningMessage("Log in to an OpenShift Cluster to use this extension");
+            return false;
         });
     }
 

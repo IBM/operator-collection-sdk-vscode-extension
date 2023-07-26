@@ -3,11 +3,14 @@ import {OperatorItem, getOperatorItems} from "../operatorItems/operatorItem";
 import {OperatorPodItem, getOperatorPodItems} from "../operatorItems/operatorPodItem";
 import {getOperatorContainerItems} from "../operatorItems/operatorContainerItem";
 import {OperatorTreeItem} from "../operatorItems/operatorTreeItems";
+import {OcSdkCommand} from '../../commands/ocSdkCommands';
+import {KubernetesObj} from "../../kubernetes/kubernetes";
 
-export class OperatorsTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
-  private operatorName: string = "";
-  private _onDidChangeTreeData: vscode.EventEmitter<OperatorTreeItem | undefined | void> = new vscode.EventEmitter<OperatorTreeItem | undefined | void>();
-	readonly onDidChangeTreeData: vscode.Event<OperatorTreeItem | undefined | void> = this._onDidChangeTreeData.event;
+type TreeItem = OperatorTreeItem | undefined | void;
+
+export class OperatorsTreeProvider implements vscode.TreeDataProvider<OperatorTreeItem> {
+  private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> = new vscode.EventEmitter<TreeItem>();
+	readonly onDidChangeTreeData: vscode.Event<TreeItem> = this._onDidChangeTreeData.event;
 
 	refresh(): void {
 		this._onDidChangeTreeData.fire();
@@ -17,19 +20,31 @@ export class OperatorsTreeProvider implements vscode.TreeDataProvider<vscode.Tre
     return element;
   }
   
-  getChildren(element?: OperatorTreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
-    const tree: Array<vscode.TreeItem> = [];
-    if (element) {
-      // Get operator children items
-        if (element instanceof OperatorItem) {
-          return getOperatorPodItems(element);
-        } else if (element instanceof OperatorPodItem) {
-          return getOperatorContainerItems(element);
-        }
-    } else {
-      // Get root operator items
-        return getOperatorItems();
-     }
-    return tree;
+  async getChildren(element?: OperatorTreeItem): Promise<OperatorTreeItem[]> {
+    const operatorTreeItems: Array<OperatorTreeItem> = [];
+    const ocSdkCmd = new OcSdkCommand();
+    const k8s = new KubernetesObj();
+    let isOcSDKinstalled: boolean = true;
+
+    try {
+      await ocSdkCmd.runCollectionVerifyCommand(true);
+    } catch(e) {
+        isOcSDKinstalled = false;
+    }
+    const userLoggedIntoOCP = await k8s.isUserLoggedIntoOCP();
+    if (userLoggedIntoOCP && isOcSDKinstalled) {
+      if (element) {
+        // Get operator children items
+          if (element instanceof OperatorItem) {
+            return getOperatorPodItems(element);
+          } else if (element instanceof OperatorPodItem) {
+            return getOperatorContainerItems(element);
+          }
+      } else {
+          // Get root operator items
+          return getOperatorItems();
+      }
+    } 
+    return operatorTreeItems;
   } 
 }

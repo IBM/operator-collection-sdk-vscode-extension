@@ -85,12 +85,19 @@
       {
         "command": "operator-collection-sdk.login",
         "title": "Log in to new OpenShift cluster",
+        "category": "OC-SDK",
         "icon": "$(log-in)"
       },
       {
         "command": "operator-collection-sdk.updateProject",
         "title": "Update OpenShift Project",
+        "category": "OC-SDK",
         "icon": "$(edit)"
+      },
+      {
+        "command": "operator-collection-sdk.install",
+        "title": "Install the IBM Operator Collection SDK",
+        "category": "OC-SDK"
       }
     ],
     "views": {
@@ -114,6 +121,16 @@
       ]
     },
     "viewsWelcome": [
+      {
+        "view": "operator-collection-sdk.operators",
+        "contents": "Install the IBM Operator Collection SDk to use this extension\n[Install IBM Operator Collection SDK](command:operator-collection-sdk.install)",
+        "when": "!operator-collection-sdk.sdkInstalled"
+      },
+      {
+        "view": "operator-collection-sdk.resources",
+        "contents": "Install the IBM Operator Collection SDk to use this extension",
+        "when": "!operator-collection-sdk.sdkInstalled"
+      },
       {
         "view": "operator-collection-sdk.openshiftClusterInfo",
         "contents": "Log in to an OpenShift Cluster to use this extension\n[Log in to OpenShift](command:operator-collection-sdk.login)",
