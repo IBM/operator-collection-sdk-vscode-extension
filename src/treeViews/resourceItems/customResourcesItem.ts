@@ -7,7 +7,7 @@ import * as util from '../../utilities/util';
 export class CustomResourcesItem extends ResourceTreeItem {
     constructor(public readonly customResourceObj: ObjectInstance, public readonly link: string) {
         super(customResourceObj.metadata.name, vscode.TreeItemCollapsibleState.None);
-        this.contextValue = "operatorcollection-object";
+        this.contextValue = "customresource-object";
         this.iconPath = icons.getBrokerObjectStatusIcon(customResourceObj);
     }
 }

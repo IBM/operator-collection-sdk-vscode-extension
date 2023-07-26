@@ -66,9 +66,9 @@
       },
       {
         "command": "operator-collection-sdk.openLink",
-        "title": "View Documentation",
+        "title": "Open External Link",
         "category": "OC-SDK",
-        "icon": "$(eye)"
+        "icon": "$(globe)"
       },
       {
         "command": "operator-collection-sdk.refresh",
@@ -117,8 +117,8 @@
           "name": "OpenShift Resources"
         },
         {
-          "id": "operator-collection-sdk.links",
-          "name": "Links"
+          "id": "operator-collection-sdk.help",
+          "name": "Help And Additional Resources"
         },
         {
           "id": "operator-collection-sdk.openshiftClusterInfo",
@@ -198,7 +198,7 @@
         },
         {
           "command": "operator-collection-sdk.openEditLink",
-          "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object)",
+          "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object || viewItem == customresource-object)",
           "group": "inline"
         },
         {
@@ -208,12 +208,12 @@
         },
         {
           "command": "operator-collection-sdk.openLink",
-          "when": "view == operator-collection-sdk.links && viewItem == links",
+          "when": "view == operator-collection-sdk.help && viewItem == links",
           "group": "inline"
         },
         {
           "command": "operator-collection-sdk.deleteCustomResource",
-          "when": "view == operator-collection-sdk.resources && viewItem == operatorcollection-object",
+          "when": "view == operator-collection-sdk.resources && viewItem == customresource-object",
           "group": "inline"
         },
         {

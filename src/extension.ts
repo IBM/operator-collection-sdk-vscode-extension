@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as util from "./utilities/util";
 import * as path from 'path';
+import {VSCodeCommands, VSCodeViewIds} from './utilities/commandConstants';
 import {OperatorsTreeProvider} from './treeViews/providers/operatorProvider';
 import {OperatorItem} from './treeViews/operatorItems/operatorItem';
 import {ResourcesTreeProvider} from './treeViews/providers/resourceProvider';
@@ -13,12 +14,13 @@ import {CustomResourcesItem} from "./treeViews/resourceItems/customResourcesItem
 import {LinkItem} from "./treeViews/linkItems/linkItem";
 import {initResources} from './treeViews/icons';
 import {KubernetesObj} from "./kubernetes/kubernetes";
-import {OcCommand} from "./commands/ocCommand";
-import {OcSdkCommand} from './commands/ocSdkCommands';
+import {OcCommand} from "./shellCommands/ocCommand";
+import {OcSdkCommand} from './shellCommands/ocSdkCommands';
 import {Session} from "./utilities/session";
 
 export async function activate(context: vscode.ExtensionContext) {
 	initResources(context);
+
 	const k8s = new KubernetesObj();
 	const ocSdkCmd = new OcSdkCommand();
 	const ocCmd = new OcCommand();
@@ -34,34 +36,37 @@ export async function activate(context: vscode.ExtensionContext) {
 	const openshiftTreeProvider = new OpenShiftTreeProvider(session);
 	const linksTreeProvider = new LinksTreeProvider();
 
+	// Register Providers
+	vscode.window.registerTreeDataProvider(VSCodeViewIds.operators, operatorTreeProvider);
+	vscode.window.registerTreeDataProvider(VSCodeViewIds.resources, resourceTreeProvider);
+	vscode.window.registerTreeDataProvider(VSCodeViewIds.help, linksTreeProvider);
+	vscode.window.registerTreeDataProvider(VSCodeViewIds.openshiftClusterInfo, openshiftTreeProvider);
+
 	
-	vscode.commands.executeCommand("setContext", "operator-collection-sdk.sdkInstalled", isOcSDKinstalled);
-	vscode.commands.executeCommand("setContext", "operator-collection-sdk.loggedIn", userLoggedIntoOCP);
-	vscode.window.registerTreeDataProvider('operator-collection-sdk.operators', operatorTreeProvider);
-	vscode.window.registerTreeDataProvider('operator-collection-sdk.resources', resourceTreeProvider);
-	vscode.window.registerTreeDataProvider('operator-collection-sdk.links', linksTreeProvider);
-	vscode.window.registerTreeDataProvider('operator-collection-sdk.openshiftClusterInfo', openshiftTreeProvider);
-	context.subscriptions.push(signIn("operator-collection-sdk.login", ocCmd, session));
-	context.subscriptions.push(installOcSdk("operator-collection-sdk.install", ocSdkCmd, session));
-	context.subscriptions.push(updateProject("operator-collection-sdk.updateProject", ocCmd));
-	context.subscriptions.push(executeSdkCommandWithUserInput("operator-collection-sdk.createOperator"));
-	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.deleteOperator"));
-	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.redeployCollection"));
-	context.subscriptions.push(executeSimpleSdkCommand("operator-collection-sdk.redeployOperator"));
-	context.subscriptions.push(deleteCustomResource("operator-collection-sdk.deleteCustomResource", k8s));
-	context.subscriptions.push(executeContainerLogDownloadCommand("operator-collection-sdk.downloadLogs", k8s));
-	context.subscriptions.push(executeContainerLogDownloadCommand("operator-collection-sdk.downloadVerboseLogs", k8s));
-	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openEditLink"));
-	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openAddLink"));
-	context.subscriptions.push(executeOpenLinkCommand("operator-collection-sdk.openLink"));
-	context.subscriptions.push(vscode.commands.registerCommand("operator-collection-sdk.refresh", () => {
+	// Register Comands
+	vscode.commands.executeCommand("setContext", VSCodeCommands.sdkInstalled, isOcSDKinstalled);
+	vscode.commands.executeCommand("setContext", VSCodeCommands.loggedIn, userLoggedIntoOCP);
+	context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
+	context.subscriptions.push(installOcSdk(VSCodeCommands.install, ocSdkCmd, session));
+	context.subscriptions.push(updateProject(VSCodeCommands.updateProject, ocCmd));
+	context.subscriptions.push(executeSdkCommandWithUserInput(VSCodeCommands.createOperator));
+	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.deleteOperator));
+	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployCollection));
+	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployOperator));
+	context.subscriptions.push(deleteCustomResource(VSCodeCommands.deleteCustomResource, k8s));
+	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadLogs, k8s));
+	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadVerboseLogs, k8s));
+	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openEditLink));
+	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openAddLink));
+	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openLink));
+	context.subscriptions.push(vscode.commands.registerCommand(VSCodeCommands.refresh, () => {
 		operatorTreeProvider.refresh();
 		resourceTreeProvider.refresh();
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("operator-collection-sdk.resourceRefresh", () => {
+	context.subscriptions.push(vscode.commands.registerCommand(VSCodeCommands.resourceRefresh, () => {
 		resourceTreeProvider.refresh();
 	}));
-	context.subscriptions.push(vscode.commands.registerCommand("operator-collection-sdk.refreshAll", () => {
+	context.subscriptions.push(vscode.commands.registerCommand(VSCodeCommands.refreshAll, () => {
 		openshiftTreeProvider.refresh();
 		operatorTreeProvider.refresh();
 		resourceTreeProvider.refresh();
@@ -79,13 +84,13 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session)
 		}
 		if (session.ocSdkInstalled) {
 			vscode.window.showInformationMessage("IBM Operator Collection SDK already installed");
-			vscode.commands.executeCommand("operator-collection-sdk.refresh");
+			vscode.commands.executeCommand(VSCodeCommands.refresh);
 		} else {
 			vscode.window.showInformationMessage("Installing the IBM Operator Collection SDK");
 			ocSdkCmd.installOcSDKCommand().then(()=> {
 				session.ocSdkInstalled = true;
 				vscode.window.showInformationMessage("Successfully installed the IBM Operator Collection SDK");
-				vscode.commands.executeCommand("operator-collection-sdk.refresh");
+				vscode.commands.executeCommand(VSCodeCommands.refresh);
 			}).catch((e) => {
 				vscode.window.showErrorMessage(`Failure installing the IBM Operator Collection SDK: ${e}`);
 			});
@@ -99,7 +104,7 @@ function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
 		if (namespace) {
 			ocCmd.runOcProjectCommand(namespace).then(() => {
 				vscode.window.showInformationMessage("Successfully updating Project on OpenShift cluster");
-				vscode.commands.executeCommand("operator-collection-sdk.refreshAll");
+				vscode.commands.executeCommand(VSCodeCommands.refreshAll);
 			}).catch((e) => {
 				vscode.window.showErrorMessage(`Failure updating Project on OpenShift cluster: ${e}`);
 			});
@@ -107,14 +112,14 @@ function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
 	});
 }
 
-function signIn(command: string, ocCmd: OcCommand, session: Session): vscode.Disposable {
+function logIn(command: string, ocCmd: OcCommand, session: Session): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async () => {
 		const args = await util.requestLogInInfo();
 		if (args) {
 			ocCmd.runOcLoginCommand(args).then(() => {
 				session.loggedIntoOpenShift = true;
 				vscode.window.showInformationMessage("Successfully logged into OpenShift cluster");
-				vscode.commands.executeCommand("operator-collection-sdk.refreshAll");
+				vscode.commands.executeCommand(VSCodeCommands.refreshAll);
 			}).catch(() => {
 				session.loggedIntoOpenShift = false;
 				vscode.window.showErrorMessage(`Failure logging into OpenShift cluster`);
@@ -145,7 +150,7 @@ function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj)
 			} else {
 				workspacePath = path.parse(workspacePath).dir;
 				switch(command) {
-					case "operator-collection-sdk.downloadLogs": {
+					case VSCodeCommands.downloadLogs: {
 						const logsPath = await k8s.downloadContainerLogs(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name, workspacePath);
 						if (logsPath) {
 							try {
@@ -163,7 +168,7 @@ function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj)
 						}
 						break;
 					}
-					case "operator-collection-sdk.downloadVerboseLogs": {
+					case VSCodeCommands.downloadVerboseLogs: {
 						const apiVersion = await util.getConvertedApiVersion(workspacePath);
 						const kind = await util.selectCustomResourceFromOperatorInWorkspace(workspacePath);
 						let crInstance: string | undefined = "";
@@ -217,34 +222,37 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 		if (workspacePath) {
 			let ocSdkCommand = new OcSdkCommand(workspacePath);
 			switch(command) {
-				case "operator-collection-sdk.deleteOperator": {
+				case VSCodeCommands.deleteOperator: {
 					vscode.window.showInformationMessage("Delete Operator request in progress");
 					const poll = util.pollRun(10);
 					const runDeleteOperatorCommand = ocSdkCommand.runDeleteOperatorCommand();
 					Promise.all([poll, runDeleteOperatorCommand]).then(() => {
 						vscode.window.showInformationMessage("Delete Operator command executed successfully");
+						vscode.commands.executeCommand(VSCodeCommands.refresh);
 					}).catch((e) => {
 						vscode.window.showInformationMessage(`Failure executing Delete Operator command: RC ${e}`);
 					});
 					break;
 				}
-				case "operator-collection-sdk.redeployCollection": {
+				case VSCodeCommands.redeployCollection: {
 					vscode.window.showInformationMessage("Redeploy Collection request in progress");
-					const poll = util.pollRun(15);
+					const poll = util.pollRun(30);
 					const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand();
 					Promise.all([poll, runRedeployCollectionCommand]).then(() => {
 						vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
+						vscode.commands.executeCommand(VSCodeCommands.refresh);
 					}).catch((e) => {
 						vscode.window.showInformationMessage(`Failure executing Redeploy Collection command: RC ${e}`);
 					});
 					break;
 				}
-				case "operator-collection-sdk.redeployOperator": {
+				case VSCodeCommands.redeployOperator: {
 					vscode.window.showInformationMessage("Redeploy Operator request in progress");
-					const poll = util.pollRun(25);
+					const poll = util.pollRun(40);
 					const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand();
 					Promise.all([poll, runRedeployOperatorCommand]).then(() => {
 						vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
+						vscode.commands.executeCommand(VSCodeCommands.refresh);
 					}).catch((e) => {
 						vscode.window.showInformationMessage(`Failure executing Redeploy Operator command: RC ${e}`);
 					});
@@ -273,7 +281,7 @@ function executeSdkCommandWithUserInput(command: string): vscode.Disposable {
 			}
 		}
 		if (workspacePath) {
-			if (command === "operator-collection-sdk.createOperator") {
+			if (command === VSCodeCommands.createOperator) {
 				let playbookArgs = await util.requestOperatorInfo(workspacePath);
 				if (playbookArgs) {
 					let ocSdkCommand = new OcSdkCommand(workspacePath);
@@ -282,6 +290,7 @@ function executeSdkCommandWithUserInput(command: string): vscode.Disposable {
 					const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs);
 					Promise.all([poll, runCreateOperatorCommand]).then(() => {
 						vscode.window.showInformationMessage("Create Operator command executed successfully");
+						vscode.commands.executeCommand(VSCodeCommands.refresh);
 					}).catch((e) => {
 						vscode.window.showInformationMessage(`Failure executing Create Operator command: RC ${e}`);
 					});
@@ -296,12 +305,18 @@ function deleteCustomResource(command: string, k8s: KubernetesObj) {
 		const name = customResourcArg.customResourceObj.metadata.name
 		const apiVersion = customResourcArg.customResourceObj.apiVersion.split("/")[1];
 		const kind = customResourcArg.customResourceObj.kind;
-		const deleteSuccessful = await k8s.deleteCustomResource(name, apiVersion, kind);
-		if (deleteSuccessful) {
-			vscode.window.showInformationMessage(`Successfully deleted ${kind} resource`);
-			vscode.commands.executeCommand("operator-collection-sdk.resourceRefresh");
-		} else {
-			vscode.window.showErrorMessage(`Failed to delete ${kind} resource`);
-		}
+		const poll = util.pollRun(15);
+		const deleteCustomResourceCmd = k8s.deleteCustomResource(name, apiVersion, kind);
+		Promise.all([poll, deleteCustomResourceCmd]).then((values) => {
+			const deleteSuccessful = values[1];
+			if (deleteSuccessful) {
+				vscode.window.showInformationMessage(`Successfully deleted ${kind} resource`);
+				vscode.commands.executeCommand(VSCodeCommands.resourceRefresh);
+			} else {
+				vscode.window.showErrorMessage(`Failed to delete ${kind} resource`);
+			}
+		}).catch((e) => {
+			vscode.window.showErrorMessage(`Failed to delete ${kind} resource: ${e}`);
+		});
 	});
 }

@@ -9,7 +9,8 @@ type WorkSpaceOperators = {[key: string] : string};
 
 export enum Links {
 	ocSpecification = 'https://github.com/IBM/operator-collection-sdk/blob/main/docs/spec.md',
-	issues = 'https://github.com/IBM/operator-collection-sdk/issues',
+	ocSDKIssues = 'https://github.com/IBM/operator-collection-sdk/issues',
+	vscodeExtensionIssues = 'https://github.com/IBM/operator-collection-sdk-vscode-extension/issues',
 	tutorial = 'https://github.com/IBM/operator-collection-sdk/blob/main/docs/tutorial.md',
 }
 
@@ -383,7 +384,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
 	const saveToFile = await vscode.window.showQuickPick(yesNoOptions, {
 		canPickMany: false,
 		ignoreFocusOut: true,
-		placeHolder: "Store variables to file",
+		placeHolder: "Store variables to file?",
 		title: "Would you like to store these variables to a file to bypass prompts later?"
 	});
 

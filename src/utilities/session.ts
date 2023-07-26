@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import {OcSdkCommand} from "../commands/ocSdkCommands";
+import {OcSdkCommand} from "../shellCommands/ocSdkCommands";
 import {KubernetesObj} from "../kubernetes/kubernetes";
 
 export class Session {

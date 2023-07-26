@@ -11,7 +11,8 @@ export class LinksTreeProvider implements vscode.TreeDataProvider<LinkItem> {
         const links: Array<LinkItem> = [];
         if (!element) {
             links.push(new LinkItem("Operator Collection Spec", "Operator Collection specification documentation", new vscode.ThemeIcon("book"), util.Links.ocSpecification));
-            links.push(new LinkItem("Report an Issue", "Report an Operator Collection SDK issue", new vscode.ThemeIcon("bug"), util.Links.issues));
+            links.push(new LinkItem("Report an SDK Issue", "Report an Operator Collection SDK issue", new vscode.ThemeIcon("bug"), util.Links.ocSDKIssues));
+            links.push(new LinkItem("Report a VS Code Extension Issue", "Report an Operator Collection SDK VS Code extension issue", new vscode.ThemeIcon("bug"), util.Links.vscodeExtensionIssues));
             links.push(new LinkItem("Tutorial", "Learn more by trying the Operator Collection development tutorial", new vscode.ThemeIcon("mortar-board"), util.Links.tutorial));
         }
 
