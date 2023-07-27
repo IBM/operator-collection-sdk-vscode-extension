@@ -66,7 +66,11 @@ export function getBrokerObjectStatusIcon(customResourceObj: ObjectInstance): Th
     if (customResourceObj.metadata.deletionTimestamp) {
         return getPendingIcons();
     }
-    switch (customResourceObj.status.phase) {
+
+    if (!customResourceObj.status?.phase) {
+        return getPendingIcons();
+    }
+    switch (customResourceObj.status?.phase) {
         case "Successful": {
             return getPassingIcons();
         }

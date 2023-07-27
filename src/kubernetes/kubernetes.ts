@@ -14,7 +14,7 @@ export interface ObjectInstance {
     apiVersion: string;
     kind: string;
     metadata: ObjectMetadata;
-    status: ObjectStatus;
+    status?: ObjectStatus;
 }
 
 export interface ObjectMetadata {
@@ -24,7 +24,7 @@ export interface ObjectMetadata {
 }
 
 export interface ObjectStatus {
-    phase: string;
+    phase?: string;
 }
 
 interface RouteObject {

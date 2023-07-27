@@ -64,7 +64,7 @@
       },
       {
         "command": "operator-collection-sdk.openAddLink",
-        "title": "Add",
+        "title": "Create Resource",
         "category": "OC-SDK",
         "icon": "$(add)"
       },
@@ -239,7 +239,9 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "build": "rm -rf ./builds && mkdir builds && vsce package && extensionName=$(ls *.vsix) && mv ${extensionName} ./builds/${extensionName}",
+    "install": "extensionName=$(ls ./builds) && code --install-extension ./builds/${extensionName}"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
