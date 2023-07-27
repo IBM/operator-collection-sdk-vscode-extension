@@ -66,7 +66,7 @@ export class OcSdkCommand {
             "verify",
             "ibm.operator_collection_sdk"
         ];
-        return awaitthis.run(cmd, args, silenceOutput);
+        return this.run(cmd, args, silenceOutput);
     }
 
     /**
