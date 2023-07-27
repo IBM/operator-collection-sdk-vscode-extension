@@ -1,10 +1,11 @@
-# operator-collection-sdk-vscode-extension README
+# IBM Operator Collection SDK for VS Code
 
-This is the README for your extension "operator-collection-sdk-vscode-extension". After writing up a brief description, we recommend including the following sections.
+The IBM Operator Collection SDK extension simplifies the Operator Collection development experience by allowing you to manage the deployment of your operator in OpenShift, and the ability to debug direcly from your VS Code editor. 
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+## Deploy your operator in OpenShift
+- 
 
 For example if there is an image subfolder under your extension project workspace:
 

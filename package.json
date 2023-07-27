@@ -4,7 +4,11 @@
   "publisher": "ibm",
   "icon": "resources/icons/broker-logo.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
-  "version": "0.0.2",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension"
+  },
+  "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.80.0"
   },

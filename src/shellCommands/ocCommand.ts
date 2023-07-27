@@ -8,14 +8,19 @@ export class OcCommand {
      * @param args - The arguments to pass to the command
      * @returns - A Promise containing the the return code of the executed command
      */
-     private async run(args?: Array<string> | undefined): Promise<any> {
-        const options = {
+     private async run(args?: Array<string>): Promise<any> {
+        const options: | child_process.SpawnOptions = {
             env: process.env,
-            shell: true
+            shell: true,
+            stdio: 'inherit'
         };
         
         let childProcess: child_process.ChildProcess;
-        childProcess = child_process.spawn("oc", args, options);
+        if (args){
+            childProcess = child_process.spawn("oc", args, options);
+        } else {
+            childProcess = child_process.spawn("oc", options);
+        }
 
         childProcess.stdout?.on('data', data => {
             console.log(`${data}`);

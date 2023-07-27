@@ -19,7 +19,7 @@ export class Session {
      */
     async validateOcSDKInstallation(): Promise<boolean> {
         try {
-            await this.ocSdkCmd.runCollectionVerifyCommand(true);
+            await this.ocSdkCmd.runCollectionVerifyCommand();
             this.ocSdkInstalled = true;
             return true;
         } catch(e) {

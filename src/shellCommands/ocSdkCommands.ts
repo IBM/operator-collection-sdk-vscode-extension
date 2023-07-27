@@ -10,20 +10,22 @@ export class OcSdkCommand {
      * @param args - The arguments to pass to the command
      * @returns - A Promise containing the the return code of the executed command
      */
-     private async run(cmd: string, args?: Array<string> | undefined, silenceOutput?: boolean): Promise<any> {
+     private async run(cmd: string, args?: Array<string>, silenceOutput?: boolean): Promise<any> {
         process.env.PWD = this.pwd;
-        const options = {
+        const options: child_process.SpawnOptions = {
             cwd: this.pwd,
             env: process.env,
-            shell: true
+            shell: true,
+            stdio: 'inherit'
         };
         
         let childProcess: child_process.ChildProcess;
-        if (!args) {
-            childProcess = child_process.spawn(cmd, options);
-        } else {
+        if (args) {
             childProcess = child_process.spawn(cmd, args, options);
+        } else {
+            childProcess = child_process.spawn(cmd, options);
         }
+        
 
         if (!silenceOutput) {
             childProcess.stdout?.on('data', data => {
@@ -64,7 +66,7 @@ export class OcSdkCommand {
             "verify",
             "ibm.operator_collection_sdk"
         ];
-        return this.run(cmd, args, silenceOutput);
+        return awaitthis.run(cmd, args, silenceOutput);
     }
 
     /**

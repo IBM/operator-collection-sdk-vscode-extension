@@ -79,7 +79,6 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session)
 			await ocSdkCmd.runCollectionVerifyCommand(true);
 			session.ocSdkInstalled = true;
 		} catch(e) {
-			vscode.window.showWarningMessage("Install the IBM Operator Collection SDK use this extension");
 			session.ocSdkInstalled = false;
 		}
 		if (session.ocSdkInstalled) {
