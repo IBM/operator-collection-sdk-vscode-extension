@@ -2,6 +2,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from "fs";
+import * as yaml from 'js-yaml';
 import {setInterval} from "timers";
 import {KubernetesObj} from "../kubernetes/kubernetes";
 
@@ -262,22 +263,24 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
 	let args: Array<string> = [];
 	const yesNoOptions: Array<string> = ["Yes", "No"];
 	let useExtraVarsFile: string | undefined = "";
-	const extraVarsFilePath = path.join(workspacePath, "ocsdk-extra-vars.json");
-	if (fs.existsSync(extraVarsFilePath)) {
+	const ocsdkVarsFile = await vscode.workspace.findFiles("**/ocsdk-extra-vars.*ml");
+	let extraVarsFilePath: string = "";
+	if (ocsdkVarsFile.length > 0) {
+		extraVarsFilePath = ocsdkVarsFile[0].fsPath;
 		useExtraVarsFile = await vscode.window.showQuickPick(yesNoOptions, {
 			canPickMany: false,
 			ignoreFocusOut: true,
 			placeHolder: "Use existing extra vars file?",
 			title: "Use existing extra vars file to bypass prompts?"
 		});
+		if (useExtraVarsFile === undefined) {
+			return undefined;
+		} else if (useExtraVarsFile.toLowerCase() === "yes") {
+			args.push(`--extra-vars "@${extraVarsFilePath}"`);
+			return args;
+		}
 	}
 
-	if (useExtraVarsFile === undefined) {
-		return undefined;
-	} else if (useExtraVarsFile.toLowerCase() === "yes") {
-		args.push(`--extra-vars "@${extraVarsFilePath}"`);
-		return args;
-	}
 
 	const options: Array<string> = ["remote", "local"];
 
@@ -401,12 +404,15 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
 		ssh_key: zosEndpointSSHKey,
 	};
 	if (saveToFile.toLowerCase() === "yes") {
+		extraVarsFilePath = path.join(workspacePath, "ocsdk-extra-vars.yml");
 		if (zosEndpointPassphrase === "") { // only store passphrase variable if it's empty
 			operatorVariables.passphrase = "";
 		}
+		
 		const stringData = JSON.stringify(operatorVariables, null, 2);
+		const varsYaml = yaml.dump(JSON.parse(stringData));
 		try {
-			fs.writeFileSync(extraVarsFilePath, stringData);
+			fs.writeFileSync(extraVarsFilePath, varsYaml);
 		} catch (e) {
 			console.error("Failure storing variables to file");
 		}
