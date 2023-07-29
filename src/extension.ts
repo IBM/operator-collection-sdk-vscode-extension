@@ -28,6 +28,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const isOcSDKinstalled = await session.validateOcSDKInstallation();
 	const userLoggedIntoOCP = await session.validateOpenShiftAccess();
+	const outputChannel = vscode.window.createOutputChannel('IBM Operator Collection SDK');
 
 
 
@@ -47,12 +48,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.commands.executeCommand("setContext", VSCodeCommands.sdkInstalled, isOcSDKinstalled);
 	vscode.commands.executeCommand("setContext", VSCodeCommands.loggedIn, userLoggedIntoOCP);
 	context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
-	context.subscriptions.push(installOcSdk(VSCodeCommands.install, ocSdkCmd, session));
+	context.subscriptions.push(installOcSdk(VSCodeCommands.install, ocSdkCmd, session, outputChannel));
 	context.subscriptions.push(updateProject(VSCodeCommands.updateProject, ocCmd));
-	context.subscriptions.push(executeSdkCommandWithUserInput(VSCodeCommands.createOperator));
-	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.deleteOperator));
-	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployCollection));
-	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployOperator));
+	context.subscriptions.push(executeSdkCommandWithUserInput(VSCodeCommands.createOperator, outputChannel));
+	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.deleteOperator, outputChannel));
+	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployCollection, outputChannel));
+	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployOperator, outputChannel));
 	context.subscriptions.push(deleteCustomResource(VSCodeCommands.deleteCustomResource, k8s));
 	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadLogs, k8s));
 	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadVerboseLogs, k8s));
@@ -73,10 +74,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	}));
 }
 
-function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session): vscode.Disposable {
+function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async () => {
 		try {
-			await ocSdkCmd.runCollectionVerifyCommand(true);
+			await ocSdkCmd.runCollectionVerifyCommand();
 			session.ocSdkInstalled = true;
 		} catch(e) {
 			session.ocSdkInstalled = false;
@@ -85,8 +86,9 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session)
 			vscode.window.showInformationMessage("IBM Operator Collection SDK already installed");
 			vscode.commands.executeCommand(VSCodeCommands.refresh);
 		} else {
+			outputChannel?.show();
 			vscode.window.showInformationMessage("Installing the IBM Operator Collection SDK");
-			ocSdkCmd.installOcSDKCommand().then(()=> {
+			ocSdkCmd.installOcSDKCommand(outputChannel).then(()=> {
 				session.ocSdkInstalled = true;
 				vscode.window.showInformationMessage("Successfully installed the IBM Operator Collection SDK");
 				vscode.commands.executeCommand(VSCodeCommands.refresh);
@@ -206,7 +208,7 @@ function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj)
  * @param command — The VS Code command to execute
  * @returns - The vscode.Disposable class
  */
-function executeSimpleSdkCommand(command: string): vscode.Disposable {
+function executeSimpleSdkCommand(command: string, outputChannel?: vscode.OutputChannel): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem) => {
 		let workspacePath: string | undefined = "";
 		if (operatorItemArg) {
@@ -220,11 +222,12 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 		}
 		if (workspacePath) {
 			let ocSdkCommand = new OcSdkCommand(workspacePath);
+			outputChannel?.show();
 			switch(command) {
 				case VSCodeCommands.deleteOperator: {
 					vscode.window.showInformationMessage("Delete Operator request in progress");
 					const poll = util.pollRun(10);
-					const runDeleteOperatorCommand = ocSdkCommand.runDeleteOperatorCommand();
+					const runDeleteOperatorCommand = ocSdkCommand.runDeleteOperatorCommand(outputChannel);
 					Promise.all([poll, runDeleteOperatorCommand]).then(() => {
 						vscode.window.showInformationMessage("Delete Operator command executed successfully");
 						vscode.commands.executeCommand(VSCodeCommands.refresh);
@@ -236,7 +239,7 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 				case VSCodeCommands.redeployCollection: {
 					vscode.window.showInformationMessage("Redeploy Collection request in progress");
 					const poll = util.pollRun(30);
-					const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand();
+					const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel);
 					Promise.all([poll, runRedeployCollectionCommand]).then(() => {
 						vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
 						vscode.commands.executeCommand(VSCodeCommands.refresh);
@@ -248,7 +251,7 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
 				case VSCodeCommands.redeployOperator: {
 					vscode.window.showInformationMessage("Redeploy Operator request in progress");
 					const poll = util.pollRun(40);
-					const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand();
+					const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand(outputChannel);
 					Promise.all([poll, runRedeployOperatorCommand]).then(() => {
 						vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
 						vscode.commands.executeCommand(VSCodeCommands.refresh);
@@ -267,7 +270,7 @@ function executeSimpleSdkCommand(command: string): vscode.Disposable {
  * @param command — The VS Code command to execute
  * @returns - The vscode.Disposable class
  */
-function executeSdkCommandWithUserInput(command: string): vscode.Disposable {
+function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.OutputChannel): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem) => {
 		let workspacePath: string | undefined = "";
 		if (operatorItemArg) {
@@ -280,13 +283,14 @@ function executeSdkCommandWithUserInput(command: string): vscode.Disposable {
 			}
 		}
 		if (workspacePath) {
+			outputChannel?.show();
 			if (command === VSCodeCommands.createOperator) {
 				let playbookArgs = await util.requestOperatorInfo(workspacePath);
 				if (playbookArgs) {
 					let ocSdkCommand = new OcSdkCommand(workspacePath);
 					vscode.window.showInformationMessage("Create Operator request in progress");
 					const poll = util.pollRun(40);
-					const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs);
+					const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel);
 					Promise.all([poll, runCreateOperatorCommand]).then(() => {
 						vscode.window.showInformationMessage("Create Operator command executed successfully");
 						vscode.commands.executeCommand(VSCodeCommands.refresh);

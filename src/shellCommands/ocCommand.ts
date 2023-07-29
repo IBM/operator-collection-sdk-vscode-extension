@@ -12,7 +12,7 @@ export class OcCommand {
         const options: | child_process.SpawnOptions = {
             env: process.env,
             shell: true,
-            stdio: 'inherit'
+            stdio: 'pipe'
         };
         
         let childProcess: child_process.ChildProcess;
