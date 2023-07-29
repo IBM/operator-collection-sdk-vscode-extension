@@ -62,7 +62,7 @@ export function getPodContainerStatusIcon(containerStatus: k8s.V1ContainerStatus
     }
 }
 
-export function getBrokerObjectStatusIcon(customResourceObj: ObjectInstance): ThemeIcons {
+export function getCustomResourceStatusIcon(customResourceObj: ObjectInstance): ThemeIcons {
     if (customResourceObj.metadata.deletionTimestamp) {
         return getPendingIcons();
     }
@@ -72,6 +72,9 @@ export function getBrokerObjectStatusIcon(customResourceObj: ObjectInstance): Th
     }
     switch (customResourceObj.status?.phase) {
         case "Successful": {
+            return getPassingIcons();
+        }
+        case "Succeeded": {
             return getPassingIcons();
         }
         case "Failed": {

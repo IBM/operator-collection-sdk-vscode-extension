@@ -8,7 +8,7 @@ export class OperatorCollectionsItem extends ResourceTreeItem {
     constructor(public readonly subOperatorConfigObj: ObjectInstance, public readonly link: string) {
         super(subOperatorConfigObj.metadata.name, vscode.TreeItemCollapsibleState.None);
         this.contextValue = "operatorcollection-object";
-        this.iconPath = icons.getBrokerObjectStatusIcon(subOperatorConfigObj);
+        this.iconPath = icons.getCustomResourceStatusIcon(subOperatorConfigObj);
     }
 }
 

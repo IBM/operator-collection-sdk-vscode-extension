@@ -8,7 +8,7 @@ export class ZosEndpointsItem extends ResourceTreeItem {
     constructor(public readonly zosendpointObj: ObjectInstance, public readonly link: string) {
         super(zosendpointObj.metadata.name, vscode.TreeItemCollapsibleState.None);
         this.contextValue = "zosendpoint-object";
-        this.iconPath = icons.getBrokerObjectStatusIcon(zosendpointObj);
+        this.iconPath = icons.getCustomResourceStatusIcon(zosendpointObj);
     }
 }
 

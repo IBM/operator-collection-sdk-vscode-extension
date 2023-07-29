@@ -8,7 +8,7 @@ export class CustomResourcesItem extends ResourceTreeItem {
     constructor(public readonly customResourceObj: ObjectInstance, public readonly link: string) {
         super(customResourceObj.metadata.name, vscode.TreeItemCollapsibleState.None);
         this.contextValue = "customresource-object";
-        this.iconPath = icons.getBrokerObjectStatusIcon(customResourceObj);
+        this.iconPath = icons.getCustomResourceStatusIcon(customResourceObj);
     }
 }
 
