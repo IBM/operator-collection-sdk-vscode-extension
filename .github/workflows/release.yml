@@ -14,8 +14,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Determine tag
+        run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
+
+      - name: Check-out repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Install Node.js
         uses: actions/setup-node@v3
@@ -46,6 +52,12 @@ jobs:
     steps:
       - name: Determine tag
         run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
+
+      - name: Check-out repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ env.RELEASE_TAG }}
         
       - uses: actions/download-artifact@v2
         with:
