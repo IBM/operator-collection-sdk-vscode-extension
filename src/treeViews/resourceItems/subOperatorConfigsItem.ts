@@ -1,16 +1,3 @@
-import * as vscode from "vscode";
-import {KubernetesObj, ObjectInstance} from "../../kubernetes/kubernetes";
-import * as icons from "../icons";
-import {ResourceTreeItem} from "./resourceTreeItems";
-import * as util from '../../utilities/util';
-
-export class SubOperatorConfigsItem extends ResourceTreeItem {
-    constructor(public readonly subOperatorConfigObj: ObjectInstance, public readonly link: string) {
-        super(subOperatorConfigObj.metadata.name, vscode.TreeItemCollapsibleState.None);
-        this.contextValue = "suboperatorconfig-object";
-        this.iconPath = icons.getCustomResourceStatusIcon(subOperatorConfigObj);
-    }
-}
 
 export async function getSubOperatorConfigsItem(operatorName: string): Promise<SubOperatorConfigsItem[]> {
 	const subOperatorConfigItems: Array<SubOperatorConfigsItem> = [];
