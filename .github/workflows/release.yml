@@ -54,8 +54,7 @@ jobs:
 
       - name: Upload Extension to GitHub
         run: |
-          echo "EXTENSION_LOCATION=~/download/extension/$(ls ~/download/extension)" >> $GITHUB_ENV
-          gh release upload ${RELEASE_TAG} ${EXTENSION_LOCATION}
+          gh release upload ${RELEASE_TAG} ~/download/extension/$(ls ~/download/extension)
         env:
           GITHUB_TOKEN: ${{ github.TOKEN }}
 
