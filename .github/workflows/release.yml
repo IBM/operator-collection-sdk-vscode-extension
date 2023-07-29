@@ -28,12 +28,15 @@ jobs:
         run: npm install -g @vscode/vsce
 
       - name: Build Extension
-        run: npm run build
+        run: |
+          npm run build
+          echo "EXTENSION_LOCATION=${GITHUB_WORKSPACE}/builds/$(ls ${GITHUB_WORKSPACE}/builds)" >> $GITHUB_ENV
 
       - uses: actions/upload-artifact@v2
         with:
           name: oc-sdk-extension
-          path: "${GITHUB_WORKSPACE}/builds/*.vsix"
+          path: "${EXTENSION_LOCATION}"
+          if-no-files-found: error
 
   release:
     name: Release
