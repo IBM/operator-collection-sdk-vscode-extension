@@ -305,7 +305,7 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 
 function deleteCustomResource(command: string, k8s: KubernetesObj) {
 	return vscode.commands.registerCommand(command, async (customResourcArg: CustomResourcesItem) => {
-		const name = customResourcArg.customResourceObj.metadata.name
+		const name = customResourcArg.customResourceObj.metadata.name;
 		const apiVersion = customResourcArg.customResourceObj.apiVersion.split("/")[1];
 		const kind = customResourcArg.customResourceObj.kind;
 		const poll = util.pollRun(15);
