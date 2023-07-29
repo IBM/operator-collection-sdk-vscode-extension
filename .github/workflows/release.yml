@@ -33,7 +33,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: oc-sdk-extension
-          path: "*.vsix"
+          path: "${GITHUB_WORKSPACE}/builds/*.vsix"
 
   release:
     name: Release
