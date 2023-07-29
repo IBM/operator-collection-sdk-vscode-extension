@@ -234,14 +234,18 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
+    "test-compile": "tsc -p ./",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "build": "rm -rf ./builds && mkdir builds && vsce package && extensionName=$(ls *.vsix) && mv ${extensionName} ./builds/${extensionName}",
-    "deploy": "extensionName=$(ls ./builds) && code --install-extension ./builds/${extensionName}"
+    "build": "vsce package",
+    "deploy": "extensionName=$(ls *.vsix) && code --install-extension ${extensionName}"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
@@ -251,6 +255,7 @@
     "@typescript-eslint/eslint-plugin": "^5.59.8",
     "@typescript-eslint/parser": "^5.59.8",
     "@vscode/test-electron": "^2.3.2",
+    "esbuild": "^0.18.17",
     "eslint": "^8.41.0",
     "glob": "^8.1.0",
     "mocha": "^10.2.0",
