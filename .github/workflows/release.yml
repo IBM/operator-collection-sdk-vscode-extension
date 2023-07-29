@@ -44,6 +44,9 @@ jobs:
     needs: [build]
 
     steps:
+      - name: Determine tag
+        run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
+        
       - uses: actions/download-artifact@v2
         with:
           name: oc-sdk-extension
@@ -51,7 +54,8 @@ jobs:
 
       - name: Upload Extension to GitHub
         run: |
-          echo "EXTENSION_LOCATION=~/download/extension/$(ls ~/download/extension)" 
+          echo "EXTENSION_LOCATION=~/download/extension/$(ls ~/download/extension)" >> $GITHUB_ENV
           gh release upload ${RELEASE_TAG} ${EXTENSION_LOCATION}
         env:
           GITHUB_TOKEN: ${{ github.TOKEN }}
+
