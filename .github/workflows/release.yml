@@ -35,7 +35,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: oc-sdk-extension
-          path: ${{ env.EXTENSION_LOCATION }}"
+          path: ${{ env.EXTENSION_LOCATION }}
           if-no-files-found: error
 
   release:
