@@ -1,6 +1,6 @@
 {
   "name": "operator-collection-sdk",
-  "displayName": "Operator Collection SDK",
+  "displayName": "IBM Operator Collection SDK",
   "publisher": "ibm",
   "icon": "resources/icons/broker-logo.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
@@ -151,7 +151,7 @@
       "activitybar": [
         {
           "id": "operator-collection-sdk",
-          "title": "Operator Collection SDK",
+          "title": "IBM Operator Collection SDK",
           "icon": "resources/icons/broker-logo.png"
         }
       ]
