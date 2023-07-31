@@ -1,6 +1,10 @@
+/*
+ * Copyright 2023 IBM Inc. All rights reserved
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import * as vscode from 'vscode';
 import * as util from "../../utilities/util";
-import * as path from 'path';
 import {OperatorItem, getOperatorItems} from "../operatorItems/operatorItem";
 import {ResourceItem} from "../resourceItems/resourceItem";
 import {ZosEndpointItem} from "../resourceItems/zosendpointItem";

@@ -1,3 +1,8 @@
+/*
+ * Copyright 2023 IBM Inc. All rights reserved
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 export enum VSCodeCommands {
 	sdkInstalled = "operator-collection-sdk.sdkInstalled",
 	loggedIn = "operator-collection-sdk.loggedIn",

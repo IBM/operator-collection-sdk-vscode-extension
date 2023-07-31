@@ -1,3 +1,8 @@
+/*
+ * Copyright 2023 IBM Inc. All rights reserved
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import * as vscode from "vscode";
 import * as k8s from '@kubernetes/client-node';
 import {ObjectInstance, ObjectStatus} from "../kubernetes/kubernetes";

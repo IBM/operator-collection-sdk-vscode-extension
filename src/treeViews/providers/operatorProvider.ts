@@ -1,3 +1,8 @@
+/*
+ * Copyright 2023 IBM Inc. All rights reserved
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import * as vscode from 'vscode';
 import {OperatorItem, getOperatorItems} from "../operatorItems/operatorItem";
 import {OperatorPodItem, getOperatorPodItems} from "../operatorItems/operatorPodItem";

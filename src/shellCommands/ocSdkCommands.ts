@@ -1,3 +1,8 @@
+/*
+ * Copyright 2023 IBM Inc. All rights reserved
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
 
