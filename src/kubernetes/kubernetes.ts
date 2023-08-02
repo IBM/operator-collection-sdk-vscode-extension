@@ -96,7 +96,7 @@ export class KubernetesObj {
         ).then((res) => {
             return res.body.items;
         }).catch((e) => {
-            const msg = `Failure retrieving Pods in namespace. ${e.body}`;
+            const msg = `Failure retrieving Pods in namespace. ${e.response.statusMessage}`;
             console.error(msg);
             vscode.window.showErrorMessage(msg);
             return undefined;
@@ -191,7 +191,7 @@ export class KubernetesObj {
             }
             return logsPath;
         }).catch((e) => {
-            const msg = `Failure retrieving Pod logs. ${e.body}`;
+            const msg = `Failure retrieving Pod logs. ${e.response.statusMessage}`;
             console.error(msg);
             vscode.window.showErrorMessage(msg);
             return undefined;
@@ -217,7 +217,7 @@ export class KubernetesObj {
         return ocCmd.runOcCpCommand(podName, this.namespace, containerName, logsPath, apiVersion, kind, instanceName).then((res) => {
             return logsPath;
         }).catch((e) => {
-            const msg = `Failure running the "oc cp" command. ${e.body}`;
+            const msg = `Failure running the "oc cp" command. ${e.response.statusMessage}`;
             console.error(msg);
             vscode.window.showErrorMessage(msg);
             return undefined;
@@ -244,7 +244,7 @@ export class KubernetesObj {
             if (e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                 return undefined;
             } else {
-                const msg = `Failure retrieving Custom Resource list. ${e.body}`;
+                const msg = `Failure retrieving Custom Resource list. ${e.response.statusMessage}`;
                 console.error(msg);
                 vscode.window.showErrorMessage(msg);
                 return undefined;
@@ -271,7 +271,7 @@ export class KubernetesObj {
             if (e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                 return false;
             } else {
-                const msg = `Failure deleting Custom Resource object. ${e.body}`;
+                const msg = `Failure deleting Custom Resource object. ${e.response.statusMessage}`;
                 console.error(msg);
                 vscode.window.showErrorMessage(msg);
                 return false;
@@ -328,7 +328,7 @@ export class KubernetesObj {
                 if (e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                     return undefined;
                 } else {
-                    const msg = `Failure retrieving Broker object list. ${e.body}`;
+                    const msg = `Failure retrieving Broker object list. ${e.response.statusMessage}`;
                     console.error(msg);
                     vscode.window.showErrorMessage(msg);
                     return undefined;
@@ -349,7 +349,7 @@ export class KubernetesObj {
                 if (e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                     return undefined;
                 } else {
-                    const msg = `Failure retrieving Broker object list. ${e.body}`;
+                    const msg = `Failure retrieving Broker object list. ${e.response.statusMessage}`;
                     console.error(msg);
                     vscode.window.showErrorMessage(msg);
                     return undefined;
@@ -388,7 +388,7 @@ export class KubernetesObj {
             if (e.response.statusCode === 404) { 
                 return undefined;
             } else {
-                const msg = `Failure retrieving Custom Resource instance names. ${e.body}`;
+                const msg = `Failure retrieving Custom Resource instance names. ${e.response.statusMessage}`;
                 console.error(msg);
                 vscode.window.showErrorMessage(msg);
                 return undefined;
@@ -428,9 +428,9 @@ export class KubernetesObj {
                 return undefined;
             }
         }).catch((e) => {
-            const msg = `Failure retrieving ClusterServiceVersion. ${e.body}`;
+            const msg: any = `Failure retrieving ClusterServiceVersion. ${e}`;
             console.error(msg);
-            vscode.window.showErrorMessage(msg);
+            vscode.window.showErrorMessage(msg.toString());
             return undefined;
         });
         
@@ -489,7 +489,7 @@ export class KubernetesObj {
             }
             return namespaceList;
         }).catch((e) => {
-            const msg = `Failure retrieving Namespace list: ${e.body}`;
+            const msg = `Failure retrieving Namespace list: ${e.response.statusMessage}`;
             console.error(msg);
             vscode.window.showErrorMessage(msg);
             return undefined;
