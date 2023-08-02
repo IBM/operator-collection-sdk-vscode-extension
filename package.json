@@ -1,19 +1,35 @@
 {
   "name": "operator-collection-sdk",
   "displayName": "IBM Operator Collection SDK",
-  "publisher": "ibm",
+  "publisher": "IBM",
+  "author": {
+    "name": "IBM Corporation"
+  },
   "icon": "resources/icons/broker-logo.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
   "version": "0.1.0",
   "repository": {
+    "type": "git",
     "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension/issues"
   },
   "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.80.0"
   },
   "categories": [
-    "Other"
+    "Debuggers",
+    "Testing"
+  ],
+  "keywords": [
+    "IBM",
+    "z/OS",
+    "Operator Collection",
+    "Ansible",
+    "Hybrid Cloud",
+    "Z"
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
@@ -248,6 +264,7 @@
     "deploy": "extensionName=$(ls *.vsix) && code --install-extension ${extensionName}"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.1",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
@@ -256,6 +273,7 @@
     "@typescript-eslint/parser": "^5.59.8",
     "@vscode/test-electron": "^2.3.2",
     "eslint": "^8.41.0",
+    "fs-extra": "^11.1.1",
     "glob": "^8.1.0",
     "mocha": "^10.2.0",
     "ts-loader": "^9.4.4",

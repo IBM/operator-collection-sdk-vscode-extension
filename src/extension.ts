@@ -96,6 +96,7 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 			ocSdkCmd.installOcSDKCommand(outputChannel).then(()=> {
 				session.ocSdkInstalled = true;
 				vscode.window.showInformationMessage("Successfully installed the IBM Operator Collection SDK");
+				vscode.commands.executeCommand(VSCodeCommands.login);
 				vscode.commands.executeCommand(VSCodeCommands.refresh);
 			}).catch((e) => {
 				vscode.window.showErrorMessage(`Failure installing the IBM Operator Collection SDK: ${e}`);
@@ -119,8 +120,15 @@ function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
 }
 
 function logIn(command: string, ocCmd: OcCommand, session: Session): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async () => {
-		const args = await util.requestLogInInfo();
+	return vscode.commands.registerCommand(command, async (params?: string[]) => {
+		console.log("Here are my login args");
+		console.log(params);
+		let args: string[] | undefined = [];
+		if (params?.length === 0) {
+			args = await util.requestLogInInfo();
+		} else {
+			args = params;
+		}
 		if (args) {
 			ocCmd.runOcLoginCommand(args).then(() => {
 				session.loggedIntoOpenShift = true;
