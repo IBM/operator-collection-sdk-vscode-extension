@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "zos_ims_operator"
+		},
+		{
+			"path": "zos_cics_operator"
+		}
+	],
+	"settings": {}
+}
