@@ -266,12 +266,42 @@ interface OperatorVariables {
  */
 export async function requestOperatorInfo(workspacePath: string): Promise<string[] | undefined > {
 	let args: Array<string> = [];
-	const ocsdkVarsFile = await vscode.workspace.findFiles("**/ocsdk-extra-vars.*ml");
+	const yesNoOptions: Array<string> = ["Yes", "No"];
+	const filePattern = new vscode.RelativePattern(workspacePath, "ocsdk-extra-vars.*ml");
+	const ocsdkVarsFile = await vscode.workspace.findFiles(filePattern);
 	let extraVarsFilePath: string = "";
 	if (ocsdkVarsFile.length === 1) {
 		extraVarsFilePath = ocsdkVarsFile[0].fsPath;
+		const operatorConfigData = fs.readFileSync(extraVarsFilePath);
+		const operatorVars = yaml.load(operatorConfigData.toString()) as OperatorVariables;
+
+		if (operatorVars.passphrase === undefined) {
+			const passphrase = await promptForPassphrase();
+
+			if (passphrase) {
+				args.push(`-e "passphrase=${passphrase}"`);
+			} else if (passphrase === "") {
+				args.push(`-e "passphrase="`);
+				const bypassPassphrase = await vscode.window.showQuickPick(yesNoOptions, {
+					canPickMany: false,
+					ignoreFocusOut: true,
+					placeHolder: "Bypass passphrase prompts?",
+					title: "Would you like to bypass passphrase prompts later?"
+				});
+				if (bypassPassphrase?.toLowerCase() === "yes") {
+					operatorVars.passphrase = "";
+					const operatorVarsStringData = JSON.stringify(operatorVars);
+					const updatedVarsYaml = yaml.dump(JSON.parse(operatorVarsStringData));
+					try {
+						fs.writeFileSync(extraVarsFilePath, updatedVarsYaml);
+					} catch (e) {
+						console.error("Failure storing variables to file");
+					}
+				}
+			} 
+		}
 		args.push(`--extra-vars "@${extraVarsFilePath}"`);
-			return args;
+		return args;
 	} else if (ocsdkVarsFile.length > 1) {
 		vscode.window.showErrorMessage("Multiple ocsdk-extra-vars files in Operator Collection not allowed");
 		return undefined;
@@ -365,11 +395,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
 	}
 	
 
-	const zosEndpointPassphrase = await vscode.window.showInputBox({
-		prompt: "Enter the passphrase for the SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
-		password: true,
-		ignoreFocusOut: true
-	});
+	const zosEndpointPassphrase = await promptForPassphrase();
 
 	if (zosEndpointPassphrase === undefined) {
 		return undefined;
@@ -379,7 +405,6 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
 		args.push(`-e "passphrase=${zosEndpointPassphrase}"`);
 	}
 
-	const yesNoOptions: Array<string> = ["Yes", "No"];
 	const saveToFile = await vscode.window.showQuickPick(yesNoOptions, {
 		canPickMany: false,
 		ignoreFocusOut: true,
@@ -415,6 +440,14 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
 		
 	}
 	return args;
+}
+
+async function promptForPassphrase(): Promise<string | undefined> {
+	return await vscode.window.showInputBox({
+		prompt: "Enter the passphrase for the SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
+		password: true,
+		ignoreFocusOut: true
+	});
 }
 
 export async function generateProjectDropDown(): Promise<string | undefined> {
