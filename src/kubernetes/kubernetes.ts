@@ -241,7 +241,7 @@ export class KubernetesObj {
             let customResourcesList: ObjectList = JSON.parse(customResourcesString);
             return customResourcesList;
         }).catch((e) => {
-            if (e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+            if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                 return undefined;
             } else {
                 const msg = `Failure retrieving Custom Resource list. ${e.response.statusMessage}`;
@@ -268,7 +268,7 @@ export class KubernetesObj {
         ).then(() => {
             return true;
         }).catch((e) => {
-            if (e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+            if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                 return false;
             } else {
                 const msg = `Failure deleting Custom Resource object. ${e.response.statusMessage}`;
@@ -325,7 +325,7 @@ export class KubernetesObj {
                 let objsList: ObjectList = JSON.parse(objsString);
                 return objsList;
             }).catch((e) => {
-                if (e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+                if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                     return undefined;
                 } else {
                     const msg = `Failure retrieving Broker object list. ${e.response.statusMessage}`;
@@ -346,7 +346,7 @@ export class KubernetesObj {
                 let objsList: ObjectList = JSON.parse(objsString);
                 return objsList;
             }).catch((e) => {
-                if (e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+                if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                     return undefined;
                 } else {
                     const msg = `Failure retrieving Broker object list. ${e.response.statusMessage}`;
@@ -385,7 +385,7 @@ export class KubernetesObj {
             }
             return crInstanceNames;
         }).catch((e) => {
-            if (e.response.statusCode === 404) { 
+            if (e.response.statusCode && e.response.statusCode === 404) { 
                 return undefined;
             } else {
                 const msg = `Failure retrieving Custom Resource instance names. ${e.response.statusMessage}`;
@@ -444,7 +444,7 @@ export class KubernetesObj {
             "clusterserviceversions",
             csvName
         ).then((res) => {
-            if (res.response.statusCode === 200) {
+            if (res.response.statusCode && res.response.statusCode === 200) {
                 return true;
             }
         }).catch(() => {
