@@ -293,7 +293,11 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 				let playbookArgs = await util.requestOperatorInfo(workspacePath);
 				if (playbookArgs) {
 					let ocSdkCommand = new OcSdkCommand(workspacePath);
-					vscode.window.showInformationMessage("Create Operator request in progress");
+					if (playbookArgs.length === 1 && playbookArgs[0].includes("ocsdk-extra-vars")) {
+						vscode.window.showInformationMessage("Create Operator request in progress using local variables file");
+					} else {
+						vscode.window.showInformationMessage("Create Operator request in progress");
+					}
 					const poll = util.pollRun(40);
 					const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel);
 					Promise.all([poll, runCreateOperatorCommand]).then(() => {

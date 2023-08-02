@@ -266,26 +266,16 @@ interface OperatorVariables {
  */
 export async function requestOperatorInfo(workspacePath: string): Promise<string[] | undefined > {
 	let args: Array<string> = [];
-	const yesNoOptions: Array<string> = ["Yes", "No"];
-	let useExtraVarsFile: string | undefined = "";
 	const ocsdkVarsFile = await vscode.workspace.findFiles("**/ocsdk-extra-vars.*ml");
 	let extraVarsFilePath: string = "";
-	if (ocsdkVarsFile.length > 0) {
+	if (ocsdkVarsFile.length === 1) {
 		extraVarsFilePath = ocsdkVarsFile[0].fsPath;
-		useExtraVarsFile = await vscode.window.showQuickPick(yesNoOptions, {
-			canPickMany: false,
-			ignoreFocusOut: true,
-			placeHolder: "Use existing extra vars file?",
-			title: "Use existing extra vars file to bypass prompts?"
-		});
-		if (useExtraVarsFile === undefined) {
-			return undefined;
-		} else if (useExtraVarsFile.toLowerCase() === "yes") {
-			args.push(`--extra-vars "@${extraVarsFilePath}"`);
+		args.push(`--extra-vars "@${extraVarsFilePath}"`);
 			return args;
-		}
+	} else if (ocsdkVarsFile.length > 1) {
+		vscode.window.showErrorMessage("Multiple ocsdk-extra-vars files in Operator Collection not allowed");
+		return undefined;
 	}
-
 
 	const options: Array<string> = ["remote", "local"];
 
@@ -389,6 +379,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
 		args.push(`-e "passphrase=${zosEndpointPassphrase}"`);
 	}
 
+	const yesNoOptions: Array<string> = ["Yes", "No"];
 	const saveToFile = await vscode.window.showQuickPick(yesNoOptions, {
 		canPickMany: false,
 		ignoreFocusOut: true,
