@@ -1,9 +1,10 @@
 # Change Log
 
-All notable changes to the "operator-collection-sdk-vscode-extension" extension will be documented in this file.
+### v0.2.0
+- Removed additional prompt asking if user would like to use extra vars file
+- Prompt for SSH Key passphrase when using extra vars file
+- Fix to detect extra vars file in specific Operator Collection, when multiple Operator Collections are listed in the workspace
+- Fixed undefined error messages
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+### v0.1.0
+- Initial prototype

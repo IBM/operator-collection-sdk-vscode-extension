@@ -7,7 +7,7 @@
   },
   "icon": "resources/icons/broker-logo.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension"
@@ -256,11 +256,12 @@
     "package": "webpack --mode production --devtool hidden-source-map",
     "test-compile": "tsc -p ./",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "watch": "npm run clean && webpack --watch --mode development --env esbuild",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
+    "clean": "rm -rf ./dist ./out",
     "test": "node ./out/test/runTest.js",
-    "build": "vsce package",
+    "build": "npm run clean && vsce package",
     "deploy": "extensionName=$(ls *.vsix) && code --install-extension ${extensionName}"
   },
   "devDependencies": {
