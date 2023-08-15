@@ -113,7 +113,7 @@ export function getTestClusterInfo(): TestCluster | Error {
         return {
             ocpServerUrl: serverUrl!,
             ocpToken: ocpToken!,
-            ocpNamespace: ocpNamespace!
+            ocpNamespace: ocpNamespace?.toLowerCase()!
         };
     }
 }
