@@ -46,11 +46,14 @@ jobs:
           xvfb-run -a npm run test
         if: runner.os == 'Linux'
         env:
-            OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
-            OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
+          OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
+          OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
 
       - name: Execute tests on non-Linux OS
         run: |
           export OCP_NAMESPACE=vscode-${GITHUB_REF_NAME}-${RUNNER_OS}  
           npm run test
         if: runner.os != 'Linux'
+        env:
+          OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
+          OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
