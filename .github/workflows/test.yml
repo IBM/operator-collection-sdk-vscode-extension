@@ -1,0 +1,56 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '**.md'
+    tags-ignore:
+      - '**'
+  pull_request_target:
+
+jobs:
+  authorize:
+    name: Authorize
+    environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository && 'external' || 'internal' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: "true"
+
+  test:
+    name: Test
+    needs: authorize
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest, windows-latest]
+
+    steps:
+      - name: Check-out repository for Branch builds
+        uses: actions/checkout@v3
+        if: github.event_name != 'pull_request_target'
+
+      - name: Check-out repository for PR builds
+        uses: actions/checkout@v3
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
+        if: github.event_name == 'pull_request_target'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Execut tests on Linux OS
+        run: |
+          export OCP_NAMESPACE=vscode-${GITHUB_REF_NAME}-${RUNNER_OS} 
+          xvfb-run -a npm run test
+        if: runner.os == 'Linux'
+        env:
+            OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
+            OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
+
+      - name: Execute tests on non-Linux OS
+        run: |
+          export OCP_NAMESPACE=vscode-${GITHUB_REF_NAME}-${RUNNER_OS}  
+          npm run test
+        if: runner.os != 'Linux'
