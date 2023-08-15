@@ -68,11 +68,20 @@ jobs:
           OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
           OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
 
-      - name: Execute tests on non-Linux OS
+      - name: Execute tests on Mac OS
         run: |
           export OCP_NAMESPACE=vscode-${GITHUB_REF_NAME}-${RUNNER_OS}  
           npm run test
-        if: runner.os != 'Linux'
+        if: runner.os == 'macOS'
+        env:
+          OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
+          OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
+
+      - name: Execute tests on Windows OS
+        run: |
+          set OCP_NAMESPACE=vscode-${GITHUB_REF_NAME}-${RUNNER_OS}  
+          npm run test
+        if: runner.os == 'Windows'
         env:
           OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
           OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
