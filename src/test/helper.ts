@@ -316,7 +316,6 @@ export class KubernetesObj {
         return this.coreV1Api.listNamespacedPod(this.namespace).then((res) => {
             return true;
         }).catch((e) => {
-            console.error(`Failure retrieving Pods in namespace. ${e.response.statusMessage}`);
             return false;
         });
     }
@@ -339,7 +338,8 @@ export class KubernetesObj {
         ).then((res) => {
             return res.body.items;
         }).catch((e) => {
-            console.error(`Failure retrieving Pods in namespace. ${e.response.statusMessage}`);
+            const errorObjectString = JSON.stringify(e);
+            console.error(`Failure retrieving Pods in namespace. ${errorObjectString}`);
             return undefined;
         });
     }
@@ -431,7 +431,8 @@ export class KubernetesObj {
             }
             return logsPath;
         }).catch((e) => {
-            console.error(`Failure retrieving Pod logs. ${e.response.statusMessage}`);
+            const errorObjectString = JSON.stringify(e);
+            console.error(`Failure retrieving Pod logs. ${errorObjectString}`);
             return undefined;
         });
     }
@@ -456,7 +457,8 @@ export class KubernetesObj {
             if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                 return undefined;
             } else {
-                console.error(`Failure retrieving Custom Resource list. ${e.response.statusMessage}`);
+                const errorObjectString = JSON.stringify(e);
+                console.error(`Failure retrieving Custom Resource list. ${errorObjectString}`);
                 return undefined;
             }
         });
@@ -481,7 +483,8 @@ export class KubernetesObj {
             if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                 return false;
             } else {
-                console.error(`Failure deleting Custom Resource object. ${e.response.statusMessage}`);
+                const errorObjectString = JSON.stringify(e);
+                console.error(`Failure deleting Custom Resource object. ${errorObjectString}`);
                 return false;
             }
         });
@@ -536,7 +539,8 @@ export class KubernetesObj {
                 if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                     return undefined;
                 } else {
-                    console.error(`Failure retrieving Broker object list. ${e.response.statusMessage}`);
+                    const errorObjectString = JSON.stringify(e);
+                    console.error(`Failure retrieving Broker object list. ${errorObjectString}`);
                     return undefined;
                 }
             });
@@ -555,7 +559,8 @@ export class KubernetesObj {
                 if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
                     return undefined;
                 } else {
-                    console.error(`Failure retrieving Broker object list. ${e.response.statusMessage}`);
+                    const errorObjectString = JSON.stringify(e);
+                    console.error(`Failure retrieving Broker object list. ${errorObjectString}`);
                     return undefined;
                 }
             });  
@@ -591,7 +596,8 @@ export class KubernetesObj {
             if (e.response.statusCode && e.response.statusCode === 404) { 
                 return undefined;
             } else {
-                console.error(`Failure retrieving Custom Resource instance names. ${e.response.statusMessage}`);
+                const errorObjectString = JSON.stringify(e);
+                console.error(`Failure retrieving Custom Resource instance names. ${errorObjectString}`);
                 return undefined;
             }
         });
@@ -629,7 +635,8 @@ export class KubernetesObj {
                 return undefined;
             }
         }).catch((e) => {
-            console.error(`Failure retrieving ClusterServiceVersion. ${e}`);
+            const errorObjectString = JSON.stringify(e);
+            console.error(`Failure retrieving ClusterServiceVersion. ${errorObjectString}`);
             return undefined;
         });
         
@@ -690,8 +697,8 @@ export class KubernetesObj {
                 return false;
             }
         }).catch((e) => {
-            const msg = `Failure retrieving Namespace list: ${e.response.statusMessage}`;
-            console.error(msg);
+            const errorObjectString = JSON.stringify(e);
+            console.error(`Failure retrieving Namespace list: ${errorObjectString}`);
             return undefined;
         });
     }
