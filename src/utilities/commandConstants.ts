@@ -30,3 +30,10 @@ export enum VSCodeViewIds {
 	help = "operator-collection-sdk.help",
 	openshiftClusterInfo = "operator-collection-sdk.openshiftClusterInfo"
 }
+
+export enum CustomResourcePhases {
+	successful = "Successful",
+	succeeded = "Succeeded",
+	failed = "Failed",
+	pending = "Pending"
+}
