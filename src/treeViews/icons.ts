@@ -5,7 +5,8 @@
 
 import * as vscode from "vscode";
 import * as k8s from '@kubernetes/client-node';
-import {ObjectInstance, ObjectStatus} from "../kubernetes/kubernetes";
+import {CustomResourcePhases} from '../utilities/commandConstants';
+import {ObjectInstance} from "../kubernetes/kubernetes";
 
 type Icons = {
     "dark": vscode.Uri,
@@ -76,16 +77,16 @@ export function getCustomResourceStatusIcon(customResourceObj: ObjectInstance): 
         return getPendingIcons();
     }
     switch (customResourceObj.status?.phase) {
-        case "Successful": {
+        case CustomResourcePhases.successful: {
             return getPassingIcons();
         }
-        case "Succeeded": {
+        case CustomResourcePhases.succeeded: {
             return getPassingIcons();
         }
-        case "Failed": {
+        case CustomResourcePhases.failed: {
             return getFailingIcons();
         }
-        case "Pending": {
+        case CustomResourcePhases.pending: {
             return getPendingIcons();
         }
         default: {

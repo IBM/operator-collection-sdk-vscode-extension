@@ -106,8 +106,13 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 }
 
 function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async () => {
-		const namespace = await util.generateProjectDropDown();
+	return vscode.commands.registerCommand(command, async (namespaceArg?: string) => {
+		let namespace: string | undefined;
+		if (namespaceArg) {
+			namespace = namespaceArg;
+		} else {
+			namespace = await util.generateProjectDropDown();
+		}
 		if (namespace) {
 			ocCmd.runOcProjectCommand(namespace).then(() => {
 				vscode.window.showInformationMessage("Successfully updating Project on OpenShift cluster");
@@ -121,10 +126,8 @@ function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
 
 function logIn(command: string, ocCmd: OcCommand, session: Session): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (params?: string[]) => {
-		console.log("Here are my login args");
-		console.log(params);
 		let args: string[] | undefined = [];
-		if (params?.length === 0) {
+		if (params === undefined || params?.length === 0) {
 			args = await util.requestLogInInfo();
 		} else {
 			args = params;
