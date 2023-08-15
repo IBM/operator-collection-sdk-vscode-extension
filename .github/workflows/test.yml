@@ -40,6 +40,20 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install oc cli
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          oc: latest
+
+      - name: Install Python Requirements
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Ansible
+        run: pip install ansible
+
       - name: Execut tests on Linux OS
         run: |
           export OCP_NAMESPACE=vscode-${GITHUB_REF_NAME}-${RUNNER_OS} 
