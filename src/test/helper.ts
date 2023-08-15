@@ -715,7 +715,7 @@ export class KubernetesObj {
             return namespaceObj;
         }).catch((e) => {
             const errorObjectString = JSON.stringify(e);
-            throw new Error(`Failure creating Namespace: ${e.response.statusMessage}`);
+            throw new Error(`Failure creating Namespace: ${errorObjectString}`);
         });
     }
 
