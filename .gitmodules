@@ -1,0 +1,6 @@
+[submodule "testFixures/zos_ims_operator"]
+	path = testFixures/zos_ims_operator
+	url = https://github.com/IBM/zos_ims_operator.git
+[submodule "testFixures/zos_cics_operator"]
+	path = testFixures/zos_cics_operator
+	url = https://github.com/IBM/zos_cics_operator.git
