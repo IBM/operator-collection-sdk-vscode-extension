@@ -288,8 +288,10 @@ function executeSimpleSdkCommand(command: string, outputChannel?: vscode.OutputC
  */
 function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.OutputChannel): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem) => {
+		console.log("Creating executeSdkCommandWithUserInput");
 		let workspacePath: string | undefined = "";
 		if (operatorItemArg) {
+			console.log("Found operatorItemArg");
 			workspacePath = operatorItemArg.workspacePath;
 		} else {
 			let pwd = util.getCurrentWorkspaceRootFolder();
@@ -309,6 +311,7 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 					} else {
 						vscode.window.showInformationMessage("Create Operator request in progress");
 					}
+					console.log("Creating operator");
 					const poll = util.pollRun(40);
 					const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel);
 					Promise.all([poll, runCreateOperatorCommand]).then(() => {

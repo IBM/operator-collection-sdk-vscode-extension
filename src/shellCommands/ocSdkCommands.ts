@@ -36,10 +36,12 @@ export class OcSdkCommand {
 
         childProcess.stdout?.on('data', data => {
             outputChannel?.appendLine(data);
+            console.log(data);
         });
 
         childProcess.stderr?.on('data', data => {
             outputChannel?.appendLine(data);
+            console.log(data);
         });
 
         return new Promise<string>((resolve: any, reject: any) => {
