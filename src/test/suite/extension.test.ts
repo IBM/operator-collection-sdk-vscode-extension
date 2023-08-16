@@ -112,13 +112,15 @@ describe('Extension Test Suite', () => {
 				// vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem);
 				// await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
 			} catch (e) {
+				let stdout = (e as helper.StdErr).stdout.data;
+				console.log("Stdout");
+				console.log(stdout.toString());
+
+				
 				let stderr = (e as helper.StdErr).stderr.data;
 				console.log("Stderr");
 				console.log(stderr.toString());
 
-				let stdout = (e as helper.StdErr).stdout.data;
-				console.log("Stdout");
-				console.log(stdout.toString());
 				assert.fail("Failure executing createOperator command");
 			}
 		});
