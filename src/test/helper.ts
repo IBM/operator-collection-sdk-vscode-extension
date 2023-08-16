@@ -45,7 +45,12 @@ interface RouteObjectSpec {
 }
 
 export interface StdErr {
-    stderr: Buffer;
+    stderr: Data;
+    stdout: Data;
+}
+
+interface Data {
+    data: Buffer;
 }
 
 interface SubscriptionObject {
