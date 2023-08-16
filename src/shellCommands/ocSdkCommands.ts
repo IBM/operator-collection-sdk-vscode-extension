@@ -17,7 +17,7 @@ export class OcSdkCommand {
      * @returns - A Promise containing the the return code of the executed command
      */
      private async run(cmd: string, args?: Array<string>, outputChannel?: vscode.OutputChannel): Promise<any> {
-        
+        console.log("Executing command");
         process.env.PWD = this.pwd;
         const options: child_process.SpawnOptions = {
             cwd: this.pwd,
@@ -28,6 +28,8 @@ export class OcSdkCommand {
         
         let childProcess: child_process.ChildProcess;
         if (args) {
+            console.log("cmd: " + cmd);
+            console.log("Args: " + args.toString());
             childProcess = child_process.spawn(cmd, args, options);
         } else {
             childProcess = child_process.spawn(cmd, options);
