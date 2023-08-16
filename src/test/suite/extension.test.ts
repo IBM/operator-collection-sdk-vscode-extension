@@ -95,6 +95,7 @@ describe('Extension Test Suite', () => {
 	describe('Validate Commands', () => {
 		it('Should install the Operator Collection SDK', async () => {
 			await vscode.commands.executeCommand(VSCodeCommands.install);
+			await helper.sleep(15000);
 			try {
 				child_process.execSync("ansible-galaxy collection verify ibm.operator_collection_sdk");
 			} catch (e) {
