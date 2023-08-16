@@ -44,6 +44,10 @@ interface RouteObjectSpec {
     host: string;
 }
 
+export interface StdErr {
+    stderr: Buffer;
+}
+
 interface SubscriptionObject {
     metadata: ObjectMetadata;
     spec: SubscriptionObjectSpec;
