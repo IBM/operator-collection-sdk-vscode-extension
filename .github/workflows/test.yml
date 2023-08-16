@@ -29,12 +29,15 @@ jobs:
     steps:
       - name: Check-out repository for Branch builds
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
         if: github.event_name != 'pull_request_target'
 
       - name: Check-out repository for PR builds
         uses: actions/checkout@v3
         with:
           ref: "refs/pull/${{ github.event.number }}/merge"
+          submodules: recursive
         if: github.event_name == 'pull_request_target'
 
       - name: Install dependencies
