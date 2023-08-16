@@ -315,6 +315,7 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 					const poll = util.pollRun(40);
 					const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel);
 					Promise.all([poll, runCreateOperatorCommand]).then(() => {
+						console.log("Create Operator command executed successfully");
 						vscode.window.showInformationMessage("Create Operator command executed successfully");
 						vscode.commands.executeCommand(VSCodeCommands.refresh);
 					}).catch((e) => {
