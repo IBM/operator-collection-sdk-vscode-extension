@@ -106,8 +106,11 @@ describe('Extension Test Suite', () => {
 		});
 		it('Create Operator', async () => {
 			try {
-				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem);
-				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
+				const output = child_process.execSync(`ansible-playbook  --extra-vars "@/Users/runner/work/operator-collection-sdk-vscode-extension/operator-collection-sdk-vscode-extension/testFixures/zos_ims_operator/ocsdk-extra-vars.yml" ibm.operator_collection_sdk.create_operator`);
+				console.log(output.toString());
+				await helper.sleep(60000);
+				// vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem);
+				// await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
 			} catch (e) {
 				assert.fail("Failure executing createOperator command");
 			}
