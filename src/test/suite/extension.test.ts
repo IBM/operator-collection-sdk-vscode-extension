@@ -114,7 +114,8 @@ describe('Extension Test Suite', () => {
 				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 3);
 			} catch (e) {
 				let log = fs.readFileSync(path.join(imsOperatorItem.workspacePath, 'logFile.log'));
-				console.log(log);
+				console.log("Printing logs");
+				console.log(log.toString());
 				// const errorObjectString = JSON.stringify(e);
 				// let data: helper.StdErr = JSON.parse(errorObjectString);
 
