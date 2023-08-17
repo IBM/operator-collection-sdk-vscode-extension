@@ -47,6 +47,7 @@ interface RouteObjectSpec {
 export interface StdErr {
     stderr: Data;
     stdout: Data;
+    output: Data[]
 }
 
 interface Data {
