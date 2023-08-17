@@ -113,27 +113,30 @@ describe('Extension Test Suite', () => {
 				// await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
 			} catch (e) {
 				const errorObjectString = JSON.stringify(e);
-                console.log(errorObjectString);
-
-				console.log("Output");
 				let data: helper.StdErr = JSON.parse(errorObjectString);
-				const objString = JSON.stringify(data.stderr.data);
-                console.log(objString);
 
 				console.log("To Buffer");
-				const buf = new Uint8Array(data.stderr.data);
-				console.log(buf);
+				const stderrBuf = new Uint8Array(data.stderr.data);
 
 				var binary = '';
-				var bytes = new Uint8Array( buf );
+				var bytes = new Uint8Array( stderrBuf );
 				var len = bytes.byteLength;
 				for (var i = 0; i < len; i++) {
 					binary += String.fromCharCode( bytes[ i ] );
 				}
 
-				console.log("To String");
+				console.log("StdErr");
 				console.log(binary);
-				
+
+				console.log("StdOut");
+				const stdoutBuf = new Uint8Array(data.stdout.data);
+				var binary = '';
+				var bytes = new Uint8Array( stderrBuf );
+				var len = bytes.byteLength;
+				for (var i = 0; i < len; i++) {
+					binary += String.fromCharCode( bytes[ i ] );
+				}
+				console.log(binary);
 				// console.log("Output");
 				// console.log(output);
 
