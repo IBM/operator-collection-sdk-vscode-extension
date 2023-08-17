@@ -321,6 +321,8 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 						vscode.window.showInformationMessage("Create Operator command executed successfully");
 						vscode.commands.executeCommand(VSCodeCommands.refresh);
 					}).catch((e) => {
+						const errorObjectString = JSON.stringify(e);
+						console.log("Create Operator failure: " + errorObjectString);
 						vscode.window.showInformationMessage(`Failure executing Create Operator command: RC ${e}`);
 					});
 				}
