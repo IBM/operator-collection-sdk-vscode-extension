@@ -48,6 +48,7 @@ export class OcSdkCommand {
 
         return new Promise<string>((resolve: any, reject: any) => {
             childProcess.on('error', (error: Error) => {
+                console.log(error.message);
                 outputChannel?.appendLine(error.message);
                 return reject(error.message);
             });

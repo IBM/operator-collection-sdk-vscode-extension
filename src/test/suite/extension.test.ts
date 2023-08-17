@@ -106,63 +106,51 @@ describe('Extension Test Suite', () => {
 		});
 		it('Create Operator', async () => {
 			try {
-				child_process.execSync(`ansible-playbook  --extra-vars "@/Users/runner/work/operator-collection-sdk-vscode-extension/operator-collection-sdk-vscode-extension/testFixures/zos_ims_operator/ocsdk-extra-vars.yml" ibm.operator_collection_sdk.create_operator`);
+				// child_process.execSync(`ansible-playbook  --extra-vars "@/Users/runner/work/operator-collection-sdk-vscode-extension/operator-collection-sdk-vscode-extension/testFixures/zos_ims_operator/ocsdk-extra-vars.yml" ibm.operator_collection_sdk.create_operator`);
 				// console.log(output.toString());
 				// await helper.sleep(60000);
-				// vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem);
-				// await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
+				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem);
+				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
 			} catch (e) {
-				const errorObjectString = JSON.stringify(e);
-				let data: helper.StdErr = JSON.parse(errorObjectString);
+				// const errorObjectString = JSON.stringify(e);
+				// let data: helper.StdErr = JSON.parse(errorObjectString);
 
-				console.log("To Buffer");
-				const stderrBuf = new Uint8Array(data.stderr.data);
+				// console.log("To Buffer");
+				// const stderrBuf = new Uint8Array(data.stderr.data);
 
-				var binary = '';
-				var bytes = new Uint8Array( stderrBuf );
-				var len = bytes.byteLength;
-				for (var i = 0; i < len; i++) {
-					binary += String.fromCharCode( bytes[ i ] );
-				}
+				// var binary = '';
+				// var bytes = new Uint8Array( stderrBuf );
+				// var len = bytes.byteLength;
+				// for (var i = 0; i < len; i++) {
+				// 	binary += String.fromCharCode( bytes[ i ] );
+				// }
 
-				console.log("StdErr");
-				console.log(binary);
+				// console.log("StdErr");
+				// console.log(binary);
 
-				console.log("StdOut");
-				const stdoutBuf = new Uint8Array(data.stdout.data);
-				var binary = '';
-				var bytes = new Uint8Array( stderrBuf );
-				var len = bytes.byteLength;
-				for (var i = 0; i < len; i++) {
-					binary += String.fromCharCode( bytes[ i ] );
-				}
-				console.log(binary);
+				// console.log("StdOut");
+				// const stdoutBuf = new Uint8Array(data.stdout.data);
+				// var binary = '';
+				// var bytes = new Uint8Array( stderrBuf );
+				// var len = bytes.byteLength;
+				// for (var i = 0; i < len; i++) {
+				// 	binary += String.fromCharCode( bytes[ i ] );
+				// }
+				// console.log(binary);
 
-				console.log("Output");
-				for (const out of data.output) {
-					if (out) {
-						const outputBuf = new Uint8Array(out.data);
-						var binary = '';
-						var bytes = new Uint8Array( outputBuf );
-						var len = bytes.byteLength;
-						for (var i = 0; i < len; i++) {
-							binary += String.fromCharCode( bytes[ i ] );
-						}
-						console.log(binary);
-					}
-				}
-				
 				// console.log("Output");
-				// console.log(output);
-
-				// let stdout = (e as helper.StdErr).stdout.data;
-				// console.log("Stdout");
-				// console.log(stdout.toString());
-
-
-				// let stderr = (e as helper.StdErr).stderr.data;
-				// console.log("Stderr");
-				// console.log(stderr.toString());
+				// for (const out of data.output) {
+				// 	if (out) {
+				// 		const outputBuf = new Uint8Array(out.data);
+				// 		var binary = '';
+				// 		var bytes = new Uint8Array( outputBuf );
+				// 		var len = bytes.byteLength;
+				// 		for (var i = 0; i < len; i++) {
+				// 			binary += String.fromCharCode( bytes[ i ] );
+				// 		}
+				// 		console.log(binary);
+				// 	}
+				// }
 
 				assert.fail("Failure executing createOperator command");
 			}
