@@ -1,5 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
+import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as myExtension from '../../extension';
 import * as child_process from 'child_process';
@@ -112,6 +113,8 @@ describe('Extension Test Suite', () => {
 				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem);
 				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 3);
 			} catch (e) {
+				let log = fs.readFileSync(path.join(imsOperatorItem.workspacePath, 'logFile.log'));
+				console.log(log);
 				// const errorObjectString = JSON.stringify(e);
 				// let data: helper.StdErr = JSON.parse(errorObjectString);
 
