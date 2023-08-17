@@ -5,6 +5,8 @@
 
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 
 export class OcSdkCommand {
     constructor(private pwd?: string | undefined) {}
@@ -27,6 +29,9 @@ export class OcSdkCommand {
         };
         
         let childProcess: child_process.ChildProcess;
+
+        let logStream = fs.createWriteStream(path.join(this.pwd!, 'logFile.log'), {flags: 'a'});
+
         if (args) {
             console.log("cmd: " + cmd);
             console.log("Args: " + args.toString());
@@ -38,6 +43,9 @@ export class OcSdkCommand {
         } else {
             childProcess = child_process.spawn(cmd, options);
         }
+
+        childProcess.stdout?.pipe(logStream);
+        childProcess.stderr?.pipe(logStream);
 
 
         childProcess.stdout?.on('data', data => {
