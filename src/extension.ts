@@ -300,6 +300,7 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 				workspacePath = path.parse(workspacePath!).dir;
 			}
 		}
+		console.log("WorkspacePath: " + workspacePath);
 		if (workspacePath) {
 			outputChannel?.show();
 			if (command === VSCodeCommands.createOperator) {
@@ -312,6 +313,7 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 						vscode.window.showInformationMessage("Create Operator request in progress");
 					}
 					console.log("Creating operator");
+					console.log("playbookArgs: " + playbookArgs.toString());
 					const poll = util.pollRun(40);
 					const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel);
 					Promise.all([poll, runCreateOperatorCommand]).then(() => {
