@@ -68,7 +68,7 @@ jobs:
         env:
           OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
           OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
-          OCP_NAMESPACE: vscode-${{ github.ref_name }}-${{ runner.os }} 
+          OCP_NAMESPACE: vscode-${{ github.ref_name }}-${{ runner.os }}
 
       - name: Execute tests on Mac OS
         run: npm run test
@@ -76,7 +76,7 @@ jobs:
         env:
           OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
           OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
-          OCP_NAMESPACE: vscode-${{ github.ref_name }}-${{ runner.os }} 
+          OCP_NAMESPACE: vscode-${{ github.ref_name }}-${{ runner.os }}
 
       - name: Execute tests on Windows OS
         run: npm run test
@@ -84,4 +84,4 @@ jobs:
         env:
           OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
           OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
-          OCP_NAMESPACE: vscode-${{ github.ref_name }}-${{ runner.os }} 
+          OCP_NAMESPACE: vscode-${{ github.ref_name }}-${{ runner.os }}

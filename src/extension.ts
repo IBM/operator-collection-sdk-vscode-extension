@@ -225,7 +225,7 @@ function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj)
  * @returns - The vscode.Disposable class
  */
 function executeSimpleSdkCommand(command: string, outputChannel?: vscode.OutputChannel): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem) => {
+	return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem, logPath?: string) => {
 		let workspacePath: string | undefined = "";
 		if (operatorItemArg) {
 			workspacePath = operatorItemArg.workspacePath;
@@ -243,7 +243,7 @@ function executeSimpleSdkCommand(command: string, outputChannel?: vscode.OutputC
 				case VSCodeCommands.deleteOperator: {
 					vscode.window.showInformationMessage("Delete Operator request in progress");
 					const poll = util.pollRun(10);
-					const runDeleteOperatorCommand = ocSdkCommand.runDeleteOperatorCommand(outputChannel);
+					const runDeleteOperatorCommand = ocSdkCommand.runDeleteOperatorCommand(outputChannel, logPath);
 					Promise.all([poll, runDeleteOperatorCommand]).then(() => {
 						vscode.window.showInformationMessage("Delete Operator command executed successfully");
 						vscode.commands.executeCommand(VSCodeCommands.refresh);
@@ -255,7 +255,7 @@ function executeSimpleSdkCommand(command: string, outputChannel?: vscode.OutputC
 				case VSCodeCommands.redeployCollection: {
 					vscode.window.showInformationMessage("Redeploy Collection request in progress");
 					const poll = util.pollRun(30);
-					const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel);
+					const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel, logPath);
 					Promise.all([poll, runRedeployCollectionCommand]).then(() => {
 						vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
 						vscode.commands.executeCommand(VSCodeCommands.refresh);
@@ -267,7 +267,7 @@ function executeSimpleSdkCommand(command: string, outputChannel?: vscode.OutputC
 				case VSCodeCommands.redeployOperator: {
 					vscode.window.showInformationMessage("Redeploy Operator request in progress");
 					const poll = util.pollRun(40);
-					const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand(outputChannel);
+					const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
 					Promise.all([poll, runRedeployOperatorCommand]).then(() => {
 						vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
 						vscode.commands.executeCommand(VSCodeCommands.refresh);
@@ -287,11 +287,9 @@ function executeSimpleSdkCommand(command: string, outputChannel?: vscode.OutputC
  * @returns - The vscode.Disposable class
  */
 function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.OutputChannel): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem) => {
-		console.log("Creating executeSdkCommandWithUserInput");
+	return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem, logPath?: string) => {
 		let workspacePath: string | undefined = "";
 		if (operatorItemArg) {
-			console.log("Found operatorItemArg");
 			workspacePath = operatorItemArg.workspacePath;
 		} else {
 			let pwd = util.getCurrentWorkspaceRootFolder();
@@ -300,7 +298,6 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 				workspacePath = path.parse(workspacePath!).dir;
 			}
 		}
-		console.log("WorkspacePath: " + workspacePath);
 		if (workspacePath) {
 			outputChannel?.show();
 			if (command === VSCodeCommands.createOperator) {
@@ -312,17 +309,12 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 					} else {
 						vscode.window.showInformationMessage("Create Operator request in progress");
 					}
-					console.log("Creating operator");
-					console.log("playbookArgs: " + playbookArgs.toString());
 					const poll = util.pollRun(40);
-					const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel);
+					const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel, logPath);
 					Promise.all([poll, runCreateOperatorCommand]).then(() => {
-						console.log("Create Operator command executed successfully");
 						vscode.window.showInformationMessage("Create Operator command executed successfully");
 						vscode.commands.executeCommand(VSCodeCommands.refresh);
 					}).catch((e) => {
-						const errorObjectString = JSON.stringify(e);
-						console.log("Create Operator failure: " + errorObjectString);
 						vscode.window.showInformationMessage(`Failure executing Create Operator command: RC ${e}`);
 					});
 				}
