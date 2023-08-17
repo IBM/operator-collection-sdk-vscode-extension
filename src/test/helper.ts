@@ -46,12 +46,12 @@ interface RouteObjectSpec {
 
 export interface StdErr {
     stderr: Data;
-    stdout: Data;
-    output: Data
+    // stdout: Data;
+    output: Buffer
 }
 
 interface Data {
-    data: Buffer;
+    data: any;
 }
 
 interface SubscriptionObject {
@@ -100,6 +100,7 @@ interface TestCluster {
     ocpToken: string;
     ocpNamespace: string;
 }
+
 export function getTestClusterInfo(): TestCluster | Error {
     const serverUrl = process.env.OCP_SERVER_URL;
     let errorMessage: string = "";

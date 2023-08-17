@@ -112,18 +112,39 @@ describe('Extension Test Suite', () => {
 				// vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem);
 				// await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
 			} catch (e) {
-				let output = (e as helper.StdErr).output.data;
+				const errorObjectString = JSON.stringify(e);
+                console.log(errorObjectString);
+
 				console.log("Output");
-				console.log(output.toString());
+				let data: helper.StdErr = JSON.parse(errorObjectString);
+				const objString = JSON.stringify(data.stderr.data);
+                console.log(objString);
 
-				let stdout = (e as helper.StdErr).stdout.data;
-				console.log("Stdout");
-				console.log(stdout.toString());
+				console.log("To Buffer");
+				const buf = new Uint8Array(data.stderr.data);
+				console.log(buf);
+
+				var binary = '';
+				var bytes = new Uint8Array( buf );
+				var len = bytes.byteLength;
+				for (var i = 0; i < len; i++) {
+					binary += String.fromCharCode( bytes[ i ] );
+				}
+
+				console.log("To String");
+				console.log(binary);
+				
+				// console.log("Output");
+				// console.log(output);
+
+				// let stdout = (e as helper.StdErr).stdout.data;
+				// console.log("Stdout");
+				// console.log(stdout.toString());
 
 
-				let stderr = (e as helper.StdErr).stderr.data;
-				console.log("Stderr");
-				console.log(stderr.toString());
+				// let stderr = (e as helper.StdErr).stderr.data;
+				// console.log("Stderr");
+				// console.log(stderr.toString());
 
 				assert.fail("Failure executing createOperator command");
 			}
