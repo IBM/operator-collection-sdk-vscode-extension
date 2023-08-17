@@ -110,7 +110,7 @@ describe('Extension Test Suite', () => {
 				// console.log(output.toString());
 				// await helper.sleep(60000);
 				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem);
-				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
+				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 3);
 			} catch (e) {
 				// const errorObjectString = JSON.stringify(e);
 				// let data: helper.StdErr = JSON.parse(errorObjectString);
