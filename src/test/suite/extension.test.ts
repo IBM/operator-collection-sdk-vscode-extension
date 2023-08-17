@@ -140,14 +140,16 @@ describe('Extension Test Suite', () => {
 
 				console.log("Output");
 				for (const out of data.output) {
-					const outputBuf = new Uint8Array(out.data);
-					var binary = '';
-					var bytes = new Uint8Array( outputBuf );
-					var len = bytes.byteLength;
-					for (var i = 0; i < len; i++) {
-						binary += String.fromCharCode( bytes[ i ] );
+					if (out) {
+						const outputBuf = new Uint8Array(out.data);
+						var binary = '';
+						var bytes = new Uint8Array( outputBuf );
+						var len = bytes.byteLength;
+						for (var i = 0; i < len; i++) {
+							binary += String.fromCharCode( bytes[ i ] );
+						}
+						console.log(binary);
 					}
-					console.log(binary);
 				}
 				
 				// console.log("Output");
