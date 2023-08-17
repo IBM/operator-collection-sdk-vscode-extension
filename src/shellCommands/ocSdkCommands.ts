@@ -30,7 +30,11 @@ export class OcSdkCommand {
         if (args) {
             console.log("cmd: " + cmd);
             console.log("Args: " + args.toString());
-            childProcess = child_process.spawn(cmd, args, options);
+            childProcess = child_process.spawn(cmd, args, {
+                cwd: this.pwd,
+                env: process.env,
+                shell: true
+            });
         } else {
             childProcess = child_process.spawn(cmd, options);
         }
