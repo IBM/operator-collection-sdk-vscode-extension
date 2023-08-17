@@ -4,16 +4,16 @@
  */
 
 import * as child_process from 'child_process';
+import * as fs from 'fs-extra';
 
 export class OcCommand {
     /**
      * Executes the requested command
-     * @param cmd - The command to be executed
-     * @param pwd - The currrent working directory
      * @param args - The arguments to pass to the command
+     * @param logPath - Log path to store command output
      * @returns - A Promise containing the the return code of the executed command
      */
-     private async run(args?: Array<string>): Promise<any> {
+     private async run(args?: Array<string>, logPath?: string): Promise<any> {
         const options: | child_process.SpawnOptions = {
             env: process.env,
             shell: true,
@@ -25,6 +25,12 @@ export class OcCommand {
             childProcess = child_process.spawn("oc", args, options);
         } else {
             childProcess = child_process.spawn("oc", options);
+        }
+
+        if (logPath) {
+            let logStream = fs.createWriteStream(logPath, {flags: 'a'});
+            childProcess.stdout?.pipe(logStream);
+            childProcess.stderr?.pipe(logStream);
         }
 
         childProcess.stdout?.on('data', data => {
@@ -62,7 +68,7 @@ export class OcCommand {
      * @param instanceName 
      * @returns 
      */
-     async runOcCpCommand(podName: string, namespace: string,containerName: string, workspacePath: string, apiVersion: string, kind: string, instanceName: string): Promise<any> {
+     async runOcCpCommand(podName: string, namespace: string,containerName: string, workspacePath: string, apiVersion: string, kind: string, instanceName: string, logPath?: string): Promise<any> {
         const args: Array<string> = [
             "cp",
             `${namespace}/${podName}:/tmp/ansible-operator/runner/suboperator.zoscb.ibm.com/${apiVersion}/${kind}/${namespace}/${instanceName}/artifacts/latest/stdout`,
@@ -70,7 +76,7 @@ export class OcCommand {
             "-c",
             containerName
         ];
-        return this.run(args);
+        return this.run(args, logPath);
     }
 
     /**
@@ -79,10 +85,10 @@ export class OcCommand {
      * @param token 
      * @returns 
      */
-    async runOcLoginCommand(args: Array<string>): Promise<any> {
+    async runOcLoginCommand(args: Array<string>, logPath?: string): Promise<any> {
         const logInArg: Array<string> = ["login"];
         const finalArgs = logInArg.concat(args);
-        return this.run(finalArgs);
+        return this.run(finalArgs, logPath);
     }
 
     /**
@@ -91,8 +97,8 @@ export class OcCommand {
      * @param token 
      * @returns 
      */
-    async runOcProjectCommand(project: string): Promise<any> {
+    async runOcProjectCommand(project: string, logPath?: string): Promise<any> {
         const args: Array<string> = ["project", project];
-        return this.run(args);
+        return this.run(args, logPath);
     }
 }
