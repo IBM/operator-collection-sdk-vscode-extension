@@ -84,10 +84,18 @@ describe('Extension Test Suite', () => {
 	});
 
 	after(async () => {
-		fs.unlinkSync(installSdkLogPath);
-		fs.unlinkSync(createOperatorLogPath);
-		fs.unlinkSync(redeployCollectionLogPath);
-		fs.unlinkSync(redeployOperatorLogPath);
+		if (fs.existsSync(installSdkLogPath)) {
+			fs.unlinkSync(installSdkLogPath);
+		}
+		if (fs.existsSync(createOperatorLogPath)) {
+			fs.unlinkSync(createOperatorLogPath);
+		}
+		if (fs.existsSync(redeployCollectionLogPath)) {
+			fs.unlinkSync(redeployCollectionLogPath);
+		}
+		if (fs.existsSync(redeployOperatorLogPath)) {
+			fs.unlinkSync(redeployOperatorLogPath);
+		}
 
 		if (userLoggedIn) {
 			try {
