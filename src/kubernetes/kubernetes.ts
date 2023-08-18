@@ -208,14 +208,14 @@ export class KubernetesObj {
      * @param instanceName - The resource instance name
      * @returns - A promise containing the path to the container log
      */
-    public async downloadVerboseContainerLogs(podName: string, containerName: string, workspacePath: string, apiVersion: string, kind: string, instanceName: string): Promise<string | undefined> {
+    public async downloadVerboseContainerLogs(podName: string, containerName: string, workspacePath: string, apiVersion: string, kind: string, instanceName: string, logPath?: string): Promise<string | undefined> {
         if (! fs.existsSync(path.join(workspacePath, ".openshiftLogs"))) {
             fs.mkdirSync(path.join(workspacePath, ".openshiftLogs"));
         }
-        const logsPath = path.join(workspacePath, ".openshiftLogs", `${podName}-${containerName}-verbose.log`);
+        const openshiftLogsPath = path.join(workspacePath, ".openshiftLogs", `${podName}-${containerName}-verbose.log`);
         const ocCmd = new OcCommand();
-        return ocCmd.runOcCpCommand(podName, this.namespace, containerName, logsPath, apiVersion, kind, instanceName).then((res) => {
-            return logsPath;
+        return ocCmd.runOcCpCommand(podName, this.namespace, containerName, openshiftLogsPath, apiVersion, kind, instanceName, logPath).then(() => {
+            return openshiftLogsPath;
         }).catch((e) => {
             const msg = `Failure running the "oc cp" command. ${e.response.statusMessage}`;
             console.error(msg);
@@ -241,7 +241,7 @@ export class KubernetesObj {
             let customResourcesList: ObjectList = JSON.parse(customResourcesString);
             return customResourcesList;
         }).catch((e) => {
-            if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+            if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
                 return undefined;
             } else {
                 const msg = `Failure retrieving Custom Resource list. ${e.response.statusMessage}`;
@@ -268,7 +268,7 @@ export class KubernetesObj {
         ).then(() => {
             return true;
         }).catch((e) => {
-            if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+            if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
                 return false;
             } else {
                 const msg = `Failure deleting Custom Resource object. ${e.response.statusMessage}`;
@@ -325,7 +325,7 @@ export class KubernetesObj {
                 let objsList: ObjectList = JSON.parse(objsString);
                 return objsList;
             }).catch((e) => {
-                if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+                if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
                     return undefined;
                 } else {
                     const msg = `Failure retrieving Broker object list. ${e.response.statusMessage}`;
@@ -346,7 +346,7 @@ export class KubernetesObj {
                 let objsList: ObjectList = JSON.parse(objsString);
                 return objsList;
             }).catch((e) => {
-                if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+                if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
                     return undefined;
                 } else {
                     const msg = `Failure retrieving Broker object list. ${e.response.statusMessage}`;
