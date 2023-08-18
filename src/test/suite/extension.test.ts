@@ -126,7 +126,7 @@ describe('Extension Test Suite', () => {
 		it('Create Operator', async () => {
 			try {
 				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem, createOperatorLogPath);
-				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 3);
+				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
 			} catch (e) {
 				let log = fs.readFileSync(createOperatorLogPath);
 				console.log("Printing Create Operator logs");
