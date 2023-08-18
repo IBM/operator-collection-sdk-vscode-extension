@@ -80,9 +80,9 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async () => {
+	return vscode.commands.registerCommand(command, async (logPath?: string) => {
 		try {
-			await ocSdkCmd.runCollectionVerifyCommand();
+			await ocSdkCmd.runCollectionVerifyCommand(undefined, logPath);
 			session.ocSdkInstalled = true;
 		} catch(e) {
 			session.ocSdkInstalled = false;
@@ -93,7 +93,7 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 		} else {
 			outputChannel?.show();
 			vscode.window.showInformationMessage("Installing the IBM Operator Collection SDK");
-			ocSdkCmd.installOcSDKCommand(outputChannel).then(()=> {
+			ocSdkCmd.installOcSDKCommand(outputChannel, logPath).then(()=> {
 				session.ocSdkInstalled = true;
 				vscode.window.showInformationMessage("Successfully installed the IBM Operator Collection SDK");
 				vscode.commands.executeCommand(VSCodeCommands.login);

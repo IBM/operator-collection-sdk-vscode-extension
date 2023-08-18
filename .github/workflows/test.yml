@@ -62,6 +62,9 @@ jobs:
       - name: Install Ansible
         run: pip install ansible
 
+      - name: Install Ansible Galaxy dependencies
+        run: ansible-galaxy collection install kubernetes.core
+
       - name: Execut tests on Linux OS
         run: xvfb-run -a npm run test
         if: runner.os == 'Linux'
