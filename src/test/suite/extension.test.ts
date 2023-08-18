@@ -146,6 +146,7 @@ describe('Extension Test Suite', () => {
 				console.log("Printing Install OC SDK logs");
 				helper.displayCmdOutput(installSdkLogPath);
 				assert.equal(e, undefined);
+				process.exit(1);
 			}
 		});
 		it('Create Operator', async () => {
@@ -158,27 +159,31 @@ describe('Extension Test Suite', () => {
 				assert.fail("Failure executing createOperator command");
 			}
 		});
-		// it('Redeploy Collection', async () => {
-		// 	try {
-		// 		const oldPod = await k8s.getOperatorPods(imsOperatorItem.operatorName);
-		// 		if (oldPod === undefined || oldPod.length !== 1) {
-		// 			assert.fail("Failure validating operator pods");
-		// 		}
-		// 		const oldPodName = oldPod[0].metadata?.name;
-		// 		vscode.commands.executeCommand(VSCodeCommands.redeployCollection, imsOperatorItem);
-		// 		await helper.pollOperatorPodStatus(imsOperatorItem.operatorName, oldPodName!, 30);
-		// 	} catch (e) {
-		// 		assert.fail("Failure executing redeployCollection command");
-		// 	}
-		// });
-		// it('Redeploy Operator', async () => {
-		// 	try {
-		// 		vscode.commands.executeCommand(VSCodeCommands.redeployOperator, imsOperatorItem);
-		// 		await helper.sleep(20000);
-		// 		await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
-		// 	} catch (e) {
-		// 		assert.fail("Failure executing redeployOperator command");
-		// 	}
-		// });
+		it('Redeploy Collection', async () => {
+			try {
+				const oldPod = await k8s.getOperatorPods(imsOperatorItem.operatorName);
+				if (oldPod === undefined || oldPod.length !== 1) {
+					assert.fail("Failure validating operator pods");
+				}
+				const oldPodName = oldPod[0].metadata?.name;
+				vscode.commands.executeCommand(VSCodeCommands.redeployCollection, imsOperatorItem, redeployCollectionLogPath);
+				await helper.pollOperatorPodStatus(imsOperatorItem.operatorName, oldPodName!, 30);
+			} catch (e) {
+				console.log("Printing Redeploy Collection logs");
+				helper.displayCmdOutput(redeployCollectionLogPath);
+				assert.fail("Failure executing redeployCollection command");
+			}
+		});
+		it('Redeploy Operator', async () => {
+			try {
+				vscode.commands.executeCommand(VSCodeCommands.redeployOperator, imsOperatorItem, redeployOperatorLogPath);
+				await helper.sleep(20000);
+				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
+			} catch (e) {
+				console.log("Printing Redeploy Operator logs");
+				helper.displayCmdOutput(redeployOperatorLogPath);
+				assert.fail("Failure executing redeployOperator command");
+			}
+		});
 	});
 });
