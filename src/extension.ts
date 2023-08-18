@@ -106,7 +106,7 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 }
 
 function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async (namespaceArg?: string) => {
+	return vscode.commands.registerCommand(command, async (namespaceArg?: string, logPath?: string) => {
 		let namespace: string | undefined;
 		if (namespaceArg) {
 			namespace = namespaceArg;
@@ -114,7 +114,7 @@ function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
 			namespace = await util.generateProjectDropDown();
 		}
 		if (namespace) {
-			ocCmd.runOcProjectCommand(namespace).then(() => {
+			ocCmd.runOcProjectCommand(namespace, logPath).then(() => {
 				vscode.window.showInformationMessage("Successfully updating Project on OpenShift cluster");
 				vscode.commands.executeCommand(VSCodeCommands.refreshAll);
 			}).catch((e) => {
@@ -125,7 +125,7 @@ function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
 }
 
 function logIn(command: string, ocCmd: OcCommand, session: Session): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async (params?: string[]) => {
+	return vscode.commands.registerCommand(command, async (params?: string[], logPath?: string) => {
 		let args: string[] | undefined = [];
 		if (params === undefined || params?.length === 0) {
 			args = await util.requestLogInInfo();
@@ -133,7 +133,7 @@ function logIn(command: string, ocCmd: OcCommand, session: Session): vscode.Disp
 			args = params;
 		}
 		if (args) {
-			ocCmd.runOcLoginCommand(args).then(() => {
+			ocCmd.runOcLoginCommand(args, logPath).then(() => {
 				session.loggedIntoOpenShift = true;
 				vscode.window.showInformationMessage("Successfully logged into OpenShift cluster");
 				vscode.commands.executeCommand(VSCodeCommands.refreshAll);
@@ -156,7 +156,7 @@ function executeOpenLinkCommand(command: string): vscode.Disposable {
 }
 
 function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async (containerItemArgs: OperatorContainerItem) => {
+	return vscode.commands.registerCommand(command, async (containerItemArgs: OperatorContainerItem, logPath?: string) => {
 		const pwd = util.getCurrentWorkspaceRootFolder();
 		if (!pwd) {
 			vscode.window.showErrorMessage("Unable to execute command when workspace is empty");
@@ -193,7 +193,7 @@ function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj)
 							crInstance = await util.selectCustomResourceInstance(workspacePath, k8s, apiVersion, kind!);
 							let logsPath: string | undefined = "";
 							if (kind && crInstance) {
-								logsPath = await k8s.downloadVerboseContainerLogs(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name, workspacePath, apiVersion, kind, crInstance);
+								logsPath = await k8s.downloadVerboseContainerLogs(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name, workspacePath, apiVersion, kind, crInstance, logPath);
 								if (logsPath) {
 									try {
 										const logUri: vscode.Uri = vscode.Uri.parse(logsPath);

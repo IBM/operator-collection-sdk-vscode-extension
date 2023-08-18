@@ -101,6 +101,10 @@ interface TestCluster {
     ocpNamespace: string;
 }
 
+export function displayCmdOutput(logPath: string) {
+    const log = fs.readFileSync(logPath);
+	console.log(log.toString());
+}
 export function getTestClusterInfo(): TestCluster | Error {
     const serverUrl = process.env.OCP_SERVER_URL;
     let errorMessage: string = "";
@@ -135,6 +139,7 @@ export async function pollOperatorInstallStatus(operatorName: string, attempts: 
     let zosEndpointInstalled: boolean = false;
     let operatorCollectionInstalled: boolean = false;
     let subOperatorConfigInstalled: boolean = false;
+    let maxAttemptsPerTask: number = Math.floor(attempts / 3);
     return await new Promise((resolve, reject) => {
         const interval = setInterval(async (): Promise<void> => {
             if (++i === attempts) {
@@ -144,6 +149,10 @@ export async function pollOperatorInstallStatus(operatorName: string, attempts: 
             console.log(`Install attempt #${i}`);
             try {
                 if (!zosEndpointInstalled && !await zosEndpointInstalledSuccessfully(k8s)) {
+                    if (i === maxAttemptsPerTask) {
+                        reject();
+                        clearInterval(interval);
+                    }
                     console.log("Waiting for ZosEndpoint to install successfully...");
                     return;
                 } else {
@@ -151,6 +160,10 @@ export async function pollOperatorInstallStatus(operatorName: string, attempts: 
                 }
 
                 if (!operatorCollectionInstalled && !await operatorCollectionInstalledSuccessfully(operatorName, k8s)) {
+                    if (i === maxAttemptsPerTask * 2) {
+                        reject();
+                        clearInterval(interval);
+                    }
                     console.log("Waiting for OperatorCollection to install successfully...");
                     return;
                 } else {
@@ -465,7 +478,7 @@ export class KubernetesObj {
             let customResourcesList: ObjectList = JSON.parse(customResourcesString);
             return customResourcesList;
         }).catch((e) => {
-            if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+            if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
                 return undefined;
             } else {
                 const errorObjectString = JSON.stringify(e);
@@ -491,7 +504,7 @@ export class KubernetesObj {
         ).then(() => {
             return true;
         }).catch((e) => {
-            if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+            if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
                 return false;
             } else {
                 const errorObjectString = JSON.stringify(e);
@@ -547,7 +560,7 @@ export class KubernetesObj {
                 let objsList: ObjectList = JSON.parse(objsString);
                 return objsList;
             }).catch((e) => {
-                if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+                if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
                     return undefined;
                 } else {
                     const errorObjectString = JSON.stringify(e);
@@ -567,7 +580,7 @@ export class KubernetesObj {
                 let objsList: ObjectList = JSON.parse(objsString);
                 return objsList;
             }).catch((e) => {
-                if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there a change that the CRD or API Version hasn't yet been created on the cluster
+                if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
                     return undefined;
                 } else {
                     const errorObjectString = JSON.stringify(e);
@@ -714,7 +727,12 @@ export class KubernetesObj {
         });
     }
 
-    public async createNamespace(name: string): Promise<ObjectInstance> {
+    public async createNamespace(name: string): Promise<ObjectInstance | undefined> {
+        const existingNamespace = await this.validateNamespaceExists(name);
+        if (existingNamespace) {
+            return undefined;
+        }
+
         const ns = {
             metadata: {
                 name: name
@@ -761,13 +779,22 @@ export class KubernetesObj {
         }
         return true;
     }
- 
+    
     public async installZosCloudBroker(): Promise<void> {
+        let pollingAttemptsNeeded: number = 0; 
         try {
             await this.createOperatorGroup();
-            await this.createBrokerSubscription();
-            await this.createZosCloudBrokerInstance();
-            await this.pollZosCloudBrokerInstallStatus(50);
+            const subscription = await this.createBrokerSubscription();
+            if (subscription) {
+                pollingAttemptsNeeded += 25;
+            }
+            const zosCloudBroker = await this.createZosCloudBrokerInstance();
+            if (zosCloudBroker) {
+                pollingAttemptsNeeded += 25;
+            }
+            if (pollingAttemptsNeeded > 0) {
+                await this.pollZosCloudBrokerInstallStatus(pollingAttemptsNeeded);
+            }
         } catch (e) {
             throw new Error(`Failure installing ZosCloudBroker: ${e}`);
         }
@@ -889,7 +916,7 @@ export class KubernetesObj {
         });
     }
 
-    private async createOperatorGroup(): Promise<ObjectInstance> {
+    private async createOperatorGroup(): Promise<ObjectInstance | undefined> {
         const operatorGroup = {
             apiVersion: "operators.coreos.com/v1",
             kind: "OperatorGroup",
@@ -902,6 +929,12 @@ export class KubernetesObj {
                 upgradeStrategy: "Default"
             }
         };
+
+        const existingOperatorGroup = await this.getOperatorGroup(operatorGroup.metadata.name);
+        if (existingOperatorGroup) {
+            return undefined;
+        }
+
         return this.customObjectsApi.createNamespacedCustomObject(
             "operators.coreos.com",
             "v1",
@@ -918,7 +951,36 @@ export class KubernetesObj {
         });
     }
 
-    private async createBrokerSubscription(): Promise<SubscriptionObject> {
+    private async getOperatorGroup(name: string): Promise<ObjectInstance | undefined > {
+        return this.customObjectsApi.getNamespacedCustomObject(
+            "operators.coreos.com",
+            "v1",
+            this.namespace,
+            "operatorgroups",
+            name
+        ).then((res) => {
+            if (res.response.statusCode && res.response.statusCode === 404) {
+                return undefined;
+            }
+            const operatorGroupObjString = JSON.stringify(res.body);
+            const operatorGroupObj: ObjectInstance = JSON.parse(operatorGroupObjString);
+            return operatorGroupObj;
+        }).catch((e) => {
+            if (e.response.statusCode && e.response.statusCode === 404) {
+                return undefined;
+            } else {
+                const errorObjectString = JSON.stringify(e);
+                throw new Error(`Failure creating OperatorGroup: ${errorObjectString}`);
+            }
+        });
+    }
+
+    private async createBrokerSubscription(): Promise<SubscriptionObject | undefined> {
+        const existingSubscription = await this.getBrokerSubscription();
+        if (existingSubscription) {
+            return undefined;
+        }
+
         let source = process.env.CATALOGSOURCE_NAME;
         if (source === undefined) {
             source = "ibm-operator-catalog";
@@ -950,6 +1012,7 @@ export class KubernetesObj {
                 startingCSV: startingCSV
             }
         };
+
         return this.customObjectsApi.createNamespacedCustomObject(
             "operators.coreos.com",
             "v1alpha1",
@@ -961,8 +1024,12 @@ export class KubernetesObj {
             const subscriptionObj: SubscriptionObject = JSON.parse(subscriptionObjString);
             return subscriptionObj;
         }).catch((e) => {
-            const errorObjectString = JSON.stringify(e);
-            throw new Error(`Failure creating Subscription: ${errorObjectString}`);
+            if (e.response.statusCode && e.response.statusCode === 404) {
+                return undefined;
+            } else {
+                const errorObjectString = JSON.stringify(e);
+                throw new Error(`Failure creating Subscription: ${errorObjectString}`);
+            }
         });
     }
 
@@ -978,8 +1045,12 @@ export class KubernetesObj {
             const subscriptionObj: SubscriptionObject = JSON.parse(subscriptionObjString);
             return subscriptionObj;
         }).catch((e) => {
-            const errorObjectString = JSON.stringify(e);
-            throw new Error(`Failure retrieving Subscription: ${errorObjectString}`);
+            if (e.response.statusCode && e.response.statusCode === 404) {
+                return undefined;
+            } else {
+                const errorObjectString = JSON.stringify(e);
+                throw new Error(`Failure retrieving Subscription: ${errorObjectString}`);
+            }
         });
     }
 
@@ -1062,6 +1133,10 @@ export class KubernetesObj {
     }
 
     private async getBrokerInstance(): Promise<ObjectInstance | undefined> {
+        const existingBrokerInstance = await this.getBrokerInstance();
+        if (existingBrokerInstance) {
+            return undefined;
+        }
         let csv = process.env.CATALOGSOURCE_CSV;
         if (csv === undefined) {
             csv = zosCloudBrokerCsvVersion;
