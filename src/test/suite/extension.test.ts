@@ -12,6 +12,10 @@ import {OperatorItem} from "../../treeViews/operatorItems/operatorItem";
 describe('Extension Test Suite', () => {
 	vscode.window.showInformationMessage('Start all tests.');
 	const imsOperatorItem: OperatorItem | undefined = new OperatorItem("IBM Z and Cloud Modernization Stack - IMS Operator", "zos-ims-operator", helper.imsOperatorCollectionPath);
+	const installSdkLogPath = path.join(__dirname, "installOcSdk.log");
+	const createOperatorLogPath = path.join(__dirname, "createOperator.log");
+	const redeployCollectionLogPath = path.join(__dirname, "redeployCollection.log");
+	const redeployOperatorLogPath = path.join(__dirname, "redeployOperator.log");
 	let k8s: helper.KubernetesObj;
 	let cleanup: boolean = false;
 	let userLoggedIn: boolean = false;
@@ -80,6 +84,11 @@ describe('Extension Test Suite', () => {
 	});
 
 	after(async () => {
+		fs.unlinkSync(installSdkLogPath);
+		fs.unlinkSync(createOperatorLogPath);
+		fs.unlinkSync(redeployCollectionLogPath);
+		fs.unlinkSync(redeployOperatorLogPath);
+
 		if (userLoggedIn) {
 			try {
 				vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
@@ -94,30 +103,25 @@ describe('Extension Test Suite', () => {
 	});
 
 	describe('Validate Commands', () => {
-		const createOperatorLogPath = path.join(__dirname, "createOperator.log");
-		const redeployCollectionLogPath = path.join(__dirname, "redeployCollection.log");
-		const redeployOperatorLogPath = path.join(__dirname, "redeployOperator.log");
 		it('Should install the Operator Collection SDK', async () => {
-			// await vscode.commands.executeCommand(VSCodeCommands.install);
-			const output = child_process.execSync("ansible-galaxy collection install ibm.operator_collection_sdk");
-			console.log(output.toString());
+			vscode.commands.executeCommand(VSCodeCommands.install, installSdkLogPath);
 			await helper.sleep(15000);
 			try {
 				child_process.execSync("ansible-galaxy collection verify ibm.operator_collection_sdk");
 			} catch (e) {
+				let log = fs.readFileSync(installSdkLogPath);
+				console.log("Printing Install OC SDK logs");
+				console.log(log.toString());
 				assert.equal(e, undefined);
 			}
 		});
 		it('Create Operator', async () => {
 			try {
-				// child_process.execSync(`ansible-playbook  --extra-vars "@/Users/runner/work/operator-collection-sdk-vscode-extension/operator-collection-sdk-vscode-extension/testFixures/zos_ims_operator/ocsdk-extra-vars.yml" ibm.operator_collection_sdk.create_operator`);
-				// console.log(output.toString());
-				// await helper.sleep(60000);
 				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem, createOperatorLogPath);
 				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 3);
 			} catch (e) {
 				let log = fs.readFileSync(createOperatorLogPath);
-				console.log("Printing logs");
+				console.log("Printing Create Operator logs");
 				console.log(log.toString());
 				assert.fail("Failure executing createOperator command");
 			}
