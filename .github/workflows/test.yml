@@ -60,10 +60,7 @@ jobs:
           key: ${{ runner.os }}-pip
 
       - name: Install Ansible
-        run: pip install ansible
-
-      - name: Install Ansible Galaxy dependencies
-        run: ansible-galaxy collection install kubernetes.core
+        run: pip install ansible openshift pyyaml kubernetes
 
       - name: Execut tests on Linux OS
         run: xvfb-run -a npm run test
