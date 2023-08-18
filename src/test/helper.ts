@@ -1091,7 +1091,11 @@ export class KubernetesObj {
         return false;
     }
 
-    private async createZosCloudBrokerInstance(): Promise<ObjectInstance> {
+    private async createZosCloudBrokerInstance(): Promise<ObjectInstance | undefined> {
+        const existingBrokerInstance = await this.getBrokerInstance();
+        if (existingBrokerInstance) {
+            return undefined;
+        }
         const zosCloudBroker = {
             apiVersion: `${zosCloudBrokerGroup}/${zosCloudBrokerApiVersion}`,
             kind: "ZosCloudBroker",
@@ -1133,10 +1137,6 @@ export class KubernetesObj {
     }
 
     private async getBrokerInstance(): Promise<ObjectInstance | undefined> {
-        const existingBrokerInstance = await this.getBrokerInstance();
-        if (existingBrokerInstance) {
-            return undefined;
-        }
         let csv = process.env.CATALOGSOURCE_CSV;
         if (csv === undefined) {
             csv = zosCloudBrokerCsvVersion;
