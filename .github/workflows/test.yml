@@ -62,7 +62,7 @@ jobs:
       - name: Install Ansible
         run: pip install ansible openshift pyyaml kubernetes
 
-      - name: Execut tests on Linux OS
+      - name: Execute tests on Linux OS
         run: xvfb-run -a npm run test
         if: runner.os == 'Linux'
         env:

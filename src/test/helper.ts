@@ -2,7 +2,9 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs-extra';
 import * as k8sClient from '@kubernetes/client-node';
-
+import {OperatorItem} from "../treeViews/operatorItems/operatorItem";
+import {OperatorPodItem} from "../treeViews/operatorItems/operatorPodItem";
+import {OperatorContainerItem} from "../treeViews/operatorItems/operatorContainerItem";
 
 export const fixturePath = path.resolve(__dirname, '../../testFixures/');
 export const extraVarsFile = `${fixturePath}/ocsdk-extra-vars.yml`;
@@ -300,6 +302,32 @@ async function subOperatorConfigDeletedSuccessfully(operatorName: string, k8s: K
         return true;
     }
     return false;
+}
+
+export async function getOperatorContainerItems(parentOperator: OperatorItem): Promise<OperatorContainerItem[]> {
+    const operatorContainerItems: Array<OperatorContainerItem> = [];
+    const k8s = new KubernetesObj();
+    const operatorPodItems = await getOperatorPodItems(parentOperator);
+    if (operatorPodItems.length === 1) {
+        const containerStatuses = await k8s.getOperatorContainerStatuses(operatorPodItems[0].parentOperator.operatorName, operatorPodItems[0].podObj);
+        for (const containerStatus of containerStatuses) {
+            operatorContainerItems.push(new OperatorContainerItem(operatorPodItems[0].podObj, containerStatus, operatorPodItems[0].parentOperator));
+        }
+    }
+	return operatorContainerItems;
+}
+
+async function getOperatorPodItems(parentOperator: OperatorItem): Promise<OperatorPodItem[]> {
+	const operatorPodItems: Array<OperatorPodItem> = [];
+	const k8s = new KubernetesObj();
+	const pods = await k8s.getOperatorPods(parentOperator.operatorName);
+	if (pods) {
+		for (const pod of pods) {
+			const containerStatus = await k8s.getOperatorContainerStatuses(parentOperator.operatorName, pod);
+			operatorPodItems.push(new OperatorPodItem(pod, containerStatus, parentOperator));
+		}
+	}
+	return operatorPodItems;
 }
 
 export class KubernetesObj {

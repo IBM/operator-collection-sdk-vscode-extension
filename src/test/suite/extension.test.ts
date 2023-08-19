@@ -20,6 +20,7 @@ describe('Extension Test Suite', () => {
 	const createOperatorLogPath = path.join(__dirname, "createOperator.log");
 	const redeployCollectionLogPath = path.join(__dirname, "redeployCollection.log");
 	const redeployOperatorLogPath = path.join(__dirname, "redeployOperator.log");
+	const downloadVerboseLogsLogPath = path.join(__dirname, "downloadVerboseLogs.log");
 	let k8s: helper.KubernetesObj;
 	let cleanup: boolean = false;
 	let userLoggedIn: boolean = false;
@@ -117,6 +118,9 @@ describe('Extension Test Suite', () => {
 		if (fs.existsSync(deleteOperatorBeforeAllLogPath)) {
 			fs.unlinkSync(deleteOperatorBeforeAllLogPath);
 		}
+		if (fs.existsSync(downloadVerboseLogsLogPath)) {
+			fs.unlinkSync(downloadVerboseLogsLogPath);
+		}
 
 		if (userLoggedIn) {
 			try {
@@ -136,7 +140,7 @@ describe('Extension Test Suite', () => {
 		}
 	});
 
-	describe('Validate Commands', () => {
+	describe('When validating commands', () => {
 		it('Should install the Operator Collection SDK', async () => {
 			vscode.commands.executeCommand(VSCodeCommands.install, installSdkLogPath);
 			await helper.sleep(15000);
@@ -149,7 +153,7 @@ describe('Extension Test Suite', () => {
 				process.exit(1);
 			}
 		});
-		it('Create Operator', async () => {
+		it('Should create an operator', async () => {
 			try {
 				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem, createOperatorLogPath);
 				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
@@ -159,7 +163,7 @@ describe('Extension Test Suite', () => {
 				assert.fail("Failure executing createOperator command");
 			}
 		});
-		it('Redeploy Collection', async () => {
+		it('Should redeploy the collection', async () => {
 			try {
 				const oldPod = await k8s.getOperatorPods(imsOperatorItem.operatorName);
 				if (oldPod === undefined || oldPod.length !== 1) {
@@ -174,7 +178,7 @@ describe('Extension Test Suite', () => {
 				assert.fail("Failure executing redeployCollection command");
 			}
 		});
-		it('Redeploy Operator', async () => {
+		it('Should redeploy the operator', async () => {
 			try {
 				vscode.commands.executeCommand(VSCodeCommands.redeployOperator, imsOperatorItem, redeployOperatorLogPath);
 				await helper.sleep(20000);
@@ -184,6 +188,36 @@ describe('Extension Test Suite', () => {
 				helper.displayCmdOutput(redeployOperatorLogPath);
 				assert.fail("Failure executing redeployOperator command");
 			}
+		});
+		it('Should download the container logs', async () => {
+			const operatorContainerItems = await helper.getOperatorContainerItems(imsOperatorItem);
+			assert.equal(operatorContainerItems.length, 2);
+
+			for (const containerItem of operatorContainerItems) {
+				try {
+					vscode.commands.executeCommand(VSCodeCommands.downloadLogs, containerItem);
+					await helper.sleep(5000);
+					const fileData = vscode.window.activeTextEditor?.document.getText();
+					assert.notEqual(fileData, undefined);
+					assert.notEqual(fileData?.length, 0);
+				} catch (e) {
+					assert.fail("Failure executing verbose log download command");
+				}
+				if (containerItem.contextValue === "operator-container") {
+					try {
+						vscode.commands.executeCommand(VSCodeCommands.downloadVerboseLogs, containerItem, downloadVerboseLogsLogPath);
+						await helper.sleep(5000);
+						const fileData = vscode.window.activeTextEditor?.document.getText();
+						assert.notEqual(fileData, undefined);
+						assert.notEqual(fileData?.length, 0);
+					} catch (e) {
+						console.log("Printing Verbose log download logs");
+						helper.displayCmdOutput(downloadVerboseLogsLogPath);
+						assert.fail("Failure executing verbose log download command");
+					}
+				}
+			}
+
 		});
 	});
 });
