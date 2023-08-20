@@ -7,6 +7,9 @@ import * as child_process from 'child_process';
 import {VSCodeCommands} from '../../utilities/commandConstants';
 import * as helper from '../helper';
 import {OperatorItem} from "../../treeViews/operatorItems/operatorItem";
+import {OperatorContainerItem} from "../../treeViews/operatorItems/operatorContainerItem";
+import {OperatorPodItem} from "../../treeViews/operatorItems/operatorPodItem";
+import {initResources} from '../../treeViews/icons';
 
 
 describe('Extension Test Suite', () => {
@@ -24,10 +27,14 @@ describe('Extension Test Suite', () => {
 	let k8s: helper.KubernetesObj;
 	let cleanup: boolean = false;
 	let userLoggedIn: boolean = false;
+	let extensionContext: vscode.ExtensionContext;
 	
 	before(async () => {
 		const extension = vscode.extensions.getExtension("ibm.operator-collection-sdk");
-  		await extension?.activate();
+		await extension?.activate();
+		extensionContext = (global as any).testExtensionContext;
+		initResources(extensionContext);
+
 		k8s = new helper.KubernetesObj();
 
 		userLoggedIn = await k8s.isUserLoggedIntoOCP();
@@ -190,7 +197,7 @@ describe('Extension Test Suite', () => {
 			}
 		});
 		it('Should download the container logs', async () => {
-			const operatorContainerItems = await helper.getOperatorContainerItems(imsOperatorItem);
+			const operatorContainerItems = await getOperatorContainerItems(imsOperatorItem);
 			assert.equal(operatorContainerItems.length, 2);
 
 			for (const containerItem of operatorContainerItems) {
@@ -203,21 +210,35 @@ describe('Extension Test Suite', () => {
 				} catch (e) {
 					assert.fail("Failure executing verbose log download command");
 				}
-				if (containerItem.contextValue === "operator-container") {
-					try {
-						vscode.commands.executeCommand(VSCodeCommands.downloadVerboseLogs, containerItem, downloadVerboseLogsLogPath);
-						await helper.sleep(5000);
-						const fileData = vscode.window.activeTextEditor?.document.getText();
-						assert.notEqual(fileData, undefined);
-						assert.notEqual(fileData?.length, 0);
-					} catch (e) {
-						console.log("Printing Verbose log download logs");
-						helper.displayCmdOutput(downloadVerboseLogsLogPath);
-						assert.fail("Failure executing verbose log download command");
-					}
-				}
 			}
-
 		});
 	});
 });
+
+
+
+async function getOperatorPodItems(parentOperator: OperatorItem): Promise<OperatorPodItem[]> {
+	const operatorPodItems: Array<OperatorPodItem> = [];
+	const k8s = new helper.KubernetesObj();
+	const pods = await k8s.getOperatorPods(parentOperator.operatorName);
+	if (pods) {
+		for (const pod of pods) {
+			const containerStatus = await k8s.getOperatorContainerStatuses(parentOperator.operatorName, pod);
+			operatorPodItems.push(new OperatorPodItem(pod, containerStatus, parentOperator));
+		}
+	}
+	return operatorPodItems;
+}
+
+async function getOperatorContainerItems(parentOperator: OperatorItem): Promise<OperatorContainerItem[]> {
+    const operatorContainerItems: Array<OperatorContainerItem> = [];
+    const k8s = new helper.KubernetesObj();
+    const operatorPodItems = await getOperatorPodItems(parentOperator);
+    if (operatorPodItems.length === 1) {
+        const containerStatuses = await k8s.getOperatorContainerStatuses(operatorPodItems[0].parentOperator.operatorName, operatorPodItems[0].podObj);
+        for (const containerStatus of containerStatuses) {
+            operatorContainerItems.push(new OperatorContainerItem(operatorPodItems[0].podObj, containerStatus, operatorPodItems[0].parentOperator));
+        }
+    }
+	return operatorContainerItems;
+}

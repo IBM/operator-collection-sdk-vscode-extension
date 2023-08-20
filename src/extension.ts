@@ -24,6 +24,8 @@ import {OcSdkCommand} from './shellCommands/ocSdkCommands';
 import {Session} from "./utilities/session";
 
 export async function activate(context: vscode.ExtensionContext) {
+	// Set context as a global as some tests depend on it
+	(global as any).testExtensionContext = context;
 	initResources(context);
 
 	const k8s = new KubernetesObj();
