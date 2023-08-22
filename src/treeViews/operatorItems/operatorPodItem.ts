@@ -11,16 +11,12 @@ import {OperatorTreeItem} from "./operatorTreeItems";
 import {OperatorItem} from "../operatorItems/operatorItem";
 
 export class OperatorPodItem extends OperatorTreeItem {
-    constructor(public podObj: k8s.V1Pod, public containerStatus: Array<k8s.V1ContainerStatus>, public readonly parentOperator: OperatorItem) {
+    constructor(public readonly podObj: k8s.V1Pod, public readonly containerStatus: Array<k8s.V1ContainerStatus>, public readonly parentOperator: OperatorItem) {
         super(`Pod: ${podObj.metadata?.name!}`, vscode.TreeItemCollapsibleState.Expanded);
 		this.contextValue = "operaror-pod";
 		this.iconPath = icons.getPodStatusIcon(containerStatus);
     }
 
-	updatePodItem(item: OperatorPodItem) {
-		this.podObj = item.podObj;
-		this.containerStatus = item.containerStatus;
-	  }
 	contextValue = "operator-pod";
 }
 

@@ -10,10 +10,10 @@ import {ResourceTreeItem} from "./resourceTreeItems";
 import * as util from '../../utilities/util';
 
 export class OperatorCollectionsItem extends ResourceTreeItem {
-    constructor(public readonly subOperatorConfigObj: ObjectInstance, public readonly link: string) {
-        super(subOperatorConfigObj.metadata.name, vscode.TreeItemCollapsibleState.None);
+    constructor(public readonly operatorCollectionObj: ObjectInstance, public readonly link: string) {
+        super(operatorCollectionObj.metadata.name, vscode.TreeItemCollapsibleState.None);
         this.contextValue = "operatorcollection-object";
-        this.iconPath = icons.getCustomResourceStatusIcon(subOperatorConfigObj);
+        this.iconPath = icons.getCustomResourceStatusIcon(operatorCollectionObj);
     }
 }
 
