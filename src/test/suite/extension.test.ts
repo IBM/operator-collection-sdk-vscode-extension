@@ -246,7 +246,6 @@ describe('Extension Test Suite', async () => {
 		const session = new Session();
 		let operatorsTreeProvider: OperatorsTreeProvider;
 		let resourcesTreeProvider: ResourcesTreeProvider;
-		let openShiftTreeProvider: OpenShiftTreeProvider;
 		
 		let imsOperator: OperatorItem;
 		let imsOperatorResource: OperatorItem;

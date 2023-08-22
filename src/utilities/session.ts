@@ -28,6 +28,7 @@ export class Session {
             this.ocSdkInstalled = true;
             return true;
         } catch(e) {
+            console.log("Install the IBM Operator Collection SDK use this extension");
             vscode.window.showWarningMessage("Install the IBM Operator Collection SDK use this extension");
             this.ocSdkInstalled = false;
             return false;
@@ -43,6 +44,7 @@ export class Session {
             this.loggedIntoOpenShift = true;
             return true;
         }).catch(() => {
+            console.log("Log in to an OpenShift Cluster to use this extension");
             vscode.window.showWarningMessage("Log in to an OpenShift Cluster to use this extension");
             this.loggedIntoOpenShift = false;
             return false;
