@@ -347,6 +347,8 @@ describe('Extension Test Suite', async () => {
 		});
 		it('Should validate the IMS operator container items', async () => {
 			const imsOperatorContainers = await operatorsTreeProvider.getChildren(imsOperatorPod);
+			console.log("imsOperatorContainers");
+			console.log(JSON.stringify(imsOperatorContainers)); 
 			assert.equal(imsOperatorContainers.length, 2);
 			assert.equal(imsOperatorContainers[0] instanceof OperatorContainerItem, true);
 			assert.equal(imsOperatorContainers[1] instanceof OperatorContainerItem, true);
