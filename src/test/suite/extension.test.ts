@@ -269,8 +269,10 @@ describe('Extension Test Suite', async () => {
 		let consoleUrl: string;
 
 		it('Should validate the operator items', async() => {
-			await session.validateOcSDKInstallation();
-			await session.validateOpenShiftAccess();
+			const ocsdkValidation = await session.validateOcSDKInstallation();
+			console.log("ocsdkValidation " + ocsdkValidation);
+			const openshilftAccess = await session.validateOpenShiftAccess();
+			console.log("openshilftAccess " + openshilftAccess);
 			operatorsTreeProvider = new OperatorsTreeProvider(session);
 			const parentOperators = await operatorsTreeProvider.getChildren();
 			assert.equal(parentOperators.length, 2);
