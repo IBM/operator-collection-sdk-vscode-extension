@@ -62,9 +62,18 @@ describe('Extension Test Suite', async () => {
 		await extension?.activate();
 		extensionContext = (global as any).testExtensionContext;
 		initResources(extensionContext);
-
 		k8s = new helper.KubernetesObj();
+		// try {
+		// 	vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
+		// 	await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
+		// } catch (e) {
+		// 	console.log("Printing Delete Operator command logs");
+		// 	helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
+		// 	assert.fail(`Failure executing deleteOperator command: ${e}`);
+		// }
+	});
 
+	beforeEach(async() => {
 		userLoggedIn = await k8s.isUserLoggedIntoOCP();
 		if (!userLoggedIn) {
 			const testClusterInfo = helper.getTestClusterInfo();
@@ -118,15 +127,6 @@ describe('Extension Test Suite', async () => {
 				assert.fail(`Failure installing ZosCloudBroker: ${e}`);
 			}
 		}
-
-		// try {
-		// 	vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
-		// 	await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
-		// } catch (e) {
-		// 	console.log("Printing Delete Operator command logs");
-		// 	helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
-		// 	assert.fail(`Failure executing deleteOperator command: ${e}`);
-		// }
 	});
 
 	after(async () => {
