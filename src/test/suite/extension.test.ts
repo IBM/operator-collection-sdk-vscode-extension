@@ -67,17 +67,6 @@ describe('Extension Test Suite', async () => {
 		initResources(extensionContext);
 
 		k8s = new helper.TestKubernetesObj();
-		// try {
-		// 	vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
-		// 	await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
-		// } catch (e) {
-		// 	console.log("Printing Delete Operator command logs");
-		// 	helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
-		// 	assert.fail(`Failure executing deleteOperator command: ${e}`);
-		// }
-	});
-
-	beforeEach(async() => {
 		userLoggedIn = await k8s.isUserLoggedIntoOCP();
 		if (!userLoggedIn) {
 			const testClusterInfo = helper.getTestClusterInfo();
@@ -102,9 +91,6 @@ describe('Extension Test Suite', async () => {
 			console.log("User logged in Before Each: " + userLoggedIn);
 			assert.equal(userLoggedIn, true);
 
-			const openshiftAccess = await session.validateOpenShiftAccess();
-			console.log("openshiftAccess " + openshiftAccess);
-
 			// Create Namespace if not already created
 			let namespaceObject: helper.ObjectInstance | undefined;
 			try {
@@ -126,7 +112,6 @@ describe('Extension Test Suite', async () => {
 				assert.fail("Failure logging in to OCP cluster");
 			}
 			k8s = new helper.TestKubernetesObj(testClusterInfo.ocpNamespace);
-			session = new Session(ocSdkCmd, k8s);
 
 			// Install ZosCloudBroker if not already installed
 			try {
@@ -135,6 +120,14 @@ describe('Extension Test Suite', async () => {
 				assert.fail(`Failure installing ZosCloudBroker: ${e}`);
 			}
 		}
+		// try {
+		// 	vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
+		// 	await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
+		// } catch (e) {
+		// 	console.log("Printing Delete Operator command logs");
+		// 	helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
+		// 	assert.fail(`Failure executing deleteOperator command: ${e}`);
+		// }
 	});
 
 	after(async () => {
@@ -186,6 +179,10 @@ describe('Extension Test Suite', async () => {
 
 	describe('When validating commands', () => {
 		it('Should install the Operator Collection SDK', async () => {
+			console.log("K8s: " + JSON.stringify(k8s));
+			session = new Session(ocSdkCmd, k8s);
+			const openshiftAccess = await session.validateOpenShiftAccess();
+			console.log("openshiftAccess " + openshiftAccess);
 			const userLoggedIn = await k8s.isUserLoggedIntoOCP();
 			console.log("User logged in OC SDK test: " + userLoggedIn);
 			vscode.commands.executeCommand(VSCodeCommands.install, installSdkLogPath);
@@ -313,6 +310,7 @@ describe('Extension Test Suite', async () => {
 		});
 		it('Should validate the IMS operator pod item', async () => {
 			const imsOperatorPods = await operatorsTreeProvider.getChildren(imsOperator);
+			console.log("imsOperatorPods: " + imsOperatorPods);
 			assert.equal(imsOperatorPods.length, 1);
 			assert.equal(imsOperatorPods[0] instanceof OperatorPodItem, true);
 
@@ -443,7 +441,7 @@ describe('Extension Test Suite', async () => {
 			consoleUrl = await k8s.getOpenshifConsoleUrl();
 			const createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/clusterserviceversions/${imsCSVName}/suboperator.zoscb.ibm.com~${imsApiVersion}~${tmdbKind}/~new`;
 
-			assert.notEqual(imsCustomResourceParents.length, 1);
+			assert.equal(imsCustomResourceParents.length, 1);
 			assert.equal(imsCustomResourceParents[0].kind, tmdbKind);
 			assert.equal(imsCustomResourceParents[0].apiVersion, imsApiVersion);
 			assert.equal(imsCustomResourceParents[0].operatorCsvName, imsCSVName);
@@ -482,7 +480,7 @@ describe('Extension Test Suite', async () => {
 			consoleUrl = await k8s.getOpenshifConsoleUrl();
 			const createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/clusterserviceversions/${cicsCSVName}/suboperator.zoscb.ibm.com~${cicsApiVersion}~${cicsKind}/~new`;
 			
-			assert.notEqual(cicsCustomResourceParents.length, 1);
+			assert.equal(cicsCustomResourceParents.length, 1);
 			assert.equal(cicsCustomResourceParents[0].kind, cicsKind);
 			assert.equal(cicsCustomResourceParents[0].apiVersion, cicsApiVersion);
 			assert.equal(cicsCustomResourceParents[0].operatorCsvName, cicsCSVName);
