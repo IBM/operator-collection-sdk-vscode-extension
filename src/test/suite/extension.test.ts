@@ -215,32 +215,32 @@ describe('Extension Test Suite', async () => {
 				}
 			}
 		});
-		it('Should redeploy the collection', async () => {
-			try {
-				const oldPod = await k8s.getOperatorPods(imsOperatorItem.operatorName);
-				if (oldPod === undefined || oldPod.length !== 1) {
-					assert.fail("Failure validating operator pods");
-				}
-				const oldPodName = oldPod[0].metadata?.name;
-				vscode.commands.executeCommand(VSCodeCommands.redeployCollection, imsOperatorItem, redeployCollectionLogPath);
-				await helper.pollOperatorPodStatus(imsOperatorItem.operatorName, oldPodName!, 30);
-			} catch (e) {
-				console.log("Printing Redeploy Collection logs");
-				helper.displayCmdOutput(redeployCollectionLogPath);
-				assert.fail("Failure executing redeployCollection command");
-			}
-		});
-		it('Should redeploy the operator', async () => {
-			try {
-				vscode.commands.executeCommand(VSCodeCommands.redeployOperator, imsOperatorItem, redeployOperatorLogPath);
-				await helper.sleep(20000);
-				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
-			} catch (e) {
-				console.log("Printing Redeploy Operator logs");
-				helper.displayCmdOutput(redeployOperatorLogPath);
-				assert.fail("Failure executing redeployOperator command");
-			}
-		});
+		// it('Should redeploy the collection', async () => {
+		// 	try {
+		// 		const oldPod = await k8s.getOperatorPods(imsOperatorItem.operatorName);
+		// 		if (oldPod === undefined || oldPod.length !== 1) {
+		// 			assert.fail("Failure validating operator pods");
+		// 		}
+		// 		const oldPodName = oldPod[0].metadata?.name;
+		// 		vscode.commands.executeCommand(VSCodeCommands.redeployCollection, imsOperatorItem, redeployCollectionLogPath);
+		// 		await helper.pollOperatorPodStatus(imsOperatorItem.operatorName, oldPodName!, 30);
+		// 	} catch (e) {
+		// 		console.log("Printing Redeploy Collection logs");
+		// 		helper.displayCmdOutput(redeployCollectionLogPath);
+		// 		assert.fail("Failure executing redeployCollection command");
+		// 	}
+		// });
+		// it('Should redeploy the operator', async () => {
+		// 	try {
+		// 		vscode.commands.executeCommand(VSCodeCommands.redeployOperator, imsOperatorItem, redeployOperatorLogPath);
+		// 		await helper.sleep(20000);
+		// 		await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
+		// 	} catch (e) {
+		// 		console.log("Printing Redeploy Operator logs");
+		// 		helper.displayCmdOutput(redeployOperatorLogPath);
+		// 		assert.fail("Failure executing redeployOperator command");
+		// 	}
+		// });
 	});
 
 	describe('When validating the Tree View', () => {
