@@ -120,7 +120,11 @@ describe('Extension Test Suite', async () => {
 				assert.fail(`Failure installing ZosCloudBroker: ${e}`);
 			}
 		}
-		
+
+		await installOperatorCollectionSDK(installSdkLogPath);
+		await session.validateOcSDKInstallation();
+		await session.validateOpenShiftAccess();
+
 		try {
 			vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem, deleteOperatorBeforeAllLogPath);
 			await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
@@ -179,22 +183,6 @@ describe('Extension Test Suite', async () => {
 	});
 
 	describe('When validating commands', () => {
-		it('Should install the Operator Collection SDK', async () => {
-			session = new Session(ocSdkCmd, k8s);
-			await session.validateOpenShiftAccess();
-			await k8s.isUserLoggedIntoOCP();
-			vscode.commands.executeCommand(VSCodeCommands.install, installSdkLogPath);
-			await helper.sleep(15000);
-			await session.validateOcSDKInstallation();
-			try {
-				child_process.execSync("ansible-galaxy collection verify ibm.operator_collection_sdk");
-			} catch (e) {
-				console.log("Printing Install OC SDK logs");
-				helper.displayCmdOutput(installSdkLogPath);
-				assert.equal(e, undefined);
-				process.exit(1);
-			}
-		});
 		it('Should create an operator', async () => {
 			try {
 				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem, createOperatorLogPath);
@@ -615,6 +603,18 @@ describe('Extension Test Suite', async () => {
 	});
 });
 
+async function installOperatorCollectionSDK(installSdkLogPath: string) {
+	vscode.commands.executeCommand(VSCodeCommands.install, installSdkLogPath);
+	await helper.sleep(15000);
+	try {
+		child_process.execSync("ansible-galaxy collection verify ibm.operator_collection_sdk");
+	} catch (e) {
+		console.log("Printing Install OC SDK logs");
+		helper.displayCmdOutput(installSdkLogPath);
+		assert.equal(e, undefined);
+		process.exit(1);
+	}
+}
 
 
 async function getOperatorPodItems(parentOperator: OperatorItem): Promise<OperatorPodItem[]> {
