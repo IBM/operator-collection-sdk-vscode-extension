@@ -56,7 +56,6 @@ describe('Extension Test Suite', async () => {
 	let cleanup: boolean = false;
 	let userLoggedIn: boolean = false;
 	let extensionContext: vscode.ExtensionContext;
-	let namespace: string;
 	
 	before(async () => {
 		const extension = vscode.extensions.getExtension("ibm.operator-collection-sdk");
@@ -91,10 +90,9 @@ describe('Extension Test Suite', async () => {
 			assert.equal(userLoggedIn, true);
 
 			// Create Namespace if not already created
-			namespace = testClusterInfo.ocpNamespace;
 			let namespaceObject: helper.ObjectInstance | undefined;
 			try {
-				namespaceObject = await k8s.createNamespace(namespace);
+				namespaceObject = await k8s.createNamespace(testClusterInfo.ocpNamespace);
 			} catch(e) {
 				assert.fail(`Failure creating Namespace: ${e}`);
 			}
@@ -104,14 +102,14 @@ describe('Extension Test Suite', async () => {
 				cleanup = true;
 			}
 			try {
-				vscode.commands.executeCommand(VSCodeCommands.updateProject, namespace, updateProjectLogPath);
+				vscode.commands.executeCommand(VSCodeCommands.updateProject, testClusterInfo.ocpNamespace, updateProjectLogPath);
 				await helper.sleep(5000);
 			} catch (e) {
 				console.log("Printing Update Project command logs");
 				helper.displayCmdOutput(updateProjectLogPath);
 				assert.fail("Failure logging in to OCP cluster");
 			}
-			k8s = new helper.KubernetesObj(namespace);
+			k8s = new helper.KubernetesObj(testClusterInfo.ocpNamespace);
 
 			// Install ZosCloudBroker if not already installed
 			try {
@@ -230,10 +228,23 @@ describe('Extension Test Suite', async () => {
 		it('Should download the container logs', async () => {
 			const operatorContainerItems = await getOperatorContainerItems(imsOperatorItem);
 			assert.equal(operatorContainerItems.length, 2);
+			const testClusterInfo = helper.getTestClusterInfo();
+			if (testClusterInfo instanceof Error) {
+				assert.fail(testClusterInfo);
+			}
+			// Login to Openshift
+			let args: Array<string> = [`--server="${testClusterInfo.ocpServerUrl}"`, `--token="${testClusterInfo.ocpToken}"`];
+			try {
+				vscode.commands.executeCommand(VSCodeCommands.login, args, ocLoginLogPath);
+				await helper.sleep(5000);
+			} catch (e) {
+				console.log("Printing OC Login logs");
+				helper.displayCmdOutput(ocLoginLogPath);
+				assert.fail("Failure logging in to OCP cluster");
+			}
 
 			for (const containerItem of operatorContainerItems) {
 				try {
-					k8s = new helper.KubernetesObj(namespace);
 					vscode.commands.executeCommand(VSCodeCommands.downloadLogs, containerItem);
 					await helper.sleep(5000);
 					const fileData = vscode.window.activeTextEditor?.document.getText();
@@ -273,7 +284,6 @@ describe('Extension Test Suite', async () => {
 		let consoleUrl: string;
 
 		it('Should validate the operator items', async() => {
-			k8s = new helper.KubernetesObj(namespace);
 			const ocsdkValidation = await session.validateOcSDKInstallation();
 			console.log("ocsdkValidation " + ocsdkValidation);
 			const openshilftAccess = await session.validateOpenShiftAccess();
