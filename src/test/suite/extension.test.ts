@@ -25,6 +25,7 @@ import * as k8sClient from '@kubernetes/client-node';
 
 describe('Extension Test Suite', async () => {
 	vscode.window.showInformationMessage('Start all tests.');
+	const session = new Session();
 	const imsOperatorItem: OperatorItem | undefined = new OperatorItem("IBM Z and Cloud Modernization Stack - IMS Operator", "zos-ims-operator", helper.imsOperatorCollectionPath);
 	const cicsOperatorItem: OperatorItem | undefined = new OperatorItem("IBM Z and Cloud Modernization Stack - CICS TS Operator", "zos-cics-ts-operator", helper.cicsOperatorCollectionPath);
 	const ocLoginLogPath = path.join(__dirname, "ocLogin.log");
@@ -62,6 +63,7 @@ describe('Extension Test Suite', async () => {
 		await extension?.activate();
 		extensionContext = (global as any).testExtensionContext;
 		initResources(extensionContext);
+
 		k8s = new helper.KubernetesObj();
 		// try {
 		// 	vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
@@ -97,6 +99,9 @@ describe('Extension Test Suite', async () => {
 			userLoggedIn = await k8s.isUserLoggedIntoOCP();
 			console.log("User logged in Before: " + userLoggedIn);
 			assert.equal(userLoggedIn, true);
+
+			const openshilftAccess = await session.validateOpenShiftAccess();
+			console.log("openshilftAccess " + openshilftAccess);
 
 			// Create Namespace if not already created
 			let namespaceObject: helper.ObjectInstance | undefined;
@@ -182,6 +187,8 @@ describe('Extension Test Suite', async () => {
 			console.log("User logged in OC SDK test: " + userLoggedIn);
 			vscode.commands.executeCommand(VSCodeCommands.install, installSdkLogPath);
 			await helper.sleep(15000);
+			const ocsdkValidation = await session.validateOcSDKInstallation();
+			console.log("ocsdkValidation " + ocsdkValidation);
 			try {
 				child_process.execSync("ansible-galaxy collection verify ibm.operator_collection_sdk");
 			} catch (e) {
@@ -250,7 +257,6 @@ describe('Extension Test Suite', async () => {
 	});
 
 	describe('When validating the Tree View', () => {
-		const session = new Session();
 		let operatorsTreeProvider: OperatorsTreeProvider;
 		let resourcesTreeProvider: ResourcesTreeProvider;
 		
@@ -276,10 +282,6 @@ describe('Extension Test Suite', async () => {
 		let consoleUrl: string;
 
 		it('Should validate the operator items', async() => {
-			const ocsdkValidation = await session.validateOcSDKInstallation();
-			console.log("ocsdkValidation " + ocsdkValidation);
-			const openshilftAccess = await session.validateOpenShiftAccess();
-			console.log("openshilftAccess " + openshilftAccess);
 			operatorsTreeProvider = new OperatorsTreeProvider(session);
 			const parentOperators = await operatorsTreeProvider.getChildren();
 			assert.equal(parentOperators.length, 2);
