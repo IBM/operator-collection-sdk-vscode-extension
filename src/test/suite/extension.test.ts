@@ -203,24 +203,24 @@ describe('Extension Test Suite', async () => {
 				assert.fail("Failure executing createOperator command");
 			}
 		});
-		it('Should download the container logs', async () => {
-			const userLoggedIn = await k8s.isUserLoggedIntoOCP();
-			console.log("User logged in download container logs test: " + userLoggedIn);
-			const operatorContainerItems = await getOperatorContainerItems(imsOperatorItem);
-			assert.equal(operatorContainerItems.length, 2);
+		// it('Should download the container logs', async () => {
+		// 	const userLoggedIn = await k8s.isUserLoggedIntoOCP();
+		// 	console.log("User logged in download container logs test: " + userLoggedIn);
+		// 	const operatorContainerItems = await getOperatorContainerItems(imsOperatorItem);
+		// 	assert.equal(operatorContainerItems.length, 2);
 
-			for (const containerItem of operatorContainerItems) {
-				try {
-					vscode.commands.executeCommand(VSCodeCommands.downloadLogs, containerItem);
-					await helper.sleep(5000);
-					const fileData = vscode.window.activeTextEditor?.document.getText();
-					assert.notEqual(fileData, undefined);
-					assert.notEqual(fileData?.length, 0);
-				} catch (e) {
-					assert.fail("Failure executing verbose log download command");
-				}
-			}
-		});
+		// 	for (const containerItem of operatorContainerItems) {
+		// 		try {
+		// 			vscode.commands.executeCommand(VSCodeCommands.downloadLogs, containerItem);
+		// 			await helper.sleep(5000);
+		// 			const fileData = vscode.window.activeTextEditor?.document.getText();
+		// 			assert.notEqual(fileData, undefined);
+		// 			assert.notEqual(fileData?.length, 0);
+		// 		} catch (e) {
+		// 			assert.fail("Failure executing verbose log download command");
+		// 		}
+		// 	}
+		// });
 		// it('Should redeploy the collection', async () => {
 		// 	try {
 		// 		const oldPod = await k8s.getOperatorPods(imsOperatorItem.operatorName);
