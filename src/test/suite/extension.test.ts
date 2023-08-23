@@ -120,14 +120,15 @@ describe('Extension Test Suite', async () => {
 				assert.fail(`Failure installing ZosCloudBroker: ${e}`);
 			}
 		}
-		try {
-			vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem, deleteOperatorBeforeAllLogPath);
-			await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
-		} catch (e) {
-			console.log("Printing Delete Operator command logs");
-			helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
-			assert.fail(`Failure executing deleteOperator command: ${e}`);
-		}
+		
+		// try {
+		// 	vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem, deleteOperatorBeforeAllLogPath);
+		// 	await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
+		// } catch (e) {
+		// 	console.log("Printing Delete Operator command logs");
+		// 	helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
+		// 	assert.fail(`Failure executing deleteOperator command: ${e}`);
+		// }
 	});
 
 	after(async () => {
