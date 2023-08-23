@@ -105,8 +105,10 @@ export interface TestCluster {
 }
 
 export function displayCmdOutput(logPath: string) {
-    const log = fs.readFileSync(logPath);
-	console.log(log.toString());
+    if (fs.existsSync(logPath)) {
+        const log = fs.readFileSync(logPath);
+	    console.log(log.toString());
+    }
 }
 export function getTestClusterInfo(): TestCluster | Error {
     const serverUrl = process.env.OCP_SERVER_URL;
