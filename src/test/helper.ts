@@ -342,6 +342,7 @@ export class KubernetesObj {
         return this.coreV1Api.listNamespacedPod(this.namespace).then((res) => {
             return true;
         }).catch((e) => {
+            console.log(JSON.stringify(e));
             return false;
         });
     }
