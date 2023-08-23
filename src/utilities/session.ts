@@ -5,18 +5,13 @@
 
 import * as vscode from 'vscode';
 import {OcSdkCommand} from "../shellCommands/ocSdkCommands";
-import {KubernetesObj} from "../kubernetes/kubernetes";
+import {KubernetesContext} from "../kubernetes/kubernetesContext";
 
 export class Session {
-    private ocSdkCmd: OcSdkCommand;
-    private k8s: KubernetesObj;
     public ocSdkInstalled: boolean = false;
     public loggedIntoOpenShift: boolean = false;
     
-    constructor(){
-        this.ocSdkCmd = new OcSdkCommand();
-        this.k8s = new KubernetesObj();
-    };
+    constructor(public readonly ocSdkCmd: OcSdkCommand, public readonly k8s: KubernetesContext){};
 
     /**
      * Validates that the IBM Operator Collection SDK is installed
