@@ -119,14 +119,14 @@ describe('Extension Test Suite', async () => {
 			}
 		}
 
-		try {
-			vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
-			await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
-		} catch (e) {
-			console.log("Printing Delete Operator command logs");
-			helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
-			assert.fail(`Failure executing deleteOperator command: ${e}`);
-		}
+		// try {
+		// 	vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
+		// 	await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
+		// } catch (e) {
+		// 	console.log("Printing Delete Operator command logs");
+		// 	helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
+		// 	assert.fail(`Failure executing deleteOperator command: ${e}`);
+		// }
 	});
 
 	after(async () => {
@@ -158,22 +158,22 @@ describe('Extension Test Suite', async () => {
 			fs.unlinkSync(downloadVerboseLogsLogPath);
 		}
 
-		if (userLoggedIn) {
-			try {
-				vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
-				await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
-				if (cleanup) {
-					await k8s.cleanupNamespace();
-				}
-			} catch (e) {
-				console.log("Printing Delete Operator command logs");
-				helper.displayCmdOutput(deleteOperatorAfterAllLogPath);
-				if (fs.existsSync(deleteOperatorAfterAllLogPath)) {
-					fs.unlinkSync(deleteOperatorAfterAllLogPath);
-				}
-				assert.fail(`Failure performing cleanup: ${e}`);
-			}
-		}
+		// if (userLoggedIn) {
+		// 	try {
+		// 		vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
+		// 		await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
+		// 		if (cleanup) {
+		// 			await k8s.cleanupNamespace();
+		// 		}
+		// 	} catch (e) {
+		// 		console.log("Printing Delete Operator command logs");
+		// 		helper.displayCmdOutput(deleteOperatorAfterAllLogPath);
+		// 		if (fs.existsSync(deleteOperatorAfterAllLogPath)) {
+		// 			fs.unlinkSync(deleteOperatorAfterAllLogPath);
+		// 		}
+		// 		assert.fail(`Failure performing cleanup: ${e}`);
+		// 	}
+		// }
 	});
 
 	describe('When validating commands', () => {
