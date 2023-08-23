@@ -199,6 +199,22 @@ describe('Extension Test Suite', async () => {
 				assert.fail("Failure executing createOperator command");
 			}
 		});
+		it('Should download the container logs', async () => {
+			const operatorContainerItems = await getOperatorContainerItems(imsOperatorItem);
+			assert.equal(operatorContainerItems.length, 2);
+
+			for (const containerItem of operatorContainerItems) {
+				try {
+					vscode.commands.executeCommand(VSCodeCommands.downloadLogs, containerItem);
+					await helper.sleep(5000);
+					const fileData = vscode.window.activeTextEditor?.document.getText();
+					assert.notEqual(fileData, undefined);
+					assert.notEqual(fileData?.length, 0);
+				} catch (e) {
+					assert.fail("Failure executing verbose log download command");
+				}
+			}
+		});
 		it('Should redeploy the collection', async () => {
 			try {
 				const oldPod = await k8s.getOperatorPods(imsOperatorItem.operatorName);
@@ -223,36 +239,6 @@ describe('Extension Test Suite', async () => {
 				console.log("Printing Redeploy Operator logs");
 				helper.displayCmdOutput(redeployOperatorLogPath);
 				assert.fail("Failure executing redeployOperator command");
-			}
-		});
-		it('Should download the container logs', async () => {
-			const operatorContainerItems = await getOperatorContainerItems(imsOperatorItem);
-			assert.equal(operatorContainerItems.length, 2);
-			const testClusterInfo = helper.getTestClusterInfo();
-			if (testClusterInfo instanceof Error) {
-				assert.fail(testClusterInfo);
-			}
-			// Login to Openshift
-			let args: Array<string> = [`--server="${testClusterInfo.ocpServerUrl}"`, `--token="${testClusterInfo.ocpToken}"`];
-			try {
-				vscode.commands.executeCommand(VSCodeCommands.login, args, ocLoginLogPath);
-				await helper.sleep(5000);
-			} catch (e) {
-				console.log("Printing OC Login logs");
-				helper.displayCmdOutput(ocLoginLogPath);
-				assert.fail("Failure logging in to OCP cluster");
-			}
-
-			for (const containerItem of operatorContainerItems) {
-				try {
-					vscode.commands.executeCommand(VSCodeCommands.downloadLogs, containerItem);
-					await helper.sleep(5000);
-					const fileData = vscode.window.activeTextEditor?.document.getText();
-					assert.notEqual(fileData, undefined);
-					assert.notEqual(fileData?.length, 0);
-				} catch (e) {
-					assert.fail("Failure executing verbose log download command");
-				}
 			}
 		});
 	});
