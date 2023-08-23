@@ -121,14 +121,14 @@ describe('Extension Test Suite', async () => {
 			}
 		}
 		
-		// try {
-		// 	vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem, deleteOperatorBeforeAllLogPath);
-		// 	await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
-		// } catch (e) {
-		// 	console.log("Printing Delete Operator command logs");
-		// 	helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
-		// 	assert.fail(`Failure executing deleteOperator command: ${e}`);
-		// }
+		try {
+			vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem, deleteOperatorBeforeAllLogPath);
+			await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
+		} catch (e) {
+			console.log("Printing Delete Operator command logs");
+			helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
+			assert.fail(`Failure executing deleteOperator command: ${e}`);
+		}
 	});
 
 	after(async () => {
@@ -180,16 +180,12 @@ describe('Extension Test Suite', async () => {
 
 	describe('When validating commands', () => {
 		it('Should install the Operator Collection SDK', async () => {
-			console.log("K8s: " + JSON.stringify(k8s));
 			session = new Session(ocSdkCmd, k8s);
-			const openshiftAccess = await session.validateOpenShiftAccess();
-			console.log("openshiftAccess " + openshiftAccess);
-			const userLoggedIn = await k8s.isUserLoggedIntoOCP();
-			console.log("User logged in OC SDK test: " + userLoggedIn);
+			await session.validateOpenShiftAccess();
+			await k8s.isUserLoggedIntoOCP();
 			vscode.commands.executeCommand(VSCodeCommands.install, installSdkLogPath);
 			await helper.sleep(15000);
-			const ocsdkValidation = await session.validateOcSDKInstallation();
-			console.log("ocsdkValidation " + ocsdkValidation);
+			await session.validateOcSDKInstallation();
 			try {
 				child_process.execSync("ansible-galaxy collection verify ibm.operator_collection_sdk");
 			} catch (e) {
@@ -200,8 +196,6 @@ describe('Extension Test Suite', async () => {
 			}
 		});
 		it('Should create an operator', async () => {
-			const userLoggedIn = await k8s.isUserLoggedIntoOCP();
-			console.log("User logged in create operator test: " + userLoggedIn);
 			try {
 				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem, createOperatorLogPath);
 				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
@@ -237,9 +231,8 @@ describe('Extension Test Suite', async () => {
 				assert.fail("Failure executing redeployOperator command");
 			}
 		});
-		it('Should download the container logs', async () => {
-			const userLoggedIn = await k8s.isUserLoggedIntoOCP();
-			console.log("User logged in download container logs test: " + userLoggedIn);
+		// TODO - re-enable when fix is found for ECONNREFUSED error when running in Github runner
+		xit('Should download the container logs', async () => {
 			const operatorContainerItems = await getOperatorContainerItems(imsOperatorItem);
 			assert.equal(operatorContainerItems.length, 2);
 
@@ -261,7 +254,7 @@ describe('Extension Test Suite', async () => {
 					assert.notEqual(fileData?.length, 0);
 
 				} catch (e) {
-					assert.fail("Failure executing verbose log download command");
+					assert.fail("Failure executing log download command");
 				}
 			}
 		});
