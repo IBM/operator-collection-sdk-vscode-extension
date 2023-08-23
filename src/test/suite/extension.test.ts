@@ -56,6 +56,7 @@ describe('Extension Test Suite', async () => {
 	let cleanup: boolean = false;
 	let userLoggedIn: boolean = false;
 	let extensionContext: vscode.ExtensionContext;
+	let namespace: string;
 	
 	before(async () => {
 		const extension = vscode.extensions.getExtension("ibm.operator-collection-sdk");
@@ -90,9 +91,10 @@ describe('Extension Test Suite', async () => {
 			assert.equal(userLoggedIn, true);
 
 			// Create Namespace if not already created
+			namespace = testClusterInfo.ocpNamespace;
 			let namespaceObject: helper.ObjectInstance | undefined;
 			try {
-				namespaceObject = await k8s.createNamespace(testClusterInfo.ocpNamespace);
+				namespaceObject = await k8s.createNamespace(namespace);
 			} catch(e) {
 				assert.fail(`Failure creating Namespace: ${e}`);
 			}
@@ -102,14 +104,14 @@ describe('Extension Test Suite', async () => {
 				cleanup = true;
 			}
 			try {
-				vscode.commands.executeCommand(VSCodeCommands.updateProject, testClusterInfo.ocpNamespace, updateProjectLogPath);
+				vscode.commands.executeCommand(VSCodeCommands.updateProject, namespace, updateProjectLogPath);
 				await helper.sleep(5000);
 			} catch (e) {
 				console.log("Printing Update Project command logs");
 				helper.displayCmdOutput(updateProjectLogPath);
 				assert.fail("Failure logging in to OCP cluster");
 			}
-			k8s = new helper.KubernetesObj(testClusterInfo.ocpNamespace);
+			k8s = new helper.KubernetesObj(namespace);
 
 			// Install ZosCloudBroker if not already installed
 			try {
@@ -231,6 +233,7 @@ describe('Extension Test Suite', async () => {
 
 			for (const containerItem of operatorContainerItems) {
 				try {
+					k8s = new helper.KubernetesObj(namespace);
 					vscode.commands.executeCommand(VSCodeCommands.downloadLogs, containerItem);
 					await helper.sleep(5000);
 					const fileData = vscode.window.activeTextEditor?.document.getText();
@@ -270,6 +273,7 @@ describe('Extension Test Suite', async () => {
 		let consoleUrl: string;
 
 		it('Should validate the operator items', async() => {
+			k8s = new helper.KubernetesObj(namespace);
 			const ocsdkValidation = await session.validateOcSDKInstallation();
 			console.log("ocsdkValidation " + ocsdkValidation);
 			const openshilftAccess = await session.validateOpenShiftAccess();

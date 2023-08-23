@@ -97,7 +97,7 @@ export async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-interface TestCluster {
+export interface TestCluster {
     ocpServerUrl: string;
     ocpToken: string;
     ocpNamespace: string;
