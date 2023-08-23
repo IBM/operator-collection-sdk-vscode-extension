@@ -31,7 +31,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	const k8s = new KubernetesObj();
 	const ocSdkCmd = new OcSdkCommand();
 	const ocCmd = new OcCommand();
-	const session = new Session();
+	const session = new Session(ocSdkCmd, k8s);
 
 	const isOcSDKinstalled = await session.validateOcSDKInstallation();
 	const userLoggedIntoOCP = await session.validateOpenShiftAccess();

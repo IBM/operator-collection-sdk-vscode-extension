@@ -13,6 +13,7 @@ export const imsOperatorCollectionPath = `${fixturePath}/zos_ims_operator`;
 export const ocWorkspacePath = `${fixturePath}/operator-collections.code-workspace`;
 export const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-user'));
 import {CustomResourcePhases} from '../utilities/commandConstants';
+import {KubernetesContext} from '../kubernetes/kubernetesContext';
 
 interface ObjectList {
     apiVersion: string;
@@ -136,7 +137,7 @@ export function getTestClusterInfo(): TestCluster | Error {
 }
 
 export async function pollOperatorInstallStatus(operatorName: string, attempts: number) {
-    const k8s = new KubernetesObj();
+    const k8s = new TestKubernetesObj();
     let i = 0;
     let zosEndpointInstalled: boolean = false;
     let operatorCollectionInstalled: boolean = false;
@@ -187,7 +188,7 @@ export async function pollOperatorInstallStatus(operatorName: string, attempts: 
 }
 
 export async function pollOperatorDeleteStatus(operatorName: string, attempts: number) {
-    const k8s = new KubernetesObj();
+    const k8s = new TestKubernetesObj();
     let i = 0;
     let operatorCollectionDeleted: boolean = false;
     let subOperatorConfigDeleted: boolean = false;
@@ -222,7 +223,7 @@ export async function pollOperatorDeleteStatus(operatorName: string, attempts: n
 
 
 export async function pollOperatorPodStatus(operatorName: string, oldPodName: string, attempts: number) {
-    const k8s = new KubernetesObj();
+    const k8s = new TestKubernetesObj();
     let i = 0;
     return await new Promise((resolve, reject) => {
         const interval = setInterval(async (): Promise<void> => {
@@ -246,7 +247,7 @@ export async function pollOperatorPodStatus(operatorName: string, oldPodName: st
 }
 
 
-async function podReinstalledSuccessfully(operatorName: string, oldPodName: string, k8s: KubernetesObj): Promise<boolean> {
+async function podReinstalledSuccessfully(operatorName: string, oldPodName: string, k8s: TestKubernetesObj): Promise<boolean> {
     const pods = await k8s.getOperatorPods(operatorName);
     if (pods?.length === 0) {
         return false;
@@ -263,7 +264,7 @@ async function podReinstalledSuccessfully(operatorName: string, oldPodName: stri
 }
 
 
-async function zosEndpointInstalledSuccessfully(k8s: KubernetesObj): Promise<boolean> {
+async function zosEndpointInstalledSuccessfully(k8s: TestKubernetesObj): Promise<boolean> {
     const zosEndpoints = await k8s.getZosEndpoints();
     const zosEndpoint = zosEndpoints?.items.find((zosEndpoint) => zosEndpoint.metadata.name === zosEndpointName && zosEndpoint.status?.phase === CustomResourcePhases.successful);
     if (zosEndpoint) {
@@ -272,7 +273,7 @@ async function zosEndpointInstalledSuccessfully(k8s: KubernetesObj): Promise<boo
     return false;
 }
 
-async function operatorCollectionInstalledSuccessfully(operatorName: string, k8s: KubernetesObj): Promise<boolean> {
+async function operatorCollectionInstalledSuccessfully(operatorName: string, k8s: TestKubernetesObj): Promise<boolean> {
     const operatorCollections = await k8s.getOperatorCollections(operatorName);
     if (operatorCollections?.items.length === 1 && operatorCollections.items[0].status?.phase === CustomResourcePhases.successful) {
         return true;
@@ -280,7 +281,7 @@ async function operatorCollectionInstalledSuccessfully(operatorName: string, k8s
     return false;
 }
 
-async function operatorCollectionDeletedSuccessfully(operatorName: string, k8s: KubernetesObj): Promise<boolean> {
+async function operatorCollectionDeletedSuccessfully(operatorName: string, k8s: TestKubernetesObj): Promise<boolean> {
     const operatorCollections = await k8s.getOperatorCollections(operatorName);
     if (operatorCollections?.items.length === 0) {
         return true;
@@ -288,7 +289,7 @@ async function operatorCollectionDeletedSuccessfully(operatorName: string, k8s: 
     return false;
 }
 
-async function subOperatorConfigInstalledSuccessfully(operatorName: string, k8s: KubernetesObj): Promise<boolean> {
+async function subOperatorConfigInstalledSuccessfully(operatorName: string, k8s: TestKubernetesObj): Promise<boolean> {
     const subOperatorConfigs = await k8s.getSubOperatorConfigs(operatorName);
     if (subOperatorConfigs?.items.length === 1 && subOperatorConfigs.items[0].status?.phase === CustomResourcePhases.successful) {
         return true;
@@ -296,7 +297,7 @@ async function subOperatorConfigInstalledSuccessfully(operatorName: string, k8s:
     return false;
 }
 
-async function subOperatorConfigDeletedSuccessfully(operatorName: string, k8s: KubernetesObj): Promise<boolean> {
+async function subOperatorConfigDeletedSuccessfully(operatorName: string, k8s: TestKubernetesObj): Promise<boolean> {
     const subOperatorConfigs = await k8s.getSubOperatorConfigs(operatorName);
     if (subOperatorConfigs?.items.length === 0) {
         return true;
@@ -304,36 +305,11 @@ async function subOperatorConfigDeletedSuccessfully(operatorName: string, k8s: K
     return false;
 }
 
-export class KubernetesObj {
-    public coreV1Api: k8sClient.CoreV1Api;
-    public customObjectsApi: k8sClient.CustomObjectsApi;
-    public namespace: string = "";
-    public openshiftServerURL: string | undefined  = "";
+export class TestKubernetesObj extends KubernetesContext {
     constructor(namespace?: string) {
-        const kc = new k8sClient.KubeConfig();
-        if (namespace === undefined) {
-            if (fs.existsSync("/var/run/secrets/kubernetes.io/serviceaccount")) {
-                kc.loadFromCluster();
-                this.namespace = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/namespace').toString();
-            } else {
-                kc.loadFromDefault();
-                if (kc.currentContext) {
-                    const currentContextObj = kc.getContextObject(kc.currentContext);
-                    if (currentContextObj?.namespace) {
-                        this.namespace = currentContextObj.namespace;
-                    }
-                }
-            }
-        } else {
-            kc.loadFromDefault();
-            this.namespace = namespace;
-        }
-
-        this.openshiftServerURL = kc.getCurrentCluster()?.server;
-        this.coreV1Api = kc.makeApiClient(k8sClient.CoreV1Api);
-        this.customObjectsApi = kc.makeApiClient(k8sClient.CustomObjectsApi);
+        super(namespace);
     }
-
+    
     /**
      * Validate if user is logged into an OCP Cluster
      * @returns - A promise containing a boolean
@@ -428,7 +404,7 @@ export class KubernetesObj {
         return containerStatuses;
     }
 
-    private setTerminatingStatus(containerStatus: k8sClient.V1ContainerStatus): void {
+    public setTerminatingStatus(containerStatus: k8sClient.V1ContainerStatus): void {
         if (containerStatus.state) {
             containerStatus.state.running = undefined;
             containerStatus.state.terminated = undefined;
@@ -460,6 +436,40 @@ export class KubernetesObj {
         }).catch((e) => {
             const errorObjectString = JSON.stringify(e);
             console.error(`Failure retrieving Pod logs. ${errorObjectString}`);
+            return undefined;
+        });
+    }
+
+    /**
+     * Download the verbose container logs
+     * @param podName - The pod name where the container resides
+     * @param containerName - The container name within the pod
+     * @param workspacePath - The current workspace path
+     * @param apiVersion - The resource API version
+     * @param kind - The resource Kind
+     * @param instanceName - The resource instance name
+     * @returns - A promise containing the path to the container log
+     */
+    public async downloadVerboseContainerLogs(podName: string, containerName: string, workspacePath: string, apiVersion: string, kind: string, instanceName: string, logPath?: string): Promise<string | undefined> {
+        return "";
+    }
+
+    /**
+     * Returns a list of namespaces on the OpenShift cluster
+     * @returns - A promise containing a list of Namespace names
+     */
+    public async getNamespaceList(): Promise<string[] | undefined> {
+        const namespaceList: Array<string> = [];
+        return this.coreV1Api.listNamespace().then((res) => {
+            let namespacesString = JSON.stringify(res.body);
+            let namespacesbjectList: ObjectList = JSON.parse(namespacesString);
+            for (const namespaces of namespacesbjectList.items) {
+                namespaceList.push(namespaces.metadata.name);
+            }
+            return namespaceList;
+        }).catch((e) => {
+            const msg = `Failure retrieving Namespace list: ${JSON.stringify(e)}`;
+            console.error(msg);
             return undefined;
         });
     }
@@ -544,7 +554,7 @@ export class KubernetesObj {
         return await this.getBrokerObjList("operatorcollections", operatorName);
     }
 
-    private async getBrokerObjList(objPlural: string, operatorName?: string): Promise<ObjectList | undefined> {
+    public async getBrokerObjList(objPlural: string, operatorName?: string): Promise<ObjectList | undefined> {
         let objsString: string = "";
         if (objPlural !== "zosendpoints" && operatorName) {
             const labelSelector = `operator-name=${operatorName}`;
@@ -641,7 +651,7 @@ export class KubernetesObj {
         return routeObj.spec.host;
     }
 
-    private async getZosCloudBrokerCsvName(): Promise<string | undefined> {
+    public async getZosCloudBrokerCsvName(): Promise<string | undefined> {
         const labelSelector = `operators.coreos.com/ibm-zoscb.${this.namespace}=`;
         return this.customObjectsApi.listNamespacedCustomObject(
             clusterServiceVersionGroup,

@@ -21,11 +21,12 @@ import {CustomResourceItem} from '../../treeViews/resourceItems/customResourceIt
 import {initResources, getPassingIcons, getFailingIcons} from '../../treeViews/icons';
 import {Session} from "../../utilities/session";
 import * as k8sClient from '@kubernetes/client-node';
+import {OcSdkCommand} from '../../shellCommands/ocSdkCommands';
 
 
 describe('Extension Test Suite', async () => {
 	vscode.window.showInformationMessage('Start all tests.');
-	const session = new Session();
+	const ocSdkCmd = new OcSdkCommand();
 	const imsOperatorItem: OperatorItem | undefined = new OperatorItem("IBM Z and Cloud Modernization Stack - IMS Operator", "zos-ims-operator", helper.imsOperatorCollectionPath);
 	const cicsOperatorItem: OperatorItem | undefined = new OperatorItem("IBM Z and Cloud Modernization Stack - CICS TS Operator", "zos-cics-ts-operator", helper.cicsOperatorCollectionPath);
 	const ocLoginLogPath = path.join(__dirname, "ocLogin.log");
@@ -53,7 +54,8 @@ describe('Extension Test Suite', async () => {
 	const operatorCollectionApiVersion: string =  "v2beta2";
 
 	
-	let k8s: helper.KubernetesObj;
+	let k8s: helper.TestKubernetesObj;
+	let session: Session;
 	let cleanup: boolean = false;
 	let userLoggedIn: boolean = false;
 	let extensionContext: vscode.ExtensionContext;
@@ -64,7 +66,7 @@ describe('Extension Test Suite', async () => {
 		extensionContext = (global as any).testExtensionContext;
 		initResources(extensionContext);
 
-		k8s = new helper.KubernetesObj();
+		k8s = new helper.TestKubernetesObj();
 		// try {
 		// 	vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
 		// 	await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
@@ -95,13 +97,10 @@ describe('Extension Test Suite', async () => {
 			}
 
 			// Update K8s object to retrieve config after log in
-			k8s = new helper.KubernetesObj();
+			k8s = new helper.TestKubernetesObj();
 			userLoggedIn = await k8s.isUserLoggedIntoOCP();
 			console.log("User logged in Before: " + userLoggedIn);
 			assert.equal(userLoggedIn, true);
-
-			const openshilftAccess = await session.validateOpenShiftAccess();
-			console.log("openshilftAccess " + openshilftAccess);
 
 			// Create Namespace if not already created
 			let namespaceObject: helper.ObjectInstance | undefined;
@@ -123,7 +122,8 @@ describe('Extension Test Suite', async () => {
 				helper.displayCmdOutput(updateProjectLogPath);
 				assert.fail("Failure logging in to OCP cluster");
 			}
-			k8s = new helper.KubernetesObj(testClusterInfo.ocpNamespace);
+			k8s = new helper.TestKubernetesObj(testClusterInfo.ocpNamespace);
+			session = new Session(ocSdkCmd, k8s);
 
 			// Install ZosCloudBroker if not already installed
 			try {
@@ -617,7 +617,7 @@ describe('Extension Test Suite', async () => {
 
 async function getOperatorPodItems(parentOperator: OperatorItem): Promise<OperatorPodItem[]> {
 	const operatorPodItems: Array<OperatorPodItem> = [];
-	const k8s = new helper.KubernetesObj();
+	const k8s = new helper.TestKubernetesObj();
 	const pods = await k8s.getOperatorPods(parentOperator.operatorName);
 	if (pods) {
 		for (const pod of pods) {
@@ -630,7 +630,7 @@ async function getOperatorPodItems(parentOperator: OperatorItem): Promise<Operat
 
 async function getOperatorContainerItems(parentOperator: OperatorItem): Promise<OperatorContainerItem[]> {
     const operatorContainerItems: Array<OperatorContainerItem> = [];
-    const k8s = new helper.KubernetesObj();
+    const k8s = new helper.TestKubernetesObj();
     const operatorPodItems = await getOperatorPodItems(parentOperator);
     if (operatorPodItems.length === 1) {
         const containerStatuses = await k8s.getOperatorContainerStatuses(operatorPodItems[0].parentOperator.operatorName, operatorPodItems[0].podObj);

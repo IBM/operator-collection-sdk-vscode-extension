@@ -9,6 +9,7 @@ import * as fs from "fs";
 import * as path from 'path';
 import * as util from '../utilities/util';
 import {OcCommand} from "../shellCommands/ocCommand";
+import {KubernetesContext} from "./kubernetesContext";
 
 export interface ObjectList {
     apiVersion: string;
@@ -40,31 +41,7 @@ interface RouteObject {
 interface RouteObjectSpec {
     host: string;
 }
-export class KubernetesObj {
-    public coreV1Api: k8s.CoreV1Api;
-    public customObjectsApi: k8s.CustomObjectsApi;
-    public namespace: string = "";
-    public openshiftServerURL: string | undefined  = "";
-    constructor() {
-        const kc = new k8s.KubeConfig();
-        if (fs.existsSync("/var/run/secrets/kubernetes.io/serviceaccount")) {
-            kc.loadFromCluster();
-            this.namespace = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/namespace').toString();
-        } else {
-            kc.loadFromDefault();
-            if (kc.currentContext) {
-                const currentContextObj = kc.getContextObject(kc.currentContext);
-                if (currentContextObj?.namespace) {
-                    this.namespace = currentContextObj.namespace;
-                }
-            }
-        }
-
-        this.openshiftServerURL = kc.getCurrentCluster()?.server;
-        this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
-        this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
-    }
-
+export class KubernetesObj extends KubernetesContext {
     /**
      * Validate if user is logged into an OCP Cluster
      * @returns - A promise containing a boolean
@@ -217,7 +194,7 @@ export class KubernetesObj {
         return ocCmd.runOcCpCommand(podName, this.namespace, containerName, openshiftLogsPath, apiVersion, kind, instanceName, logPath).then(() => {
             return openshiftLogsPath;
         }).catch((e) => {
-            const msg = `Failure running the "oc cp" command. ${JSON.stringify(e)}`;
+            const msg = `Failure running the "oc cp" command. ${e.response.statusMessage}`;
             console.error(msg);
             vscode.window.showErrorMessage(msg);
             return undefined;
@@ -244,7 +221,7 @@ export class KubernetesObj {
             if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
                 return undefined;
             } else {
-                const msg = `Failure retrieving Custom Resource list. ${JSON.stringify(e)}`;
+                const msg = `Failure retrieving Custom Resource list. ${e.response.statusMessage}`;
                 console.error(msg);
                 vscode.window.showErrorMessage(msg);
                 return undefined;
@@ -271,7 +248,7 @@ export class KubernetesObj {
             if (e.response.statusCode && e.response.statusCode === 404) { // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
                 return false;
             } else {
-                const msg = `Failure deleting Custom Resource object. ${JSON.stringify(e)}`;
+                const msg = `Failure deleting Custom Resource object. ${e.response.statusMessage}`;
                 console.error(msg);
                 vscode.window.showErrorMessage(msg);
                 return false;
