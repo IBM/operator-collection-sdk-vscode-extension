@@ -121,7 +121,7 @@ describe('Extension Test Suite', async () => {
 			}
 		}
 		try {
-			vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
+			vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem, deleteOperatorBeforeAllLogPath);
 			await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
 		} catch (e) {
 			console.log("Printing Delete Operator command logs");
@@ -161,7 +161,7 @@ describe('Extension Test Suite', async () => {
 
 		if (userLoggedIn) {
 			try {
-				vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
+				vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem, deleteOperatorAfterAllLogPath);
 				await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
 				if (cleanup) {
 					await k8s.cleanupNamespace();
