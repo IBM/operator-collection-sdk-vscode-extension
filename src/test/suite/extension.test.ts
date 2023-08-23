@@ -120,14 +120,14 @@ describe('Extension Test Suite', async () => {
 				assert.fail(`Failure installing ZosCloudBroker: ${e}`);
 			}
 		}
-		// try {
-		// 	vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
-		// 	await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
-		// } catch (e) {
-		// 	console.log("Printing Delete Operator command logs");
-		// 	helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
-		// 	assert.fail(`Failure executing deleteOperator command: ${e}`);
-		// }
+		try {
+			vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
+			await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
+		} catch (e) {
+			console.log("Printing Delete Operator command logs");
+			helper.displayCmdOutput(deleteOperatorBeforeAllLogPath);
+			assert.fail(`Failure executing deleteOperator command: ${e}`);
+		}
 	});
 
 	after(async () => {
@@ -159,22 +159,22 @@ describe('Extension Test Suite', async () => {
 			fs.unlinkSync(downloadVerboseLogsLogPath);
 		}
 
-		// if (userLoggedIn) {
-		// 	try {
-		// 		vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
-		// 		await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
-		// 		if (cleanup) {
-		// 			await k8s.cleanupNamespace();
-		// 		}
-		// 	} catch (e) {
-		// 		console.log("Printing Delete Operator command logs");
-		// 		helper.displayCmdOutput(deleteOperatorAfterAllLogPath);
-		// 		if (fs.existsSync(deleteOperatorAfterAllLogPath)) {
-		// 			fs.unlinkSync(deleteOperatorAfterAllLogPath);
-		// 		}
-		// 		assert.fail(`Failure performing cleanup: ${e}`);
-		// 	}
-		// }
+		if (userLoggedIn) {
+			try {
+				vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem);
+				await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
+				if (cleanup) {
+					await k8s.cleanupNamespace();
+				}
+			} catch (e) {
+				console.log("Printing Delete Operator command logs");
+				helper.displayCmdOutput(deleteOperatorAfterAllLogPath);
+				if (fs.existsSync(deleteOperatorAfterAllLogPath)) {
+					fs.unlinkSync(deleteOperatorAfterAllLogPath);
+				}
+				assert.fail(`Failure performing cleanup: ${e}`);
+			}
+		}
 	});
 
 	describe('When validating commands', () => {
@@ -198,62 +198,72 @@ describe('Extension Test Suite', async () => {
 				process.exit(1);
 			}
 		});
-		// it('Should create an operator', async () => {
-		// 	const userLoggedIn = await k8s.isUserLoggedIntoOCP();
-		// 	console.log("User logged in create operator test: " + userLoggedIn);
-		// 	try {
-		// 		vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem, createOperatorLogPath);
-		// 		await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
-		// 	} catch (e) {
-		// 		console.log("Printing Create Operator logs");
-		// 		helper.displayCmdOutput(createOperatorLogPath);
-		// 		assert.fail("Failure executing createOperator command");
-		// 	}
-		// });
-		// it('Should download the container logs', async () => {
-		// 	const userLoggedIn = await k8s.isUserLoggedIntoOCP();
-		// 	console.log("User logged in download container logs test: " + userLoggedIn);
-		// 	const operatorContainerItems = await getOperatorContainerItems(imsOperatorItem);
-		// 	assert.equal(operatorContainerItems.length, 2);
+		it('Should create an operator', async () => {
+			const userLoggedIn = await k8s.isUserLoggedIntoOCP();
+			console.log("User logged in create operator test: " + userLoggedIn);
+			try {
+				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem, createOperatorLogPath);
+				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
+			} catch (e) {
+				console.log("Printing Create Operator logs");
+				helper.displayCmdOutput(createOperatorLogPath);
+				assert.fail("Failure executing createOperator command");
+			}
+		});
+		it('Should redeploy the collection', async () => {
+			try {
+				const oldPod = await k8s.getOperatorPods(imsOperatorItem.operatorName);
+				if (oldPod === undefined || oldPod.length !== 1) {
+					assert.fail("Failure validating operator pods");
+				}
+				const oldPodName = oldPod[0].metadata?.name;
+				vscode.commands.executeCommand(VSCodeCommands.redeployCollection, imsOperatorItem, redeployCollectionLogPath);
+				await helper.pollOperatorPodStatus(imsOperatorItem.operatorName, oldPodName!, 30);
+			} catch (e) {
+				console.log("Printing Redeploy Collection logs");
+				helper.displayCmdOutput(redeployCollectionLogPath);
+				assert.fail("Failure executing redeployCollection command");
+			}
+		});
+		it('Should redeploy the operator', async () => {
+			try {
+				vscode.commands.executeCommand(VSCodeCommands.redeployOperator, imsOperatorItem, redeployOperatorLogPath);
+				await helper.sleep(20000);
+				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
+			} catch (e) {
+				console.log("Printing Redeploy Operator logs");
+				helper.displayCmdOutput(redeployOperatorLogPath);
+				assert.fail("Failure executing redeployOperator command");
+			}
+		});
+		it('Should download the container logs', async () => {
+			const userLoggedIn = await k8s.isUserLoggedIntoOCP();
+			console.log("User logged in download container logs test: " + userLoggedIn);
+			const operatorContainerItems = await getOperatorContainerItems(imsOperatorItem);
+			assert.equal(operatorContainerItems.length, 2);
 
-		// 	for (const containerItem of operatorContainerItems) {
-		// 		try {
-		// 			vscode.commands.executeCommand(VSCodeCommands.downloadLogs, containerItem);
-		// 			await helper.sleep(5000);
-		// 			const fileData = vscode.window.activeTextEditor?.document.getText();
-		// 			assert.notEqual(fileData, undefined);
-		// 			assert.notEqual(fileData?.length, 0);
-		// 		} catch (e) {
-		// 			assert.fail("Failure executing verbose log download command");
-		// 		}
-		// 	}
-		// });
-		// it('Should redeploy the collection', async () => {
-		// 	try {
-		// 		const oldPod = await k8s.getOperatorPods(imsOperatorItem.operatorName);
-		// 		if (oldPod === undefined || oldPod.length !== 1) {
-		// 			assert.fail("Failure validating operator pods");
-		// 		}
-		// 		const oldPodName = oldPod[0].metadata?.name;
-		// 		vscode.commands.executeCommand(VSCodeCommands.redeployCollection, imsOperatorItem, redeployCollectionLogPath);
-		// 		await helper.pollOperatorPodStatus(imsOperatorItem.operatorName, oldPodName!, 30);
-		// 	} catch (e) {
-		// 		console.log("Printing Redeploy Collection logs");
-		// 		helper.displayCmdOutput(redeployCollectionLogPath);
-		// 		assert.fail("Failure executing redeployCollection command");
-		// 	}
-		// });
-		// it('Should redeploy the operator', async () => {
-		// 	try {
-		// 		vscode.commands.executeCommand(VSCodeCommands.redeployOperator, imsOperatorItem, redeployOperatorLogPath);
-		// 		await helper.sleep(20000);
-		// 		await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
-		// 	} catch (e) {
-		// 		console.log("Printing Redeploy Operator logs");
-		// 		helper.displayCmdOutput(redeployOperatorLogPath);
-		// 		assert.fail("Failure executing redeployOperator command");
-		// 	}
-		// });
+			for (const containerItem of operatorContainerItems) {
+				try {
+					vscode.commands.executeCommand(VSCodeCommands.downloadLogs, containerItem);
+					await helper.sleep(5000);
+					const fileData = vscode.window.activeTextEditor?.document.getText();
+					assert.notEqual(fileData, undefined);
+					if (containerItem.containerStatus.name.startsWith("init")) {
+						if (!fileData?.includes("playbooks")) {
+							assert.fail("Failure parsing log data in init container");
+						}
+					} else {
+						if (!fileData?.includes("New internal logger initialized")) {
+							assert.fail("Failure parsing log data in container");
+						}
+					}
+					assert.notEqual(fileData?.length, 0);
+
+				} catch (e) {
+					assert.fail("Failure executing verbose log download command");
+				}
+			}
+		});
 	});
 
 	describe('When validating the Tree View', () => {
@@ -310,7 +320,6 @@ describe('Extension Test Suite', async () => {
 		});
 		it('Should validate the IMS operator pod item', async () => {
 			const imsOperatorPods = await operatorsTreeProvider.getChildren(imsOperator);
-			console.log("imsOperatorPods: " + imsOperatorPods);
 			assert.equal(imsOperatorPods.length, 1);
 			assert.equal(imsOperatorPods[0] instanceof OperatorPodItem, true);
 
@@ -358,8 +367,6 @@ describe('Extension Test Suite', async () => {
 		});
 		it('Should validate the IMS operator container items', async () => {
 			const imsOperatorContainers = await operatorsTreeProvider.getChildren(imsOperatorPod);
-			console.log("imsOperatorContainers");
-			console.log(JSON.stringify(imsOperatorContainers)); 
 			assert.equal(imsOperatorContainers.length, 2);
 			assert.equal(imsOperatorContainers[0] instanceof OperatorContainerItem, true);
 			assert.equal(imsOperatorContainers[1] instanceof OperatorContainerItem, true);
