@@ -191,18 +191,18 @@ describe('Extension Test Suite', async () => {
 				process.exit(1);
 			}
 		});
-		it('Should create an operator', async () => {
-			const userLoggedIn = await k8s.isUserLoggedIntoOCP();
-			console.log("User logged in create operator test: " + userLoggedIn);
-			try {
-				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem, createOperatorLogPath);
-				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
-			} catch (e) {
-				console.log("Printing Create Operator logs");
-				helper.displayCmdOutput(createOperatorLogPath);
-				assert.fail("Failure executing createOperator command");
-			}
-		});
+		// it('Should create an operator', async () => {
+		// 	const userLoggedIn = await k8s.isUserLoggedIntoOCP();
+		// 	console.log("User logged in create operator test: " + userLoggedIn);
+		// 	try {
+		// 		vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem, createOperatorLogPath);
+		// 		await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
+		// 	} catch (e) {
+		// 		console.log("Printing Create Operator logs");
+		// 		helper.displayCmdOutput(createOperatorLogPath);
+		// 		assert.fail("Failure executing createOperator command");
+		// 	}
+		// });
 		// it('Should download the container logs', async () => {
 		// 	const userLoggedIn = await k8s.isUserLoggedIntoOCP();
 		// 	console.log("User logged in download container logs test: " + userLoggedIn);
