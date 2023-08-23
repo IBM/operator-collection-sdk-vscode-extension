@@ -178,6 +178,8 @@ describe('Extension Test Suite', async () => {
 
 	describe('When validating commands', () => {
 		it('Should install the Operator Collection SDK', async () => {
+			const userLoggedIn = await k8s.isUserLoggedIntoOCP();
+			console.log("User logged in OC SDK test: " + userLoggedIn);
 			vscode.commands.executeCommand(VSCodeCommands.install, installSdkLogPath);
 			await helper.sleep(15000);
 			try {
@@ -190,6 +192,8 @@ describe('Extension Test Suite', async () => {
 			}
 		});
 		it('Should create an operator', async () => {
+			const userLoggedIn = await k8s.isUserLoggedIntoOCP();
+			console.log("User logged in create operator test: " + userLoggedIn);
 			try {
 				vscode.commands.executeCommand(VSCodeCommands.createOperator, imsOperatorItem, createOperatorLogPath);
 				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
@@ -200,6 +204,8 @@ describe('Extension Test Suite', async () => {
 			}
 		});
 		it('Should download the container logs', async () => {
+			const userLoggedIn = await k8s.isUserLoggedIntoOCP();
+			console.log("User logged in download container logs test: " + userLoggedIn);
 			const operatorContainerItems = await getOperatorContainerItems(imsOperatorItem);
 			assert.equal(operatorContainerItems.length, 2);
 
