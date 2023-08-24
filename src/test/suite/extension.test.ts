@@ -122,6 +122,8 @@ describe('Extension Test Suite', async () => {
 		}
 
 		await installOperatorCollectionSDK(installSdkLogPath);
+
+		session = new Session(ocSdkCmd, k8s);
 		await session.validateOcSDKInstallation();
 		await session.validateOpenShiftAccess();
 
