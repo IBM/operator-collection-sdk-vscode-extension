@@ -56,7 +56,6 @@ describe('Extension Test Suite', async () => {
 	
 	let k8s: helper.TestKubernetesObj;
 	let session: Session;
-	let cleanup: boolean = false;
 	let userLoggedIn: boolean = false;
 	let extensionContext: vscode.ExtensionContext;
 	
@@ -99,10 +98,6 @@ describe('Extension Test Suite', async () => {
 				assert.fail(`Failure creating Namespace: ${e}`);
 			}
 
-			// If namespace was created via test, then we should cleanup this namespace and the auto-installed broker instance after completion
-			if (namespaceObject) {
-				cleanup = true;
-			}
 			try {
 				vscode.commands.executeCommand(VSCodeCommands.updateProject, testClusterInfo.ocpNamespace, updateProjectLogPath);
 				await helper.sleep(5000);
@@ -170,7 +165,8 @@ describe('Extension Test Suite', async () => {
 			try {
 				vscode.commands.executeCommand(VSCodeCommands.deleteOperator, imsOperatorItem, deleteOperatorAfterAllLogPath);
 				await helper.pollOperatorDeleteStatus(imsOperatorItem.operatorName, 10);
-				if (cleanup) {
+				if (process.env.CLEANUP_NAMESPACE) {
+					console.log("Cleanup namespace");
 					await k8s.cleanupNamespace();
 				}
 			} catch (e) {
