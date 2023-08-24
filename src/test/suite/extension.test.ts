@@ -87,7 +87,6 @@ describe('Extension Test Suite', async () => {
 			// Update K8s object to retrieve config after log in
 			k8s = new helper.TestKubernetesObj();
 			userLoggedIn = await k8s.isUserLoggedIntoOCP();
-			console.log("User logged in Before Each: " + userLoggedIn);
 			assert.equal(userLoggedIn, true);
 
 			// Create Namespace if not already created
