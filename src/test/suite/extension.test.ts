@@ -65,10 +65,12 @@ describe('Extension Test Suite', async () => {
 		extensionContext = (global as any).testExtensionContext;
 		initResources(extensionContext);
 
+		let testClusterInfo: helper.TestCluster | Error | undefined;
+		let namespace: string;
 		k8s = new helper.TestKubernetesObj();
 		userLoggedIn = await k8s.isUserLoggedIntoOCP();
 		if (!userLoggedIn) {
-			const testClusterInfo = helper.getTestClusterInfo();
+			testClusterInfo = helper.getTestClusterInfo();
 			if (testClusterInfo instanceof Error) {
 				assert.fail(testClusterInfo);
 			}
@@ -88,31 +90,37 @@ describe('Extension Test Suite', async () => {
 			k8s = new helper.TestKubernetesObj();
 			userLoggedIn = await k8s.isUserLoggedIntoOCP();
 			assert.equal(userLoggedIn, true);
+		}
 
-			// Create Namespace if not already created
-			let namespaceObject: helper.ObjectInstance | undefined;
-			try {
-				namespaceObject = await k8s.createNamespace(testClusterInfo.ocpNamespace);
-			} catch(e) {
-				assert.fail(`Failure creating Namespace: ${e}`);
-			}
+		if (testClusterInfo as helper.TestCluster) {
+			namespace = (testClusterInfo as helper.TestCluster).ocpNamespace;
+		} else {
+			namespace = k8s.namespace;
+		}
 
-			try {
-				vscode.commands.executeCommand(VSCodeCommands.updateProject, testClusterInfo.ocpNamespace, updateProjectLogPath);
-				await helper.sleep(5000);
-			} catch (e) {
-				console.log("Printing Update Project command logs");
-				helper.displayCmdOutput(updateProjectLogPath);
-				assert.fail("Failure logging in to OCP cluster");
-			}
-			k8s = new helper.TestKubernetesObj(testClusterInfo.ocpNamespace);
+		// Create Namespace if not already created
+		let namespaceObject: helper.ObjectInstance | undefined;
+		try {
+			namespaceObject = await k8s.createNamespace(namespace);
+		} catch(e) {
+			assert.fail(`Failure creating Namespace: ${e}`);
+		}
 
-			// Install ZosCloudBroker if not already installed
-			try {
-				await k8s.installZosCloudBroker();
-			} catch (e) {
-				assert.fail(`Failure installing ZosCloudBroker: ${e}`);
-			}
+		try {
+			vscode.commands.executeCommand(VSCodeCommands.updateProject, namespace, updateProjectLogPath);
+			await helper.sleep(5000);
+		} catch (e) {
+			console.log("Printing Update Project command logs");
+			helper.displayCmdOutput(updateProjectLogPath);
+			assert.fail("Failure logging in to OCP cluster");
+		}
+		k8s = new helper.TestKubernetesObj(namespace);
+
+		// Install ZosCloudBroker if not already installed
+		try {
+			await k8s.installZosCloudBroker();
+		} catch (e) {
+			assert.fail(`Failure installing ZosCloudBroker: ${e}`);
 		}
 
 		await installOperatorCollectionSDK(installSdkLogPath);

@@ -2,8 +2,8 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs-extra';
 import * as k8sClient from '@kubernetes/client-node';
-import {OperatorItem} from "../treeViews/operatorItems/operatorItem";
-import {OperatorPodItem} from "../treeViews/operatorItems/operatorPodItem";
+import {CustomResourcePhases} from '../utilities/commandConstants';
+import {KubernetesContext} from '../kubernetes/kubernetesContext';
 
 
 export const fixturePath = path.resolve(__dirname, '../../testFixures/');
@@ -12,8 +12,6 @@ export const cicsOperatorCollectionPath = `${fixturePath}/zos_cics_operator`;
 export const imsOperatorCollectionPath = `${fixturePath}/zos_ims_operator`;
 export const ocWorkspacePath = `${fixturePath}/operator-collections.code-workspace`;
 export const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vscode-user'));
-import {CustomResourcePhases} from '../utilities/commandConstants';
-import {KubernetesContext} from '../kubernetes/kubernetesContext';
 
 interface ObjectList {
     apiVersion: string;
@@ -47,16 +45,6 @@ interface RouteObjectSpec {
     host: string;
 }
 
-export interface StdErr {
-    stderr: Data;
-    stdout: Data;
-    output: Data[]
-}
-
-interface Data {
-    data: any;
-}
-
 interface SubscriptionObject {
     metadata: ObjectMetadata;
     spec: SubscriptionObjectSpec;
@@ -82,6 +70,12 @@ export enum ZosCloudBrokerKinds {
 	operatorCollection = "OperatorCollection"
 }
 
+export interface TestCluster {
+    ocpServerUrl: string;
+    ocpToken: string;
+    ocpNamespace: string;
+}
+
 export const zosEndpointName: string = "zos-lpar";
 export const zosCloudBrokerGroup: string =  "zoscb.ibm.com";
 export const clusterServiceVersionGroup: string =  "operators.coreos.com";
@@ -91,17 +85,11 @@ export const zosEndpointApiVersion: string =  "v2beta2";
 export const subOperatorConfigApiVersion: string =  "v2beta2";
 export const operatorCollectionApiVersion: string =  "v2beta2";
 export const zosCloudBrokerApiVersion: string =  "v2beta1";
-const zosCloudBrokerCsvVersion: string = "ibm-zoscb.v2.2.2";
+export const zosCloudBrokerCsvVersion: string = "ibm-zoscb.v2.2.2";
 
 
 export async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export interface TestCluster {
-    ocpServerUrl: string;
-    ocpToken: string;
-    ocpNamespace: string;
 }
 
 export function displayCmdOutput(logPath: string) {
@@ -932,6 +920,11 @@ export class TestKubernetesObj extends KubernetesContext {
     }
 
     private async createOperatorGroup(): Promise<ObjectInstance | undefined> {
+        const existingOperatorGroup = await this.getOperatorGroup();
+        if (existingOperatorGroup) {
+            return undefined;
+        }
+
         const operatorGroup = {
             apiVersion: "operators.coreos.com/v1",
             kind: "OperatorGroup",
@@ -944,11 +937,6 @@ export class TestKubernetesObj extends KubernetesContext {
                 upgradeStrategy: "Default"
             }
         };
-
-        const existingOperatorGroup = await this.getOperatorGroup(operatorGroup.metadata.name);
-        if (existingOperatorGroup) {
-            return undefined;
-        }
 
         return this.customObjectsApi.createNamespacedCustomObject(
             "operators.coreos.com",
@@ -966,20 +954,23 @@ export class TestKubernetesObj extends KubernetesContext {
         });
     }
 
-    private async getOperatorGroup(name: string): Promise<ObjectInstance | undefined > {
-        return this.customObjectsApi.getNamespacedCustomObject(
+    private async getOperatorGroup(): Promise<ObjectInstance | undefined > {
+        return this.customObjectsApi.listNamespacedCustomObject(
             "operators.coreos.com",
             "v1",
             this.namespace,
-            "operatorgroups",
-            name
+            "operatorgroups"
         ).then((res) => {
             if (res.response.statusCode && res.response.statusCode === 404) {
                 return undefined;
             }
             const operatorGroupObjString = JSON.stringify(res.body);
-            const operatorGroupObj: ObjectInstance = JSON.parse(operatorGroupObjString);
-            return operatorGroupObj;
+            const operatorGroupList: ObjectList = JSON.parse(operatorGroupObjString);
+            if (operatorGroupList.items.length > 1) {
+                throw new Error("Multiple Operator Groups exists in namespace");
+            } else {
+                return operatorGroupList.items[0];
+            }
         }).catch((e) => {
             if (e.response.statusCode && e.response.statusCode === 404) {
                 return undefined;
