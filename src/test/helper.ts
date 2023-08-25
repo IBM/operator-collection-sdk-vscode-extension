@@ -8,6 +8,7 @@ import {KubernetesContext} from '../kubernetes/kubernetesContext';
 
 export const fixturePath = path.resolve(__dirname, '../../testFixures/');
 export const extraVarsFile = `${fixturePath}/ocsdk-extra-vars.yml`;
+export const ocYamlFile = `${fixturePath}/operator-config.yaml`;
 export const cicsOperatorCollectionPath = `${fixturePath}/zos_cics_operator`;
 export const imsOperatorCollectionPath = `${fixturePath}/zos_ims_operator`;
 export const ocWorkspacePath = `${fixturePath}/operator-collections.code-workspace`;

@@ -12,6 +12,14 @@ async function go() {
 			path.resolve(__dirname, '../../testFixures/vscode-user/User'),
 			path.join(helper.tmpDir, 'User')
 		);
+		
+		if (!fs.existsSync(`${helper.fixturePath}/operator-config.yaml`)) {
+			fs.copySync(helper.ocYamlFile, `${helper.fixturePath}/operator-config.yaml`);
+		} else {
+			fs.unlinkSync(`${helper.fixturePath}/operator-config.yaml`);
+			fs.copySync(helper.ocYamlFile, `${helper.fixturePath}/operator-config.yaml`);
+		}
+		
 		if (!fs.existsSync(`${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`)) {
 			fs.copySync(helper.extraVarsFile, `${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`);
 		} else {
