@@ -606,6 +606,17 @@ describe('Extension Test Suite', async () => {
 			assert.equal(cicsCustomResources.length, 0);
 		});
 	});
+
+	describe('When validating the operator-config yaml linter', () => {
+		it('Should validate the linter lists unknown key errors', async() => {
+			const doc = await vscode.workspace.openTextDocument(helper.ocYamlFile)
+			await vscode.window.showTextDocument(doc);
+			await sleep(2000); // Wait for linter
+			let diagnostics = vscode.languages.getDiagnostics(doc.uri)
+			assert.equal(diagnostics[0].message, "Property linterShouldFlagThis is not allowed.")
+		})
+	});
+
 });
 
 async function installOperatorCollectionSDK(installSdkLogPath: string) {
@@ -646,4 +657,8 @@ async function getOperatorContainerItems(parentOperator: OperatorItem): Promise<
         }
     }
 	return operatorContainerItems;
+}
+
+async function sleep(ms: number) {
+	return new Promise(resolve => setTimeout(resolve, ms));
 }
