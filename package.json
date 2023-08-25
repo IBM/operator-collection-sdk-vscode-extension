@@ -252,6 +252,10 @@
       {
         "fileMatch": "operator-config.yaml",
         "url": "./resources/schema/operator-config.schema.json"
+      },
+      {
+        "fileMatch": "operator-config.yml",
+        "url": "./resources/schema/operator-config.schema.json"
       }
     ]
   },
