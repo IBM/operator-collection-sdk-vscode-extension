@@ -34,6 +34,9 @@ export const zosEndpointApiVersion: string =  "v2beta2";
 export const subOperatorConfigApiVersion: string =  "v2beta2";
 export const operatorCollectionApiVersion: string =  "v2beta2";
 
+export const logScheme: string = "containerLogs";
+export const verboseLogScheme: string = "verboseContainerLogs";
+
 
 /**
  * Retrieve the current workspace root directory if it exists
@@ -530,4 +533,57 @@ export async function pollRun(attempts: number): Promise<void> {
 			clearInterval(interval);
 		}
 	}, 5000);
+}
+
+export function buildContainerLogUri(podName: string, containerName: string, follow?: boolean): vscode.Uri {
+	if (follow) {
+		return vscode.Uri.parse(`${logScheme}://${podName}/${containerName}/follow`);
+	} 
+	return vscode.Uri.parse(`${logScheme}://${podName}/${containerName}`);
+}
+
+export function buildVerboseContainerLogUri(podName: string, containerName: string, apiVersion: string, kind: string, instanceName: string): vscode.Uri {
+	return vscode.Uri.parse(`${logScheme}://${podName}/${containerName}/${apiVersion}/${kind}/${instanceName}`);
+}
+
+export function parseContainerLogUri(uri: vscode.Uri): {
+	podName: string;
+	containerName: string;
+	follow: boolean;
+} {
+	if (uri.scheme !== logScheme) {
+		throw new Error("Uri is not of the containerLog scheme");
+	}
+
+	const uriSplitArray = uri.path.split("/");
+	const uriObj = {
+		podName: uriSplitArray[2],
+		containerName: uriSplitArray[3],
+		follow: false
+	};
+	if (uriSplitArray.length === 5 && uriSplitArray[4] === "follow") {
+		uriObj.follow = true; 
+	}
+	return uriObj;
+}
+
+export function parseVerboseContainerLogUri(uri: vscode.Uri): {
+	podName: string;
+	containerName: string;
+	apiVersion: string;
+	kind: string;
+	instanceName: string;
+} {
+	if (uri.scheme !== verboseLogScheme) {
+		throw new Error("Uri is not of the verboseContainerLog scheme");
+	}
+
+	const uriSplitArray = uri.path.split("/");
+	return {
+		podName: uriSplitArray[2],
+		containerName: uriSplitArray[3],
+		apiVersion: uriSplitArray[4],
+		kind: uriSplitArray[5],
+		instanceName: uriSplitArray[6],
+	};
 }

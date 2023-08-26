@@ -12,6 +12,8 @@ import {OperatorItem} from './treeViews/operatorItems/operatorItem';
 import {ResourcesTreeProvider} from './treeViews/providers/resourceProvider';
 import {OpenShiftTreeProvider} from './treeViews/providers/openshiftProvider';
 import {LinksTreeProvider} from './treeViews/providers/linkProvider';
+import {ContainerLogProvider} from './treeViews/providers/containerLogProvider';
+import {VerboseContainerLogProvider} from './treeViews/providers/verboseContainerLogProvider';
 import {OperatorContainerItem} from "./treeViews/operatorItems/operatorContainerItem";
 import {ZosEndpointsItem} from "./treeViews/resourceItems/zosendpointsItem";
 import {CustomResourceItem} from "./treeViews/resourceItems/customResourceItem";
@@ -43,12 +45,16 @@ export async function activate(context: vscode.ExtensionContext) {
 	const resourceTreeProvider = new ResourcesTreeProvider(session);
 	const openshiftTreeProvider = new OpenShiftTreeProvider(session);
 	const linksTreeProvider = new LinksTreeProvider();
+	const containerLogProvider = new ContainerLogProvider(session);
+	const verboseContainerLogProvider = new VerboseContainerLogProvider(session);
 
 	// Register Providers
 	vscode.window.registerTreeDataProvider(VSCodeViewIds.operators, operatorTreeProvider);
 	vscode.window.registerTreeDataProvider(VSCodeViewIds.resources, resourceTreeProvider);
 	vscode.window.registerTreeDataProvider(VSCodeViewIds.help, linksTreeProvider);
 	vscode.window.registerTreeDataProvider(VSCodeViewIds.openshiftClusterInfo, openshiftTreeProvider);
+	vscode.workspace.registerTextDocumentContentProvider(util.logScheme, containerLogProvider);
+	vscode.workspace.registerTextDocumentContentProvider(util.verboseLogScheme, containerLogProvider);
 
 	
 	// Register Comands
@@ -63,6 +69,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployOperator, outputChannel));
 	context.subscriptions.push(deleteCustomResource(VSCodeCommands.deleteCustomResource, k8s));
 	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadLogs, k8s));
+	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.followLogs, k8s));
 	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadVerboseLogs, k8s));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openEditLink));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openAddLink));
@@ -170,21 +177,15 @@ function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj)
 				workspacePath = path.parse(workspacePath).dir;
 				switch(command) {
 					case VSCodeCommands.downloadLogs: {
-						const logsPath = await k8s.downloadContainerLogs(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name, workspacePath);
-						if (logsPath) {
-							try {
-								const logUri: vscode.Uri = vscode.Uri.parse(logsPath);
-								const textDocument = await vscode.workspace.openTextDocument(logUri);
-								await vscode.window.showTextDocument(textDocument, {
-									preview: false
-								});
-								vscode.window.showInformationMessage("Container logs downloaded successfully");
-							} catch (e) {
-								vscode.window.showErrorMessage(`Unable to download log: ${e}`);
-							}
-						} else {
-							vscode.window.showErrorMessage("Unable to download log");
-						}
+						const logUri = util.buildContainerLogUri(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name);
+						const doc = await vscode.workspace.openTextDocument(logUri);
+						await vscode.window.showTextDocument(doc, {preview: false});
+						break;
+					}
+					case VSCodeCommands.followLogs: {
+						const logUri = util.buildContainerLogUri(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name, true);
+						const doc = await vscode.workspace.openTextDocument(logUri);
+						await vscode.window.showTextDocument(doc, {preview: false});
 						break;
 					}
 					case VSCodeCommands.downloadVerboseLogs: {
@@ -193,23 +194,10 @@ function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj)
 						let crInstance: string | undefined = "";
 						if (apiVersion) {
 							crInstance = await util.selectCustomResourceInstance(workspacePath, k8s, apiVersion, kind!);
-							let logsPath: string | undefined = "";
 							if (kind && crInstance) {
-								logsPath = await k8s.downloadVerboseContainerLogs(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name, workspacePath, apiVersion, kind, crInstance, logPath);
-								if (logsPath) {
-									try {
-										const logUri: vscode.Uri = vscode.Uri.parse(logsPath);
-										const textDocument = await vscode.workspace.openTextDocument(logUri);
-										await vscode.window.showTextDocument(textDocument, {
-											preview: false
-										});
-										vscode.window.showInformationMessage("Container logs downloaded successfully");
-									} catch (e) {
-										vscode.window.showErrorMessage(`Unable to download log: ${e}`);
-									}
-								} else {
-									vscode.window.showErrorMessage("Unable to download log");
-								}
+								const logUri = util.buildVerboseContainerLogUri(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name, apiVersion, kind, crInstance);
+								const doc = await vscode.workspace.openTextDocument(logUri);
+								await vscode.window.showTextDocument(doc, {preview: false});
 							} 
 						} else {
 							vscode.window.showErrorMessage("Unable to download log due to undefined version in operator-config");
