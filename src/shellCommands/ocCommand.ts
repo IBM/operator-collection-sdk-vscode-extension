@@ -4,6 +4,7 @@
  */
 
 import * as child_process from 'child_process';
+import { resolve4 } from 'dns/promises';
 import * as fs from 'fs-extra';
 
 export class OcCommand {
@@ -33,11 +34,14 @@ export class OcCommand {
             childProcess.stderr?.pipe(logStream);
         }
 
+        let output: string="";
         childProcess.stdout?.on('data', data => {
             console.log(`${data}`);
+            output = output.concat(data);
         });
         childProcess.stderr?.on('data', data => {
             console.error(`${data}`);
+            output = output.concat(data);
         });
 
         return new Promise<string>((resolve: any, reject: any) => {
@@ -47,14 +51,39 @@ export class OcCommand {
             });
             childProcess.on('close', (code: number) => {
                 if (code) {
-                    if (code !== 0) {
-                        return reject(code);
+                    if (code === 0) {
+                        return resolve(output);
+                    } else {
+                        return reject(output);
                     }
                 } else {
-                    return resolve(code);
+                    return resolve(output);
                 }
             });
         });
+    }
+
+    /**
+     * Executes the oc cp command
+     * @param podName
+     * @param namespace 
+     * @param containerName 
+     * @param apiVersion 
+     * @param kind 
+     * @param instanceName 
+     * @returns 
+     */
+     async runOcExecCommand(podName: string, namespace: string,containerName: string, apiVersion: string, kind: string, instanceName: string, logPath?: string): Promise<any> {
+        const args: Array<string> = [
+            "exec",
+            podName,
+            "-c",
+            containerName,
+            "--",
+            "cat",
+            `/tmp/ansible-operator/runner/suboperator.zoscb.ibm.com/${apiVersion}/${kind}/${namespace}/${instanceName}/artifacts/latest/stdout`
+        ];
+        return this.run(args, logPath);
     }
 
     /**
@@ -68,7 +97,7 @@ export class OcCommand {
      * @param instanceName 
      * @returns 
      */
-     async runOcCpCommand(podName: string, namespace: string,containerName: string, workspacePath: string, apiVersion: string, kind: string, instanceName: string, logPath?: string): Promise<any> {
+    async runOcCpCommand(podName: string, namespace: string,containerName: string, workspacePath: string, apiVersion: string, kind: string, instanceName: string, logPath?: string): Promise<any> {
         const args: Array<string> = [
             "cp",
             `${namespace}/${podName}:/tmp/ansible-operator/runner/suboperator.zoscb.ibm.com/${apiVersion}/${kind}/${namespace}/${instanceName}/artifacts/latest/stdout`,

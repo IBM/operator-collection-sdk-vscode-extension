@@ -152,21 +152,9 @@ export class KubernetesObj extends KubernetesContext {
      * @param workspacePath - The current workspace path
      * @returns - A promise containing the path to the container log
      */
-    public async downloadContainerLogs(podName: string, containerName: string, workspacePath: string): Promise<string | undefined> {
-        return this.coreV1Api.readNamespacedPodLog(podName, this.namespace, containerName).then((res) => {
-            if (! fs.existsSync(path.join(workspacePath, ".openshiftLogs"))) {
-                fs.mkdirSync(path.join(workspacePath, ".openshiftLogs"));
-            }
-            const logsPath = path.join(workspacePath, ".openshiftLogs", `${podName}-${containerName}.log`);
-            try {
-                fs.writeFileSync(logsPath, Buffer.from(res.body));
-            } catch (e) {
-                const msg = `Failure downloading container logs. ${e}`;
-                console.error(msg);
-                vscode.window.showErrorMessage(msg);
-                return undefined;
-            }
-            return logsPath;
+    public async downloadContainerLogs(podName: string, containerName: string, follow?: boolean): Promise<string | undefined> {
+        return this.coreV1Api.readNamespacedPodLog(podName, this.namespace, containerName, follow).then((res) => {
+            return res.body;
         }).catch((e) => {
             const msg = `Failure retrieving Pod logs. ${JSON.stringify(e)}`;
             console.error(msg);
@@ -179,22 +167,17 @@ export class KubernetesObj extends KubernetesContext {
      * Download the verbose container logs
      * @param podName - The pod name where the container resides
      * @param containerName - The container name within the pod
-     * @param workspacePath - The current workspace path
      * @param apiVersion - The resource API version
      * @param kind - The resource Kind
      * @param instanceName - The resource instance name
      * @returns - A promise containing the path to the container log
      */
-    public async downloadVerboseContainerLogs(podName: string, containerName: string, workspacePath: string, apiVersion: string, kind: string, instanceName: string, logPath?: string): Promise<string | undefined> {
-        if (! fs.existsSync(path.join(workspacePath, ".openshiftLogs"))) {
-            fs.mkdirSync(path.join(workspacePath, ".openshiftLogs"));
-        }
-        const openshiftLogsPath = path.join(workspacePath, ".openshiftLogs", `${podName}-${containerName}-verbose.log`);
+    public async downloadVerboseContainerLogs(podName: string, containerName: string, apiVersion: string, kind: string, instanceName: string, logPath?: string): Promise<string | undefined> {
         const ocCmd = new OcCommand();
-        return ocCmd.runOcCpCommand(podName, this.namespace, containerName, openshiftLogsPath, apiVersion, kind, instanceName, logPath).then(() => {
-            return openshiftLogsPath;
+        return ocCmd.runOcExecCommand(podName, this.namespace, containerName, apiVersion, kind, instanceName, logPath).then((data) => {
+            return data;
         }).catch((e) => {
-            const msg = `Failure running the "oc cp" command. ${e.response.statusMessage}`;
+            const msg = `Failure running the "oc exec" command. ${e.response.statusMessage}`;
             console.error(msg);
             vscode.window.showErrorMessage(msg);
             return undefined;
