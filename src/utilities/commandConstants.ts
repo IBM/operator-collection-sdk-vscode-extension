@@ -15,7 +15,6 @@ export enum VSCodeCommands {
 	redeployOperator = "operator-collection-sdk.redeployOperator",
 	deleteCustomResource = "operator-collection-sdk.deleteCustomResource",
 	downloadLogs = "operator-collection-sdk.downloadLogs",
-	followLogs = "operator-collection-sdk.followLogs",
 	downloadVerboseLogs = "operator-collection-sdk.downloadVerboseLogs",
 	openEditLink = "operator-collection-sdk.openEditLink",
 	openAddLink = "operator-collection-sdk.openAddLink",

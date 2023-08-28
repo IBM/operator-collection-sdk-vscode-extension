@@ -152,8 +152,8 @@ export class KubernetesObj extends KubernetesContext {
      * @param workspacePath - The current workspace path
      * @returns - A promise containing the path to the container log
      */
-    public async downloadContainerLogs(podName: string, containerName: string, follow?: boolean): Promise<string | undefined> {
-        return this.coreV1Api.readNamespacedPodLog(podName, this.namespace, containerName, follow).then((res) => {
+    public async downloadContainerLogs(podName: string, containerName: string): Promise<string | undefined> {
+        return this.coreV1Api.readNamespacedPodLog(podName, this.namespace, containerName).then((res) => {
             return res.body;
         }).catch((e) => {
             const msg = `Failure retrieving Pod logs. ${JSON.stringify(e)}`;

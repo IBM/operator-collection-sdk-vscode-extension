@@ -15,8 +15,8 @@ export class ContainerLogProvider implements vscode.TextDocumentContentProvider 
     async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
       if (this.session.loggedIntoOpenShift) {
         const k8s = new KubernetesObj();
-        const {podName, containerName, follow} = util.parseContainerLogUri(uri);
-        const logData = await k8s.downloadContainerLogs(podName, containerName, follow);
+        const {podName, containerName} = util.parseContainerLogUri(uri);
+        const logData = await k8s.downloadContainerLogs(podName, containerName);
         if (logData) {
           return logData;
         }
