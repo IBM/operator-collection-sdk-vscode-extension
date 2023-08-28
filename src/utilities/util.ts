@@ -543,7 +543,7 @@ export function buildContainerLogUri(podName: string, containerName: string, fol
 }
 
 export function buildVerboseContainerLogUri(podName: string, containerName: string, apiVersion: string, kind: string, instanceName: string): vscode.Uri {
-	return vscode.Uri.parse(`${logScheme}://${podName}/${containerName}/${apiVersion}/${kind}/${instanceName}`);
+	return vscode.Uri.parse(`${verboseLogScheme}://${podName}/${containerName}/${apiVersion}/${kind}/${instanceName}`);
 }
 
 export function parseContainerLogUri(uri: vscode.Uri): {
@@ -557,11 +557,11 @@ export function parseContainerLogUri(uri: vscode.Uri): {
 
 	const uriSplitArray = uri.path.split("/");
 	const uriObj = {
-		podName: uriSplitArray[2],
-		containerName: uriSplitArray[3],
+		podName: uri.authority,
+		containerName: uriSplitArray[1],
 		follow: false
 	};
-	if (uriSplitArray.length === 5 && uriSplitArray[4] === "follow") {
+	if (uriSplitArray.length === 3 && uriSplitArray[2] === "follow") {
 		uriObj.follow = true; 
 	}
 	return uriObj;
@@ -580,10 +580,10 @@ export function parseVerboseContainerLogUri(uri: vscode.Uri): {
 
 	const uriSplitArray = uri.path.split("/");
 	return {
-		podName: uriSplitArray[2],
-		containerName: uriSplitArray[3],
-		apiVersion: uriSplitArray[4],
-		kind: uriSplitArray[5],
-		instanceName: uriSplitArray[6],
+		podName: uri.authority,
+		containerName: uriSplitArray[1],
+		apiVersion: uriSplitArray[2],
+		kind: uriSplitArray[3],
+		instanceName: uriSplitArray[4],
 	};
 }
