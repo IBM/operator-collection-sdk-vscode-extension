@@ -535,10 +535,7 @@ export async function pollRun(attempts: number): Promise<void> {
 	}, 5000);
 }
 
-export function buildContainerLogUri(podName: string, containerName: string, follow?: boolean): vscode.Uri {
-	if (follow) {
-		return vscode.Uri.parse(`${logScheme}://${podName}/${containerName}/follow`);
-	} 
+export function buildContainerLogUri(podName: string, containerName: string): vscode.Uri {
 	return vscode.Uri.parse(`${logScheme}://${podName}/${containerName}`);
 }
 
@@ -549,22 +546,16 @@ export function buildVerboseContainerLogUri(podName: string, containerName: stri
 export function parseContainerLogUri(uri: vscode.Uri): {
 	podName: string;
 	containerName: string;
-	follow: boolean;
 } {
 	if (uri.scheme !== logScheme) {
 		throw new Error("Uri is not of the containerLog scheme");
 	}
 
 	const uriSplitArray = uri.path.split("/");
-	const uriObj = {
+	return {
 		podName: uri.authority,
 		containerName: uriSplitArray[1],
-		follow: false
 	};
-	if (uriSplitArray.length === 3 && uriSplitArray[2] === "follow") {
-		uriObj.follow = true; 
-	}
-	return uriObj;
 }
 
 export function parseVerboseContainerLogUri(uri: vscode.Uri): {

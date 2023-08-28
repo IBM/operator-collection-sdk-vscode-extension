@@ -69,7 +69,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployOperator, outputChannel));
 	context.subscriptions.push(deleteCustomResource(VSCodeCommands.deleteCustomResource, k8s));
 	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadLogs, k8s));
-	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.followLogs, k8s));
 	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadVerboseLogs, k8s));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openEditLink));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openAddLink));
@@ -178,12 +177,6 @@ function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj)
 				switch(command) {
 					case VSCodeCommands.downloadLogs: {
 						const logUri = util.buildContainerLogUri(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name);
-						const doc = await vscode.workspace.openTextDocument(logUri);
-						await vscode.window.showTextDocument(doc, {preview: false});
-						break;
-					}
-					case VSCodeCommands.followLogs: {
-						const logUri = util.buildContainerLogUri(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name, true);
 						const doc = await vscode.workspace.openTextDocument(logUri);
 						await vscode.window.showTextDocument(doc, {preview: false});
 						break;
