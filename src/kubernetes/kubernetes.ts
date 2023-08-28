@@ -170,11 +170,13 @@ export class KubernetesObj extends KubernetesContext {
      * @param apiVersion - The resource API version
      * @param kind - The resource Kind
      * @param instanceName - The resource instance name
+     * @param outputChannel - The VS Code output channel to display command output
+     * @param logPath - Log path to store command output
      * @returns - A promise containing the path to the container log
      */
-    public async downloadVerboseContainerLogs(podName: string, containerName: string, apiVersion: string, kind: string, instanceName: string, logPath?: string): Promise<string | undefined> {
+    public async downloadVerboseContainerLogs(podName: string, containerName: string, apiVersion: string, kind: string, instanceName: string, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string | undefined> {
         const ocCmd = new OcCommand();
-        return ocCmd.runOcExecCommand(podName, this.namespace, containerName, apiVersion, kind, instanceName, logPath).then((data) => {
+        return ocCmd.runOcExecCommand(podName, this.namespace, containerName, apiVersion, kind, instanceName, outputChannel, logPath).then((data) => {
             return data;
         }).catch((e) => {
             const msg = `Failure running the "oc exec" command. ${e.response.statusMessage}`;

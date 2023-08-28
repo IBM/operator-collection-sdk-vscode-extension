@@ -54,7 +54,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.window.registerTreeDataProvider(VSCodeViewIds.help, linksTreeProvider);
 	vscode.window.registerTreeDataProvider(VSCodeViewIds.openshiftClusterInfo, openshiftTreeProvider);
 	vscode.workspace.registerTextDocumentContentProvider(util.logScheme, containerLogProvider);
-	vscode.workspace.registerTextDocumentContentProvider(util.verboseLogScheme, containerLogProvider);
+	vscode.workspace.registerTextDocumentContentProvider(util.verboseLogScheme, verboseContainerLogProvider);
 
 	
 	// Register Comands
@@ -114,7 +114,7 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 	});
 }
 
-function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
+function updateProject(command: string, ocCmd: OcCommand, outputChannel?: vscode.OutputChannel): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (namespaceArg?: string, logPath?: string) => {
 		let namespace: string | undefined;
 		if (namespaceArg) {
@@ -123,7 +123,7 @@ function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
 			namespace = await util.generateProjectDropDown();
 		}
 		if (namespace) {
-			ocCmd.runOcProjectCommand(namespace, logPath).then(() => {
+			ocCmd.runOcProjectCommand(namespace, outputChannel, logPath).then(() => {
 				vscode.window.showInformationMessage("Successfully updating Project on OpenShift cluster");
 				vscode.commands.executeCommand(VSCodeCommands.refreshAll);
 			}).catch((e) => {
@@ -133,7 +133,7 @@ function updateProject(command: string, ocCmd: OcCommand): vscode.Disposable {
 	});
 }
 
-function logIn(command: string, ocCmd: OcCommand, session: Session): vscode.Disposable {
+function logIn(command: string, ocCmd: OcCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (params?: string[], logPath?: string) => {
 		let args: string[] | undefined = [];
 		if (params === undefined || params?.length === 0) {
@@ -142,7 +142,7 @@ function logIn(command: string, ocCmd: OcCommand, session: Session): vscode.Disp
 			args = params;
 		}
 		if (args) {
-			ocCmd.runOcLoginCommand(args, logPath).then(() => {
+			ocCmd.runOcLoginCommand(args, outputChannel, logPath).then(() => {
 				session.loggedIntoOpenShift = true;
 				vscode.window.showInformationMessage("Successfully logged into OpenShift cluster");
 				vscode.commands.executeCommand(VSCodeCommands.refreshAll);
