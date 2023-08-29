@@ -16,6 +16,7 @@ export enum VSCodeCommands {
 	deleteCustomResource = "operator-collection-sdk.deleteCustomResource",
 	downloadLogs = "operator-collection-sdk.downloadLogs",
 	downloadVerboseLogs = "operator-collection-sdk.downloadVerboseLogs",
+	viewResource = "operator-collection-sdk.viewResource",
 	openEditLink = "operator-collection-sdk.openEditLink",
 	openAddLink = "operator-collection-sdk.openAddLink",
 	openLink = "operator-collection-sdk.openLink",
