@@ -224,8 +224,7 @@ describe('Extension Test Suite', async () => {
 				assert.fail("Failure executing redeployOperator command");
 			}
 		});
-		// TODO - re-enable when fix is found for ECONNREFUSED error when running in Github runner
-		xit('Should download the container logs', async () => {
+		it('Should download the container logs', async () => {
 			const operatorContainerItems = await getOperatorContainerItems(imsOperatorItem);
 			assert.equal(operatorContainerItems.length, 2);
 
