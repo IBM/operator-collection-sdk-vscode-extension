@@ -34,6 +34,9 @@ export const zosEndpointApiVersion: string =  "v2beta2";
 export const subOperatorConfigApiVersion: string =  "v2beta2";
 export const operatorCollectionApiVersion: string =  "v2beta2";
 
+export const logScheme: string = "containerLogs";
+export const verboseLogScheme: string = "verboseContainerLogs";
+
 
 /**
  * Retrieve the current workspace root directory if it exists
@@ -530,4 +533,48 @@ export async function pollRun(attempts: number): Promise<void> {
 			clearInterval(interval);
 		}
 	}, 5000);
+}
+
+export function buildContainerLogUri(podName: string, containerName: string): vscode.Uri {
+	return vscode.Uri.parse(`${logScheme}://${podName}/${containerName}`);
+}
+
+export function buildVerboseContainerLogUri(podName: string, containerName: string, apiVersion: string, kind: string, instanceName: string): vscode.Uri {
+	return vscode.Uri.parse(`${verboseLogScheme}://${podName}/${containerName}/${apiVersion}/${kind}/${instanceName}`);
+}
+
+export function parseContainerLogUri(uri: vscode.Uri): {
+	podName: string;
+	containerName: string;
+} {
+	if (uri.scheme !== logScheme) {
+		throw new Error("Uri is not of the containerLog scheme");
+	}
+
+	const uriSplitArray = uri.path.split("/");
+	return {
+		podName: uri.authority,
+		containerName: uriSplitArray[1],
+	};
+}
+
+export function parseVerboseContainerLogUri(uri: vscode.Uri): {
+	podName: string;
+	containerName: string;
+	apiVersion: string;
+	kind: string;
+	instanceName: string;
+} {
+	if (uri.scheme !== verboseLogScheme) {
+		throw new Error("Uri is not of the verboseContainerLog scheme");
+	}
+
+	const uriSplitArray = uri.path.split("/");
+	return {
+		podName: uri.authority,
+		containerName: uriSplitArray[1],
+		apiVersion: uriSplitArray[2],
+		kind: uriSplitArray[3],
+		instanceName: uriSplitArray[4],
+	};
 }

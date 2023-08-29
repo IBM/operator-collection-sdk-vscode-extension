@@ -6,7 +6,6 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
 import * as fs from 'fs-extra';
-import * as path from 'path';
 
 export class OcSdkCommand {
     constructor(private pwd?: string | undefined) {}
@@ -53,7 +52,6 @@ export class OcSdkCommand {
 
         return new Promise<string>((resolve: any, reject: any) => {
             childProcess.on('error', (error: Error) => {
-                console.log(error.message);
                 outputChannel?.appendLine(error.message);
                 return reject(error.message);
             });
