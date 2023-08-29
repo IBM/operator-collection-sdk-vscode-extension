@@ -321,6 +321,31 @@ export class KubernetesObj extends KubernetesContext {
     }
 
     /**
+     * Retrieve a custom resource object
+     * @param kind - The custom resource Kind
+     * @param name - The custom resource Name
+     * @param group - The custom resource Group
+     * @param version - The custom resource API Version
+     * @returns - A promise containing the custom resource object
+     */
+    public async getCustomResourceObj(kind: string, name: string, group: string, version: string): Promise<object | undefined> {
+        return this.customObjectsApi.getNamespacedCustomObject(
+            group,
+            version,
+            this.namespace,
+            `${kind.toLowerCase()}s`,
+            name
+        ).then((res) => {
+            return res.body;
+        }).catch((e) => {
+            const msg = `Failure retrieving custom resource object. ${JSON.stringify(e)}`;
+            console.error(msg);
+            vscode.window.showErrorMessage(msg);
+            return undefined;
+        });
+    }
+
+    /**
      * Retrieve a list of Custom Resource instance names in the current namespace
      * @param apiVersion - The custom resource API version
      * @param kind - The custom resource Kind

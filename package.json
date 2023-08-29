@@ -7,7 +7,7 @@
   },
   "icon": "resources/icons/broker-logo.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension"
@@ -73,10 +73,16 @@
         "icon": "$(file-binary)"
       },
       {
-        "command": "operator-collection-sdk.openEditLink",
-        "title": "Preview/Edit",
+        "command": "operator-collection-sdk.viewResource",
+        "title": "View Resource",
         "category": "OC-SDK",
         "icon": "$(eye)"
+      },
+      {
+        "command": "operator-collection-sdk.openEditLink",
+        "title": "View/Edit Resource in OpenShift",
+        "category": "OC-SDK",
+        "icon": "$(link-external)"
       },
       {
         "command": "operator-collection-sdk.openAddLink",
@@ -218,6 +224,11 @@
         },
         {
           "command": "operator-collection-sdk.openEditLink",
+          "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object || viewItem == customresource-object)",
+          "group": "inline"
+        },
+        {
+          "command": "operator-collection-sdk.viewResource",
           "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object || viewItem == customresource-object)",
           "group": "inline"
         },
