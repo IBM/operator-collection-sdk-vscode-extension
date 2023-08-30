@@ -625,7 +625,7 @@ describe('Extension Test Suite', async () => {
 			}else{
 				assert.fail('Error injecting linter errors into operator-config file.');
 			}
-			await sleep(2000); // Wait for linter
+			await helper.sleep(2000); // Wait for linter
 			let diagnostics = vscode.languages.getDiagnostics(doc.uri);
 			assert.equal(diagnostics[0].message, "Property linterShouldFlagThis is not allowed.");
 		})
@@ -671,8 +671,4 @@ async function getOperatorContainerItems(parentOperator: OperatorItem): Promise<
         }
     }
 	return operatorContainerItems;
-}
-
-async function sleep(ms: number) {
-	return new Promise(resolve => setTimeout(resolve, ms));
 }
