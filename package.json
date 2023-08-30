@@ -104,7 +104,13 @@
       },
       {
         "command": "operator-collection-sdk.resourceRefresh",
-        "title": "OpenShift Resource Refresh",
+        "title": "Refresh",
+        "category": "OC-SDK",
+        "icon": "$(extensions-refresh)"
+      },
+      {
+        "command": "operator-collection-sdk.refreshAll",
+        "title": "Refresh",
         "category": "OC-SDK",
         "icon": "$(extensions-refresh)"
       },
@@ -188,6 +194,11 @@
         {
           "command": "operator-collection-sdk.resourceRefresh",
           "when": "view == operator-collection-sdk.resources",
+          "group": "navigation"
+        },
+        {
+          "command": "operator-collection-sdk.refreshAll",
+          "when": "view == operator-collection-sdk.openshiftClusterInfo",
           "group": "navigation"
         }
       ],
