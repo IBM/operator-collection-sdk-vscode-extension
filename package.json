@@ -258,8 +258,19 @@
           "group": "inline"
         }
       ]
-    }
+    },
+    "yamlValidation": [
+      {
+        "fileMatch": "operator-config.yaml",
+        "url": "./resources/schema/operator-config.schema.json"
+      },
+      {
+        "fileMatch": "operator-config.yml",
+        "url": "./resources/schema/operator-config.schema.json"
+      }
+    ]
   },
+  "extensionDependencies": ["redhat.vscode-yaml"],
   "scripts": {
     "vscode:prepublish": "npm run package",
     "webpack": "npm run clean && npm run compile && webpack --mode development",
