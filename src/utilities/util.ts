@@ -36,6 +36,7 @@ export const operatorCollectionApiVersion: string =  "v2beta2";
 
 export const logScheme: string = "containerLogs";
 export const verboseLogScheme: string = "verboseContainerLogs";
+export const customResourceScheme: string = "customResource";
 
 
 /**
@@ -543,6 +544,10 @@ export function buildVerboseContainerLogUri(podName: string, containerName: stri
 	return vscode.Uri.parse(`${verboseLogScheme}://${podName}/${containerName}/${apiVersion}/${kind}/${instanceName}`);
 }
 
+export function buildCustomResourceUri(kind: string, instanceName: string, group: string, apiVersion: string): vscode.Uri {
+	return vscode.Uri.parse(`${customResourceScheme}://${kind}/${group}/${apiVersion}/${instanceName}`);
+}
+
 export function parseContainerLogUri(uri: vscode.Uri): {
 	podName: string;
 	containerName: string;
@@ -576,5 +581,24 @@ export function parseVerboseContainerLogUri(uri: vscode.Uri): {
 		apiVersion: uriSplitArray[2],
 		kind: uriSplitArray[3],
 		instanceName: uriSplitArray[4],
+	};
+}
+
+export function parseCustomResourceUri(uri: vscode.Uri): {
+	kind: string;
+	group: string;
+	apiVersion: string;
+	instanceName: string;
+} {
+	if (uri.scheme !== customResourceScheme) {
+		throw new Error("Uri is not of the customResource scheme");
+	}
+
+	const uriSplitArray = uri.path.split("/");
+	return {
+		kind: uri.authority,
+		group: uriSplitArray[1],
+		apiVersion: uriSplitArray[2],
+		instanceName: uriSplitArray[3],
 	};
 }

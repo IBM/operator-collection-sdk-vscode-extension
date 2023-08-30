@@ -230,7 +230,7 @@ describe('Extension Test Suite', async () => {
 
 			for (const containerItem of operatorContainerItems) {
 				try {
-					vscode.commands.executeCommand(VSCodeCommands.downloadLogs, containerItem);
+					vscode.commands.executeCommand(VSCodeCommands.viewLogs, containerItem);
 					await helper.sleep(5000);
 					const fileData = vscode.window.activeTextEditor?.document.getText();
 					assert.notEqual(fileData, undefined);
