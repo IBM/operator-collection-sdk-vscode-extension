@@ -605,6 +605,31 @@ describe('Extension Test Suite', async () => {
 			assert.equal(cicsCustomResources.length, 0);
 		});
 	});
+
+	describe('When validating the operator-config yaml linter', () => {
+		it('Should validate the linter lists unknown key errors', async() => {
+			const doc = await vscode.workspace.openTextDocument(`${helper.cicsOperatorCollectionPath}/operator-config.yml`);
+			const editor = await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, false);
+			const text = doc.getText();
+			const match = text.match('displayName')
+			if(match && match.index){
+				const matchRange = doc.getWordRangeAtPosition(doc.positionAt(match.index));
+				if(matchRange){
+					editor.edit(editBuilder=>{
+						editBuilder.replace(matchRange, 'linterShouldFlagThis:');
+					});
+				}else{
+					assert.fail('Error injecting linter errors into operator-config file.');
+				}
+			}else{
+				assert.fail('Error injecting linter errors into operator-config file.');
+			}
+			await helper.sleep(2000); // Wait for linter
+			let diagnostics = vscode.languages.getDiagnostics(doc.uri);
+			assert.equal(diagnostics[0].message, "Property linterShouldFlagThis is not allowed.");
+		})
+	});
+
 });
 
 async function installOperatorCollectionSDK(installSdkLogPath: string) {
