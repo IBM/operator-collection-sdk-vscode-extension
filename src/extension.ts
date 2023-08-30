@@ -9,6 +9,7 @@ import * as path from 'path';
 import {VSCodeCommands, VSCodeViewIds} from './utilities/commandConstants';
 import {OperatorsTreeProvider} from './treeViews/providers/operatorProvider';
 import {OperatorItem} from './treeViews/operatorItems/operatorItem';
+import {OpenShiftItem} from './treeViews/openshiftItems/openshiftItem';
 import {ResourcesTreeProvider} from './treeViews/providers/resourceProvider';
 import {OpenShiftTreeProvider} from './treeViews/providers/openshiftProvider';
 import {LinksTreeProvider} from './treeViews/providers/linkProvider';
@@ -120,13 +121,15 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 }
 
 function updateProject(command: string, ocCmd: OcCommand, outputChannel?: vscode.OutputChannel): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async (namespaceArg?: string, logPath?: string) => {
+	return vscode.commands.registerCommand(command, async (arg: OpenShiftItem, logPath?: string) => {
+		const k8s = new KubernetesObj();
 		let namespace: string | undefined;
-		if (namespaceArg) {
-			namespace = namespaceArg;
-		} else {
+		if (arg.description === k8s.namespace) { // implies that the edit button was selected in the editor
 			namespace = await util.generateProjectDropDown();
+		} else { // allows for tests to pass in new namespace directly
+			namespace = arg.description;
 		}
+
 		if (namespace) {
 			ocCmd.runOcProjectCommand(namespace, outputChannel, logPath).then(() => {
 				vscode.window.showInformationMessage("Successfully updating Project on OpenShift cluster");
