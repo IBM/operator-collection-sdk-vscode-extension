@@ -14,8 +14,11 @@ import {OpenShiftTreeProvider} from './treeViews/providers/openshiftProvider';
 import {LinksTreeProvider} from './treeViews/providers/linkProvider';
 import {ContainerLogProvider} from './treeViews/providers/containerLogProvider';
 import {VerboseContainerLogProvider} from './treeViews/providers/verboseContainerLogProvider';
+import {CustomResourceDisplayProvider} from './treeViews/providers/customResourceDisplayProviders';
 import {OperatorContainerItem} from "./treeViews/operatorItems/operatorContainerItem";
 import {ZosEndpointsItem} from "./treeViews/resourceItems/zosendpointsItem";
+import {OperatorCollectionsItem} from "./treeViews/resourceItems/operatorCollectionsItem";
+import {SubOperatorConfigsItem} from "./treeViews/resourceItems/subOperatorConfigsItem";
 import {CustomResourceItem} from "./treeViews/resourceItems/customResourceItem";
 import {CustomResourcesItem} from "./treeViews/resourceItems/customResourcesItem";
 import {LinkItem} from "./treeViews/linkItems/linkItem";
@@ -47,6 +50,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	const linksTreeProvider = new LinksTreeProvider();
 	const containerLogProvider = new ContainerLogProvider(session);
 	const verboseContainerLogProvider = new VerboseContainerLogProvider(session);
+	const customResourceDisplayProvider = new CustomResourceDisplayProvider(session);
 
 	// Register Providers
 	vscode.window.registerTreeDataProvider(VSCodeViewIds.operators, operatorTreeProvider);
@@ -55,6 +59,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.window.registerTreeDataProvider(VSCodeViewIds.openshiftClusterInfo, openshiftTreeProvider);
 	vscode.workspace.registerTextDocumentContentProvider(util.logScheme, containerLogProvider);
 	vscode.workspace.registerTextDocumentContentProvider(util.verboseLogScheme, verboseContainerLogProvider);
+	vscode.workspace.registerTextDocumentContentProvider(util.customResourceScheme, customResourceDisplayProvider);
 
 	
 	// Register Comands
@@ -68,11 +73,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployCollection, outputChannel));
 	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployOperator, outputChannel));
 	context.subscriptions.push(deleteCustomResource(VSCodeCommands.deleteCustomResource, k8s));
-	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadLogs, k8s));
-	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadVerboseLogs, k8s));
+	context.subscriptions.push(executeContainerViewLogCommand(VSCodeCommands.viewLogs, k8s));
+	context.subscriptions.push(executeContainerViewLogCommand(VSCodeCommands.viewVerboseLogs, k8s));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openEditLink));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openAddLink));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openLink));
+	context.subscriptions.push(viewResourceCommand(VSCodeCommands.viewResource));
 	context.subscriptions.push(vscode.commands.registerCommand(VSCodeCommands.refresh, () => {
 		operatorTreeProvider.refresh();
 		resourceTreeProvider.refresh();
@@ -153,8 +159,9 @@ function logIn(command: string, ocCmd: OcCommand, session: Session, outputChanne
 	});
 }
 
+type CustomResources = ZosEndpointsItem | SubOperatorConfigsItem | OperatorCollectionsItem | CustomResourceItem | CustomResourcesItem;
 function executeOpenLinkCommand(command: string): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async (args: ZosEndpointsItem | CustomResourceItem | LinkItem) => {
+	return vscode.commands.registerCommand(command, async (args: CustomResources | LinkItem) => {
 		let linkUri = vscode.Uri.parse(args.link);
 		let res = await vscode.env.openExternal(linkUri);
 		if (!res) {
@@ -163,7 +170,43 @@ function executeOpenLinkCommand(command: string): vscode.Disposable {
 	});
 }
 
-function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj): vscode.Disposable {
+function viewResourceCommand(command: string): vscode.Disposable {
+	return vscode.commands.registerCommand(command, async (args: CustomResources) => {
+		let kind: string;
+		let instanceName: string;
+		let group: string;
+		let apiVersion: string;
+		if (args instanceof ZosEndpointsItem) {
+			kind = args.zosendpointObj.kind;
+			instanceName = args.zosendpointObj.metadata.name;
+			group = args.zosendpointObj.apiVersion.split("/")[0];
+			apiVersion = args.zosendpointObj.apiVersion.split("/")[1];
+		} else if (args instanceof SubOperatorConfigsItem) {
+			kind = args.subOperatorConfigObj.kind;
+			instanceName = args.subOperatorConfigObj.metadata.name;
+			group = args.subOperatorConfigObj.apiVersion.split("/")[0];
+			apiVersion = args.subOperatorConfigObj.apiVersion.split("/")[1];
+		} else if (args instanceof OperatorCollectionsItem) {
+			kind = args.operatorCollectionObj.kind;
+			instanceName = args.operatorCollectionObj.metadata.name;
+			group = args.operatorCollectionObj.apiVersion.split("/")[0];
+			apiVersion = args.operatorCollectionObj.apiVersion.split("/")[1];
+		} else if (args instanceof CustomResourcesItem) {
+			kind = args.customResourceObj.kind;
+			instanceName = args.customResourceObj.metadata.name;
+			group = args.customResourceObj.apiVersion.split("/")[0];
+			apiVersion = args.customResourceObj.apiVersion.split("/")[1];
+		} else {
+			vscode.window.showErrorMessage("Unable to preview resource for invalid resource type");
+			return;
+		}
+		const uri = util.buildCustomResourceUri(kind!, instanceName!, group!, apiVersion!);
+		const doc = await vscode.workspace.openTextDocument(uri);
+		await vscode.window.showTextDocument(doc, {preview: false});
+	});
+}
+
+function executeContainerViewLogCommand(command: string, k8s: KubernetesObj): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (containerItemArgs: OperatorContainerItem, logPath?: string) => {
 		const pwd = util.getCurrentWorkspaceRootFolder();
 		if (!pwd) {
@@ -175,13 +218,13 @@ function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj)
 			} else {
 				workspacePath = path.parse(workspacePath).dir;
 				switch(command) {
-					case VSCodeCommands.downloadLogs: {
+					case VSCodeCommands.viewLogs: {
 						const logUri = util.buildContainerLogUri(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name);
 						const doc = await vscode.workspace.openTextDocument(logUri);
 						await vscode.window.showTextDocument(doc, {preview: false});
 						break;
 					}
-					case VSCodeCommands.downloadVerboseLogs: {
+					case VSCodeCommands.viewVerboseLogs: {
 						const apiVersion = await util.getConvertedApiVersion(workspacePath);
 						const kind = await util.selectCustomResourceFromOperatorInWorkspace(workspacePath);
 						let crInstance: string | undefined = "";

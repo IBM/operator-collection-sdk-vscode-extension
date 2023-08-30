@@ -7,7 +7,7 @@
   },
   "icon": "resources/icons/broker-logo.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension"
@@ -61,22 +61,28 @@
         "icon": "$(debug-restart)"
       },
       {
-        "command": "operator-collection-sdk.downloadLogs",
-        "title": "Download Logs",
+        "command": "operator-collection-sdk.viewLogs",
+        "title": "View Logs",
         "category": "OC-SDK",
         "icon": "$(file)"
       },
       {
-        "command": "operator-collection-sdk.downloadVerboseLogs",
-        "title": "Download Verbose Logs",
+        "command": "operator-collection-sdk.viewVerboseLogs",
+        "title": "View Verbose Logs",
         "category": "OC-SDK",
         "icon": "$(file-binary)"
       },
       {
-        "command": "operator-collection-sdk.openEditLink",
-        "title": "Preview/Edit",
+        "command": "operator-collection-sdk.viewResource",
+        "title": "View Resource",
         "category": "OC-SDK",
-        "icon": "$(eye)"
+        "icon": "$(preview)"
+      },
+      {
+        "command": "operator-collection-sdk.openEditLink",
+        "title": "View/Edit Resource in OpenShift",
+        "category": "OC-SDK",
+        "icon": "$(edit)"
       },
       {
         "command": "operator-collection-sdk.openAddLink",
@@ -207,17 +213,22 @@
           "group": "inline"
         },
         {
-          "command": "operator-collection-sdk.downloadLogs",
+          "command": "operator-collection-sdk.viewLogs",
           "when": "view == operator-collection-sdk.operators && (viewItem == operator-container || viewItem == operator-init-container)",
           "group": "inline"
         },
         {
-          "command": "operator-collection-sdk.downloadVerboseLogs",
+          "command": "operator-collection-sdk.viewVerboseLogs",
           "when": "view == operator-collection-sdk.operators && viewItem == operator-container",
           "group": "inline"
         },
         {
           "command": "operator-collection-sdk.openEditLink",
+          "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object || viewItem == customresource-object)",
+          "group": "inline"
+        },
+        {
+          "command": "operator-collection-sdk.viewResource",
           "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object || viewItem == customresource-object)",
           "group": "inline"
         },
