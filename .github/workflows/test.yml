@@ -68,7 +68,7 @@ jobs:
         env:
           OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
           OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
-          OCP_NAMESPACE: vscode-${{ github.ref_name }}-${{ runner.os }}
+          OCP_NAMESPACE: vscode-${{ github.head_ref }}-${{ runner.os }}
           CLEANUP_NAMESPACE: true
 
       - name: Execute tests on Mac OS
