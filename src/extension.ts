@@ -73,8 +73,8 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployCollection, outputChannel));
 	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployOperator, outputChannel));
 	context.subscriptions.push(deleteCustomResource(VSCodeCommands.deleteCustomResource, k8s));
-	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadLogs, k8s));
-	context.subscriptions.push(executeContainerLogDownloadCommand(VSCodeCommands.downloadVerboseLogs, k8s));
+	context.subscriptions.push(executeContainerViewLogCommand(VSCodeCommands.viewLogs, k8s));
+	context.subscriptions.push(executeContainerViewLogCommand(VSCodeCommands.viewVerboseLogs, k8s));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openEditLink));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openAddLink));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openLink));
@@ -206,7 +206,7 @@ function viewResourceCommand(command: string): vscode.Disposable {
 	});
 }
 
-function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj): vscode.Disposable {
+function executeContainerViewLogCommand(command: string, k8s: KubernetesObj): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (containerItemArgs: OperatorContainerItem, logPath?: string) => {
 		const pwd = util.getCurrentWorkspaceRootFolder();
 		if (!pwd) {
@@ -218,13 +218,13 @@ function executeContainerLogDownloadCommand(command: string, k8s: KubernetesObj)
 			} else {
 				workspacePath = path.parse(workspacePath).dir;
 				switch(command) {
-					case VSCodeCommands.downloadLogs: {
+					case VSCodeCommands.viewLogs: {
 						const logUri = util.buildContainerLogUri(containerItemArgs.podObj.metadata?.name!, containerItemArgs.containerStatus.name);
 						const doc = await vscode.workspace.openTextDocument(logUri);
 						await vscode.window.showTextDocument(doc, {preview: false});
 						break;
 					}
-					case VSCodeCommands.downloadVerboseLogs: {
+					case VSCodeCommands.viewVerboseLogs: {
 						const apiVersion = await util.getConvertedApiVersion(workspacePath);
 						const kind = await util.selectCustomResourceFromOperatorInWorkspace(workspacePath);
 						let crInstance: string | undefined = "";
