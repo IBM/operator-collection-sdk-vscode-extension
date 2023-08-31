@@ -109,7 +109,7 @@
         "icon": "$(extensions-refresh)"
       },
       {
-        "command": "operator-collection-sdk.refreshAll",
+        "command": "operator-collection-sdk.refreshOpenShiftInfo",
         "title": "Refresh",
         "category": "OC-SDK",
         "icon": "$(extensions-refresh)"
@@ -197,7 +197,7 @@
           "group": "navigation"
         },
         {
-          "command": "operator-collection-sdk.refreshAll",
+          "command": "operator-collection-sdk.refreshOpenShiftInfo",
           "when": "view == operator-collection-sdk.openshiftClusterInfo",
           "group": "navigation"
         }
