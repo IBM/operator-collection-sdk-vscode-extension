@@ -11,7 +11,7 @@ export class Session {
     public ocSdkInstalled: boolean = false;
     public loggedIntoOpenShift: boolean = false;
     
-    constructor(public readonly ocSdkCmd: OcSdkCommand, public readonly k8s: KubernetesContext){};
+    constructor(public readonly ocSdkCmd: OcSdkCommand){};
 
     /**
      * Validates that the IBM Operator Collection SDK is installed
@@ -35,7 +35,8 @@ export class Session {
      * @returns - A promise containing a boolean, returning true if the user has access
      */
     async validateOpenShiftAccess(): Promise<boolean> {
-        return this.k8s.coreV1Api.listNamespacedPod(this.k8s.namespace).then(() => {
+        const k8s = new KubernetesContext();
+        return k8s.coreV1Api.listNamespacedPod(k8s.namespace).then(() => {
             this.loggedIntoOpenShift = true;
             return true;
         }).catch((e) => {

@@ -22,16 +22,31 @@ import {Session} from "../../utilities/session";
 type TreeItem = ResourceTreeItem | undefined | void;
 
 export class ResourcesTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+    // Static property to store the instances
+    private static resourceTreeProviders: ResourcesTreeProvider[] = [];
     private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> = new vscode.EventEmitter<TreeItem>();
 	readonly onDidChangeTreeData: vscode.Event<TreeItem> = this._onDidChangeTreeData.event;
 
-    constructor(private readonly session: Session){}
-	refresh(): void {
+    constructor(private readonly session: Session){
+        // Store the instances on the static property
+        ResourcesTreeProvider.resourceTreeProviders.push(this);
+    }
+
+    static async updateSession(): Promise<void> {
+        for (const provider of ResourcesTreeProvider.resourceTreeProviders) {
+            await provider.session.validateOcSDKInstallation();
+            await provider.session.validateOpenShiftAccess();
+            provider.refresh();
+        }
+    }
+	
+    refresh(): void {
 		this._onDidChangeTreeData.fire();
 	}
+    
     getTreeItem(element: ResourceItem): vscode.TreeItem {
         return element;
-      }
+    }
     
     async getChildren(element?: ResourceTreeItem): Promise<ResourceTreeItem[]> {
         let resourceItems: Array<ResourceTreeItem> = [];
