@@ -5,8 +5,6 @@
 
 import * as vscode from 'vscode';
 import * as k8s from '@kubernetes/client-node';
-import * as fs from "fs";
-import * as path from 'path';
 import * as util from '../utilities/util';
 import {OcCommand} from "../shellCommands/ocCommand";
 import {KubernetesContext} from "./kubernetesContext";

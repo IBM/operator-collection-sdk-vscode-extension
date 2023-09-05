@@ -22,7 +22,8 @@ export enum VSCodeCommands {
 	openLink = "operator-collection-sdk.openLink",
 	refresh = "operator-collection-sdk.refresh",
 	resourceRefresh = "operator-collection-sdk.resourceRefresh",
-	refreshAll = "operator-collection-sdk.refreshAll"
+	refreshAll = "operator-collection-sdk.refreshAll",
+	refreshOpenShiftInfo = "operator-collection-sdk.refreshOpenShiftInfo"
 }
 
 export enum VSCodeViewIds {

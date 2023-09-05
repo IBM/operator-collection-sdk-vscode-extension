@@ -6,11 +6,11 @@ import * as child_process from 'child_process';
 import {VSCodeCommands} from '../../utilities/commandConstants';
 import * as helper from '../helper';
 import {OperatorItem} from "../../treeViews/operatorItems/operatorItem";
+import {OpenShiftItem} from '../../treeViews/openshiftItems/openshiftItem';
 import {OperatorContainerItem} from "../../treeViews/operatorItems/operatorContainerItem";
 import {OperatorPodItem} from "../../treeViews/operatorItems/operatorPodItem";
 import {OperatorsTreeProvider} from '../../treeViews/providers/operatorProvider';
 import {ResourcesTreeProvider} from '../../treeViews/providers/resourceProvider';
-import {OpenShiftTreeProvider} from '../../treeViews/providers/openshiftProvider';
 import {ZosEndpointItem} from '../../treeViews/resourceItems/zosendpointItem';
 import {ZosEndpointsItem} from '../../treeViews/resourceItems/zosendpointsItem';
 import {OperatorCollectionItem} from '../../treeViews/resourceItems/operatorCollectionItem';
@@ -46,9 +46,6 @@ describe('Extension Test Suite', async () => {
 	}
 	
 	const zosCloudBrokerGroup: string =  "zoscb.ibm.com";
-	const clusterServiceVersionGroup: string =  "operators.coreos.com";
-	const customResourceGroup: string =  "suboperator.zoscb.ibm.com";
-	const clusterServiceVersionApiVersion: string = "v1alpha1";
 	const zosEndpointApiVersion: string =  "v2beta2";
 	const subOperatorConfigApiVersion: string =  "v2beta2";
 	const operatorCollectionApiVersion: string =  "v2beta2";
@@ -107,7 +104,8 @@ describe('Extension Test Suite', async () => {
 		}
 
 		try {
-			vscode.commands.executeCommand(VSCodeCommands.updateProject, namespace, updateProjectLogPath);
+			const namespaceObj = new OpenShiftItem("OpenShift Namespace", namespace, new vscode.ThemeIcon("account"), "openshift-namespace");
+			vscode.commands.executeCommand(VSCodeCommands.updateProject, namespaceObj, updateProjectLogPath);
 			await helper.sleep(5000);
 		} catch (e) {
 			console.log("Printing Update Project command logs");
@@ -125,7 +123,7 @@ describe('Extension Test Suite', async () => {
 
 		await installOperatorCollectionSDK(installSdkLogPath);
 
-		session = new Session(ocSdkCmd, k8s);
+		session = new Session(ocSdkCmd);
 		await session.validateOcSDKInstallation();
 		await session.validateOpenShiftAccess();
 
@@ -611,7 +609,7 @@ describe('Extension Test Suite', async () => {
 			const doc = await vscode.workspace.openTextDocument(`${helper.cicsOperatorCollectionPath}/operator-config.yml`);
 			const editor = await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, false);
 			const text = doc.getText();
-			const match = text.match('displayName')
+			const match = text.match('displayName');
 			if(match && match.index){
 				const matchRange = doc.getWordRangeAtPosition(doc.positionAt(match.index));
 				if(matchRange){
@@ -627,7 +625,7 @@ describe('Extension Test Suite', async () => {
 			await helper.sleep(2000); // Wait for linter
 			let diagnostics = vscode.languages.getDiagnostics(doc.uri);
 			assert.equal(diagnostics[0].message, "Property linterShouldFlagThis is not allowed.");
-		})
+		});
 	});
 
 });

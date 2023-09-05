@@ -9,6 +9,7 @@ import * as path from 'path';
 import {VSCodeCommands, VSCodeViewIds} from './utilities/commandConstants';
 import {OperatorsTreeProvider} from './treeViews/providers/operatorProvider';
 import {OperatorItem} from './treeViews/operatorItems/operatorItem';
+import {OpenShiftItem} from './treeViews/openshiftItems/openshiftItem';
 import {ResourcesTreeProvider} from './treeViews/providers/resourceProvider';
 import {OpenShiftTreeProvider} from './treeViews/providers/openshiftProvider';
 import {LinksTreeProvider} from './treeViews/providers/linkProvider';
@@ -33,13 +34,12 @@ export async function activate(context: vscode.ExtensionContext) {
 	(global as any).testExtensionContext = context;
 	initResources(context);
 
-	const k8s = new KubernetesObj();
 	const ocSdkCmd = new OcSdkCommand();
 	const ocCmd = new OcCommand();
-	const session = new Session(ocSdkCmd, k8s);
+	const session = new Session(ocSdkCmd);
 
-	const isOcSDKinstalled = await session.validateOcSDKInstallation();
-	const userLoggedIntoOCP = await session.validateOpenShiftAccess();
+	await session.validateOcSDKInstallation();
+	await session.validateOpenShiftAccess();
 	const outputChannel = vscode.window.createOutputChannel('IBM Operator Collection SDK');
 
 
@@ -62,9 +62,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	vscode.workspace.registerTextDocumentContentProvider(util.customResourceScheme, customResourceDisplayProvider);
 
 	
-	// Register Comands
-	vscode.commands.executeCommand("setContext", VSCodeCommands.sdkInstalled, isOcSDKinstalled);
-	vscode.commands.executeCommand("setContext", VSCodeCommands.loggedIn, userLoggedIntoOCP);
+	// Register Commands
+	vscode.commands.executeCommand("setContext", VSCodeCommands.sdkInstalled, await session.validateOcSDKInstallation());
+	vscode.commands.executeCommand("setContext", VSCodeCommands.loggedIn, await session.validateOpenShiftAccess());
 	context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
 	context.subscriptions.push(installOcSdk(VSCodeCommands.install, ocSdkCmd, session, outputChannel));
 	context.subscriptions.push(updateProject(VSCodeCommands.updateProject, ocCmd));
@@ -72,9 +72,9 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.deleteOperator, outputChannel));
 	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployCollection, outputChannel));
 	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.redeployOperator, outputChannel));
-	context.subscriptions.push(deleteCustomResource(VSCodeCommands.deleteCustomResource, k8s));
-	context.subscriptions.push(executeContainerViewLogCommand(VSCodeCommands.viewLogs, k8s));
-	context.subscriptions.push(executeContainerViewLogCommand(VSCodeCommands.viewVerboseLogs, k8s));
+	context.subscriptions.push(deleteCustomResource(VSCodeCommands.deleteCustomResource));
+	context.subscriptions.push(executeContainerViewLogCommand(VSCodeCommands.viewLogs));
+	context.subscriptions.push(executeContainerViewLogCommand(VSCodeCommands.viewVerboseLogs));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openEditLink));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openAddLink));
 	context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openLink));
@@ -90,6 +90,9 @@ export async function activate(context: vscode.ExtensionContext) {
 		openshiftTreeProvider.refresh();
 		operatorTreeProvider.refresh();
 		resourceTreeProvider.refresh();
+	}));
+	context.subscriptions.push(vscode.commands.registerCommand(VSCodeCommands.refreshOpenShiftInfo, () => {
+		openshiftTreeProvider.refresh();
 	}));
 }
 
@@ -120,13 +123,15 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 }
 
 function updateProject(command: string, ocCmd: OcCommand, outputChannel?: vscode.OutputChannel): vscode.Disposable {
-	return vscode.commands.registerCommand(command, async (namespaceArg?: string, logPath?: string) => {
+	return vscode.commands.registerCommand(command, async (arg: OpenShiftItem, logPath?: string) => {
+		const k8s = new KubernetesObj();
 		let namespace: string | undefined;
-		if (namespaceArg) {
-			namespace = namespaceArg;
-		} else {
+		if (arg.description === k8s.namespace) { // implies that the edit button was selected in the editor
 			namespace = await util.generateProjectDropDown();
+		} else { // allows for tests to pass in new namespace directly
+			namespace = arg.description;
 		}
+
 		if (namespace) {
 			ocCmd.runOcProjectCommand(namespace, outputChannel, logPath).then(() => {
 				vscode.window.showInformationMessage("Successfully updating Project on OpenShift cluster");
@@ -206,8 +211,9 @@ function viewResourceCommand(command: string): vscode.Disposable {
 	});
 }
 
-function executeContainerViewLogCommand(command: string, k8s: KubernetesObj): vscode.Disposable {
+function executeContainerViewLogCommand(command: string): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (containerItemArgs: OperatorContainerItem, logPath?: string) => {
+		const k8s = new KubernetesObj();
 		const pwd = util.getCurrentWorkspaceRootFolder();
 		if (!pwd) {
 			vscode.window.showErrorMessage("Unable to execute command when workspace is empty");
@@ -349,8 +355,9 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 	});
 }
 
-function deleteCustomResource(command: string, k8s: KubernetesObj) {
+function deleteCustomResource(command: string) {
 	return vscode.commands.registerCommand(command, async (customResourcArg: CustomResourcesItem) => {
+		const k8s = new KubernetesObj();
 		const name = customResourcArg.customResourceObj.metadata.name;
 		const apiVersion = customResourcArg.customResourceObj.apiVersion.split("/")[1];
 		const kind = customResourcArg.customResourceObj.kind;
