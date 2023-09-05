@@ -9,8 +9,20 @@ import {Session} from "../../utilities/session";
 import {KubernetesObj} from "../../kubernetes/kubernetes";
 
 export class ContainerLogProvider implements vscode.TextDocumentContentProvider {
-    
-    constructor(private readonly session: Session){}
+    // Static property to store the instances
+    private static containerLogProviders: ContainerLogProvider[] = [];
+
+    constructor(private readonly session: Session){
+      // Store the instances on the static property
+      ContainerLogProvider.containerLogProviders.push(this);
+    }
+
+    static async updateSession(): Promise<void> {
+      for (const provider of ContainerLogProvider.containerLogProviders) {
+        await provider.session.validateOcSDKInstallation();
+        await provider.session.validateOpenShiftAccess();
+      }
+    }
 
     async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
       if (this.session.loggedIntoOpenShift) {
