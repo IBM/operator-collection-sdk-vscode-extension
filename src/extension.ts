@@ -40,9 +40,14 @@ export async function activate(context: vscode.ExtensionContext) {
 	const ocCmd = new OcCommand();
 	const session = new Session(ocSdkCmd);
 
-	const verifiedKC = await verifyKubeConfig(ocCmd, session);
-	if (!verifiedKC) {
-		return;
+	const config = vscode.workspace.getConfiguration("operator-collection-sdk");
+	if (!config.get("test")) {
+		const validKubeConfig = await verifyKubeConfig(ocCmd, session);
+		if (!validKubeConfig) {
+			context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
+			vscode.window.showWarningMessage("Please reactivate this extension after logging into an OpenShift Cluster.");
+			return;
+		}
 	}
 
 	await session.validateOcSDKInstallation();
@@ -109,11 +114,11 @@ async function attemptBlockingOCLogin (ocCmd: OcCommand, session: Session, outpu
 				const response = await ocCmd.runOcLoginCommand(args, outputChannel, logPath);
 				vscode.window.showInformationMessage(response);
 				// if (response instanceof String && response.toLocaleLowerCase().includes("logged in")) {}
-				vscode.window.showInformationMessage("Successfully logged into OpenShift cluster.");
+				vscode.window.showInformationMessage("Successfully logged in to OpenShift cluster.");
 				vscode.commands.executeCommand(VSCodeCommands.refreshAll);
 				resolve(true);
 			} catch (error) {
-				vscode.window.showErrorMessage("Failure logging into OpenShift cluster");
+				vscode.window.showErrorMessage("Failure logging in to OpenShift cluster");
 				reject(false);
 			}
 		} else {
@@ -136,7 +141,7 @@ async function verifyKubeConfig(ocCmd: OcCommand, session: Session, outputChanne
 
 			if (!kc.currentContext || kc.clusters.length === 0) {
 				// KubeConfig file exists but is empty
-				vscode.window.showWarningMessage("Your KubeConfig file has not been properly configured. Before proceeding, please log into OpenShift.");
+				vscode.window.showWarningMessage("Your KubeConfig file has not been properly configured.");
 
 				// Prompt OC login
 				try {
@@ -144,7 +149,6 @@ async function verifyKubeConfig(ocCmd: OcCommand, session: Session, outputChanne
 					await attemptBlockingOCLogin(ocCmd, session);
 					vscode.window.showInformationMessage("KubeConfig context has been properly set.");
 				} catch (error) {
-					vscode.window.showWarningMessage("To proceed, reactivate this extension after logging into an OpenShift Cluster.");
 					resolve(false);
 				}
 			}
@@ -159,7 +163,6 @@ async function verifyKubeConfig(ocCmd: OcCommand, session: Session, outputChanne
 					await attemptBlockingOCLogin(ocCmd, session);
 					vscode.window.showInformationMessage("KubeConfig context has been properly set.");
 				} catch (error) {
-					vscode.window.showWarningMessage("To proceed, reactivate this extension after logging into an OpenShift Cluster.");
 					resolve(false);
 				}
 			}
