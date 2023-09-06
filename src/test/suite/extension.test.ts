@@ -27,7 +27,6 @@ process.on("uncaughtException", async (error) => {
 	// restore global variables on error
 	console.error(error);
 	await vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
-	process.exit(1);
 });
 
 describe('Extension Test Suite', async () => {
