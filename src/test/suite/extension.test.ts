@@ -65,16 +65,6 @@ describe('Extension Test Suite', async () => {
 		const extension = vscode.extensions.getExtension("ibm.operator-collection-sdk");
 		await extension?.activate();
 
-		// wait to ensure text boxes appear
-		await new Promise((resolve) => {setTimeout(resolve, 20000);});
-		await vscode.commands.executeCommand("type", {text: "test-server"});
-        await vscode.commands.executeCommand("acceptSelectedQuickOpenItem");
-
-		await new Promise((resolve) => {setTimeout(resolve, 20000);});
-        await vscode.commands.executeCommand("type", {text: "test-token"});
-        await vscode.commands.executeCommand("acceptSelectedQuickOpenItem");
-
-
 		extensionContext = (global as any).testExtensionContext;
 		initResources(extensionContext);
 
