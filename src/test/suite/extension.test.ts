@@ -29,6 +29,12 @@ process.on("uncaughtException", async (error) => {
 	await vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
 });
 
+process.on("unhandledRejection", async (error) => {
+	// restore global variables on error
+	console.error(error);
+	await vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
+});
+
 describe('Extension Test Suite', async () => {
 	vscode.workspace.getConfiguration("operator-collection-sdk").update("test", true, vscode.ConfigurationTarget.Global);
 	vscode.window.showInformationMessage('Start all tests.');
