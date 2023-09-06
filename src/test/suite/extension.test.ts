@@ -25,6 +25,11 @@ import {OcSdkCommand} from '../../shellCommands/ocSdkCommands';
 
 
 describe('Extension Test Suite', async () => {
+	vscode.workspace.getConfiguration("operator-collection-sdk").update("test", true, vscode.ConfigurationTarget.Global);
+	// const config = vscode.workspace.getConfiguration("operator-collection-sdk");
+	// vscode.window.showWarningMessage(`Testing Mode: ${config.get("test")}`);
+
+
 	vscode.window.showInformationMessage('Start all tests.');
 	const ocSdkCmd = new OcSdkCommand();
 	const imsOperatorItem: OperatorItem | undefined = new OperatorItem("IBM Z and Cloud Modernization Stack - IMS Operator", "zos-ims-operator", helper.imsOperatorCollectionPath);
@@ -59,6 +64,17 @@ describe('Extension Test Suite', async () => {
 	before(async () => {
 		const extension = vscode.extensions.getExtension("ibm.operator-collection-sdk");
 		await extension?.activate();
+
+		// wait to ensure text boxes appear
+		await new Promise((resolve) => {setTimeout(resolve, 20000);});
+		await vscode.commands.executeCommand("type", {text: "test-server"});
+        await vscode.commands.executeCommand("acceptSelectedQuickOpenItem");
+
+		await new Promise((resolve) => {setTimeout(resolve, 20000);});
+        await vscode.commands.executeCommand("type", {text: "test-token"});
+        await vscode.commands.executeCommand("acceptSelectedQuickOpenItem");
+
+
 		extensionContext = (global as any).testExtensionContext;
 		initResources(extensionContext);
 
