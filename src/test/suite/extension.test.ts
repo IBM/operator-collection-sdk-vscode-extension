@@ -23,13 +23,15 @@ import {Session} from "../../utilities/session";
 import * as k8sClient from '@kubernetes/client-node';
 import {OcSdkCommand} from '../../shellCommands/ocSdkCommands';
 
+process.on("uncaughtException", async (error) => {
+	// restore global variables on error
+	console.error(error);
+	await vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
+	process.exit(1);
+});
 
 describe('Extension Test Suite', async () => {
 	vscode.workspace.getConfiguration("operator-collection-sdk").update("test", true, vscode.ConfigurationTarget.Global);
-	// const config = vscode.workspace.getConfiguration("operator-collection-sdk");
-	// vscode.window.showWarningMessage(`Testing Mode: ${config.get("test")}`);
-
-
 	vscode.window.showInformationMessage('Start all tests.');
 	const ocSdkCmd = new OcSdkCommand();
 	const imsOperatorItem: OperatorItem | undefined = new OperatorItem("IBM Z and Cloud Modernization Stack - IMS Operator", "zos-ims-operator", helper.imsOperatorCollectionPath);
@@ -144,6 +146,8 @@ describe('Extension Test Suite', async () => {
 	});
 
 	after(async () => {
+		vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
+
 		if (fs.existsSync(installSdkLogPath)) {
 			fs.unlinkSync(installSdkLogPath);
 		}

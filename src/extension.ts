@@ -131,7 +131,7 @@ async function verifyKubeConfig(ocCmd: OcCommand, session: Session, outputChanne
 	return new Promise (async (resolve, _) => {
 	
 		const homeDirPath = findHomeDir();
-		const kcPath = homeDirPath ? path.join(homeDirPath, ".kube", "config") : "";
+		const kcPath = homeDirPath ? path.join(homeDirPath, ".kube", "config") : path.resolve("~", ".kube", "config");
 
 		if (fs.existsSync(kcPath)) {
 			// KubeConfig file exists
