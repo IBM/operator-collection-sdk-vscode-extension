@@ -35,12 +35,6 @@ process.on("unhandledRejection", async (error) => {
 	await vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
 });
 
-process.on("", async (error) => {
-	// restore global variables on error
-	console.error(error);
-	await vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
-});
-
 describe('Extension Test Suite', async () => {
 	vscode.workspace.getConfiguration("operator-collection-sdk").update("test", true, vscode.ConfigurationTarget.Global);
 	vscode.window.showInformationMessage('Start all tests.');
@@ -77,7 +71,6 @@ describe('Extension Test Suite', async () => {
 	before(async () => {
 		const extension = vscode.extensions.getExtension("ibm.operator-collection-sdk");
 		await extension?.activate();
-
 		extensionContext = (global as any).testExtensionContext;
 		initResources(extensionContext);
 
