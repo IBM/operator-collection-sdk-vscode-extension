@@ -23,17 +23,23 @@ import {Session} from "../../utilities/session";
 import * as k8sClient from '@kubernetes/client-node';
 import {OcSdkCommand} from '../../shellCommands/ocSdkCommands';
 
-// process.on("uncaughtException", async (error) => {
-// 	// restore global variables on error
-// 	console.error(error);
-// 	await vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
-// });
+process.on("uncaughtException", async (error) => {
+	// restore global variables on error
+	console.error(error);
+	await vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
+});
 
-// process.on("unhandledRejection", async (error) => {
-// 	// restore global variables on error
-// 	console.error(error);
-// 	await vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
-// });
+process.on("unhandledRejection", async (error) => {
+	// restore global variables on error
+	console.error(error);
+	await vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
+});
+
+process.on("", async (error) => {
+	// restore global variables on error
+	console.error(error);
+	await vscode.workspace.getConfiguration("operator-collection-sdk").update("test", false, vscode.ConfigurationTarget.Global);
+});
 
 describe('Extension Test Suite', async () => {
 	vscode.workspace.getConfiguration("operator-collection-sdk").update("test", true, vscode.ConfigurationTarget.Global);
