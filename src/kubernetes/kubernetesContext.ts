@@ -31,11 +31,11 @@ export class KubernetesContext {
             this.namespace = namespace;
         }
 
-        if (kc.currentContext) {
-            this.openshiftServerURL = kc.getCurrentCluster()?.server;
-            this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
-            this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
-        } else {
+        // if the KubeConfig file doesn't exist, kc.loadFromDefault() 
+        // will provide a dummy context that must be caught
+        const homeDirPath = k8s.findHomeDir();
+        const kcPath = homeDirPath ? path.join(homeDirPath, ".kube", "config") : path.join(".kube", "config");
+        if (!fs.existsSync(kcPath) || !kc.currentContext || kc.currentContext === "loaded-context") {
             // If kc is still empty, the Kube Config file is likely invalid
             vscode.window.showWarningMessage("Your KubeConfig file has not been properly configured.");
 
@@ -52,6 +52,10 @@ export class KubernetesContext {
                     vscode.commands.executeCommand(VSCodeCommands.refreshAll);
                 }
             });
+        } else {
+            this.openshiftServerURL = kc.getCurrentCluster()?.server;
+            this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
+            this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
         }
     }
 
