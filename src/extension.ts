@@ -114,7 +114,7 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 				if (!session.loggedIntoOpenShift) {
 					vscode.commands.executeCommand(VSCodeCommands.login);
 				}
-				vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+				vscode.commands.executeCommand(VSCodeCommands.refresh);
 			}).catch((e) => {
 				vscode.window.showErrorMessage(`Failure installing the IBM Operator Collection SDK: ${e}`);
 			});
