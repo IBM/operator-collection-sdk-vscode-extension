@@ -40,8 +40,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	const ocCmd = new OcCommand();
 	const session = new Session(ocSdkCmd);
 
-	const config = vscode.workspace.getConfiguration("operator-collection-sdk");
-	if (!config.get("test")) {
+	if (process.env.OCSDK_EXTENSION_MODE !== "test") {
 		const validKubeConfig = await verifyKubeConfig(ocCmd, session);
 		if (!validKubeConfig) {
 			context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
@@ -125,13 +124,13 @@ async function attemptBlockingOCLogin (ocCmd: OcCommand, session: Session, outpu
 			reject(false);
 		}
 	});
-};
+}
 
 async function verifyKubeConfig(ocCmd: OcCommand, session: Session, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<Boolean> {
 	return new Promise (async (resolve, _) => {
 	
 		const homeDirPath = findHomeDir();
-		const kcPath = homeDirPath ? path.join(homeDirPath, ".kube", "config") : path.resolve("~", ".kube", "config");
+		const kcPath = homeDirPath ? path.join(homeDirPath, ".kube", "config") : path.join("~", ".kube", "config");
 
 		if (fs.existsSync(kcPath)) {
 			// KubeConfig file exists
@@ -145,7 +144,6 @@ async function verifyKubeConfig(ocCmd: OcCommand, session: Session, outputChanne
 
 				// Prompt OC login
 				try {
-					// const loggedIntoOC = await attemptBlockingOCLogin(ocCmd, session);
 					await attemptBlockingOCLogin(ocCmd, session);
 					vscode.window.showInformationMessage("KubeConfig context has been properly set.");
 				} catch (error) {
@@ -159,7 +157,6 @@ async function verifyKubeConfig(ocCmd: OcCommand, session: Session, outputChanne
 			if (!fs.existsSync("/var/run/secrets/kubernetes.io/serviceaccount")) {
 				// Prompt OC login
 				try {
-					// const loggedIntoOC = await attemptBlockingOCLogin(ocCmd, session);
 					await attemptBlockingOCLogin(ocCmd, session);
 					vscode.window.showInformationMessage("KubeConfig context has been properly set.");
 				} catch (error) {
@@ -170,7 +167,7 @@ async function verifyKubeConfig(ocCmd: OcCommand, session: Session, outputChanne
 
 		resolve(true);
 	});
-};
+}
 
 function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (logPath?: string) => {
