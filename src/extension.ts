@@ -6,7 +6,6 @@
 import * as vscode from 'vscode';
 import * as util from "./utilities/util";
 import * as path from 'path';
-import * as fs from 'fs';
 import {VSCodeCommands, VSCodeViewIds} from './utilities/commandConstants';
 import {OperatorsTreeProvider} from './treeViews/providers/operatorProvider';
 import {OperatorItem} from './treeViews/operatorItems/operatorItem';
@@ -29,7 +28,6 @@ import {KubernetesObj} from "./kubernetes/kubernetes";
 import {OcCommand} from "./shellCommands/ocCommand";
 import {OcSdkCommand} from './shellCommands/ocSdkCommands';
 import {Session} from "./utilities/session";
-import {findHomeDir, KubeConfig} from '@kubernetes/client-node';
 
 export async function activate(context: vscode.ExtensionContext) {
 	// Set context as a global as some tests depend on it
@@ -39,15 +37,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	const ocSdkCmd = new OcSdkCommand();
 	const ocCmd = new OcCommand();
 	const session = new Session(ocSdkCmd);
-	
-	// if (process.env.OCSDK_EXTENSION_MODE !== "test") {
-	// 	const validKubeConfig = await verifyKubeConfig(ocCmd, session);
-	// 	if (!validKubeConfig) {
-	// 		context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
-	// 		vscode.window.showWarningMessage("Please reactivate this extension after logging into an OpenShift Cluster.");
-	// 		return;
-	// 	}
-	// }
 
 	await session.validateOcSDKInstallation();
 	await session.validateOpenShiftAccess();
@@ -103,70 +92,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand(VSCodeCommands.refreshOpenShiftInfo, () => {
 		openshiftTreeProvider.refresh();
 	}));
-}
-
-async function attemptBlockingOCLogin (ocCmd: OcCommand, session: Session, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<Boolean> {
-	return new Promise (async (resolve, reject) => {
-		const args = await util.requestLogInInfo();
-		if (args) {
-			try {
-				const response = await ocCmd.runOcLoginCommand(args, outputChannel, logPath);
-				vscode.window.showInformationMessage(response);
-				// if (response instanceof String && response.toLocaleLowerCase().includes("logged in")) {}
-				vscode.window.showInformationMessage("Successfully logged in to OpenShift cluster.");
-				vscode.commands.executeCommand(VSCodeCommands.refreshAll);
-				resolve(true);
-			} catch (error) {
-				vscode.window.showErrorMessage("Failure logging in to OpenShift cluster");
-				reject(false);
-			}
-		} else {
-			reject(false);
-		}
-	});
-}
-
-async function verifyKubeConfig(ocCmd: OcCommand, session: Session, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<Boolean> {
-	return new Promise (async (resolve, _) => {
-	
-		const homeDirPath = findHomeDir();
-		const kcPath = homeDirPath ? path.join(homeDirPath, ".kube", "config") : path.join("~", ".kube", "config");
-
-		if (fs.existsSync(kcPath)) {
-			// KubeConfig file exists
-
-			const kc = new KubeConfig();
-			kc.loadFromDefault();
-
-			if (!kc.currentContext || kc.clusters.length === 0) {
-				// KubeConfig file exists but is empty
-				vscode.window.showWarningMessage("Your KubeConfig file has not been properly configured.");
-
-				// Prompt OC login
-				try {
-					await attemptBlockingOCLogin(ocCmd, session);
-					vscode.window.showInformationMessage("KubeConfig context has been properly set.");
-				} catch (error) {
-					resolve(false);
-				}
-			}
-		} else {
-			// KubeConfig file does not exist
-			
-			// If Service Account also does not exist
-			if (!fs.existsSync("/var/run/secrets/kubernetes.io/serviceaccount")) {
-				// Prompt OC login
-				try {
-					await attemptBlockingOCLogin(ocCmd, session);
-					vscode.window.showInformationMessage("KubeConfig context has been properly set.");
-				} catch (error) {
-					resolve(false);
-				}
-			}
-		}
-
-		resolve(true);
-	});
 }
 
 function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
