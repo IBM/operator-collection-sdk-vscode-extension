@@ -1,9 +1,14 @@
+import * as vscode from 'vscode';
+import * as path from "path";
+import * as util from "../utilities/util";
 import * as k8s from '@kubernetes/client-node';
 import * as fs from "fs";
+import { VSCodeCommands } from '../utilities/commandConstants';
+import { OcCommand } from '../commands/ocCommand';
 
 export class KubernetesContext {
-    public coreV1Api: k8s.CoreV1Api;
-    public customObjectsApi: k8s.CustomObjectsApi;
+    public coreV1Api: k8s.CoreV1Api | undefined;
+    public customObjectsApi: k8s.CustomObjectsApi | undefined;
     public namespace: string = "";
     public openshiftServerURL: string | undefined  = "";
     constructor(namespace?: string) {
@@ -27,7 +32,58 @@ export class KubernetesContext {
         }
 
         this.openshiftServerURL = kc.getCurrentCluster()?.server;
-        this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
-        this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
+        this.coreV1Api = undefined;
+        this.customObjectsApi = undefined;
+
+        // If kc is still empty, the Kube Config file is likely invalid
+        const homeDirPath = k8s.findHomeDir();
+		const kcPath = homeDirPath ? path.join(homeDirPath, ".kube", "config") : path.join("~", ".kube", "config");
+        if (fs.existsSync(kcPath) && kc.currentContext) {
+            this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
+            this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
+        } else {
+            vscode.window.showWarningMessage("Your KubeConfig file has not been properly configured.");
+
+            // Prompt OC login
+            const ocCmd = new OcCommand();
+            this.attemptOCLogin(ocCmd).then((loggedIn) => {
+                if (loggedIn) {
+                    kc.loadFromDefault();
+                    
+                    // can omit context check here
+                    if (kc.currentContext) {
+                        vscode.window.showInformationMessage("KubeConfig context has been configured.");
+                        this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
+                        this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
+				        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Executes the requested command
+     * @param ocCmd - The oc command to be executed
+     * @returns - A Promise containing a boolean signaling the success of the executed command
+     */
+    public async attemptOCLogin (ocCmd: OcCommand): Promise<Boolean> {
+        return new Promise (async (resolve, reject) => {
+            const args = await util.requestLogInInfo();
+            if (args) {
+                try {
+                    const response = await ocCmd.runOcLoginCommand(args);
+                    vscode.window.showInformationMessage(response);
+                    vscode.window.showInformationMessage("Successfully logged in to OpenShift cluster.");
+                    vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+                    resolve(true);
+                } catch (error) {
+                    vscode.window.showErrorMessage("Failure logging in to OpenShift cluster");
+                    reject(false);
+                }
+            } else {
+                reject(false);
+            }
+        });
     }
 }

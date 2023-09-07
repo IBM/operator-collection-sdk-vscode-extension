@@ -279,17 +279,7 @@
         "fileMatch": "operator-config.yml",
         "url": "./resources/schema/operator-config.schema.json"
       }
-    ],
-    "configuration": {
-      "title": "Test Configuration",
-      "properties": {
-        "operator-collection-sdk.test": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable Testing Mode"
-        }
-      }
-    }
+    ]
   },
   "extensionDependencies": ["redhat.vscode-yaml"],
   "scripts": {
