@@ -39,15 +39,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	const ocSdkCmd = new OcSdkCommand();
 	const ocCmd = new OcCommand();
 	const session = new Session(ocSdkCmd);
-
-	if (process.env.OCSDK_EXTENSION_MODE !== "test") {
-		const validKubeConfig = await verifyKubeConfig(ocCmd, session);
-		if (!validKubeConfig) {
-			context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
-			vscode.window.showWarningMessage("Please reactivate this extension after logging into an OpenShift Cluster.");
-			return;
-		}
-	}
+	
+	// if (process.env.OCSDK_EXTENSION_MODE !== "test") {
+	// 	const validKubeConfig = await verifyKubeConfig(ocCmd, session);
+	// 	if (!validKubeConfig) {
+	// 		context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
+	// 		vscode.window.showWarningMessage("Please reactivate this extension after logging into an OpenShift Cluster.");
+	// 		return;
+	// 	}
+	// }
 
 	await session.validateOcSDKInstallation();
 	await session.validateOpenShiftAccess();
@@ -186,8 +186,10 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 			ocSdkCmd.installOcSDKCommand(outputChannel, logPath).then(()=> {
 				session.ocSdkInstalled = true;
 				vscode.window.showInformationMessage("Successfully installed the IBM Operator Collection SDK");
-				vscode.commands.executeCommand(VSCodeCommands.login);
-				vscode.commands.executeCommand(VSCodeCommands.refresh);
+				if (!session.loggedIntoOpenShift) {
+					vscode.commands.executeCommand(VSCodeCommands.login);
+				}
+				vscode.commands.executeCommand(VSCodeCommands.refreshAll);
 			}).catch((e) => {
 				vscode.window.showErrorMessage(`Failure installing the IBM Operator Collection SDK: ${e}`);
 			});
