@@ -44,7 +44,7 @@ jobs:
         run: npm install
 
       - name: Install vscode
-        run: npm install @types/vscode
+        run: npm install @types/vscode -g
 
       - name: Install oc cli
         uses: redhat-actions/openshift-tools-installer@v1
