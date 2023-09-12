@@ -602,3 +602,7 @@ export function parseCustomResourceUri(uri: vscode.Uri): {
 		instanceName: uriSplitArray[3],
 	};
 }
+
+export async function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}

@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import * as util from "./utilities/util";
 import * as path from 'path';
+import * as fs from 'fs';
 import {VSCodeCommands, VSCodeViewIds} from './utilities/commandConstants';
 import {OperatorsTreeProvider} from './treeViews/providers/operatorProvider';
 import {OperatorItem} from './treeViews/operatorItems/operatorItem';
@@ -28,11 +29,33 @@ import {KubernetesObj} from "./kubernetes/kubernetes";
 import {OcCommand} from "./shellCommands/ocCommand";
 import {OcSdkCommand} from './shellCommands/ocSdkCommands';
 import {Session} from "./utilities/session";
+import {OperatorConfig} from './linter/models'
+import {AnsibleGalaxyYmlSchema} from './linter/galaxy'
+import * as yaml from 'js-yaml';
 
 export async function activate(context: vscode.ExtensionContext) {
 	// Set context as a global as some tests depend on it
 	(global as any).testExtensionContext = context;
 	initResources(context);
+
+	//Setup Linter
+	const collection = vscode.languages.createDiagnosticCollection('linter');
+	if (vscode.window.activeTextEditor) {
+		updateDiagnostics(vscode.window.activeTextEditor.document, collection);
+	}
+	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
+		if (editor) {
+			updateDiagnostics(editor.document, collection);
+		}
+	}));
+	context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(textDocument => {
+		if (textDocument) {
+			updateDiagnostics(textDocument, collection);
+		}
+	}));
+	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(textDocumentChangeEvent => {
+			updateDiagnostics(textDocumentChangeEvent.document, collection);
+	}));
 
 	const ocSdkCmd = new OcSdkCommand();
 	const ocCmd = new OcCommand();
@@ -41,7 +64,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	await session.validateOcSDKInstallation();
 	await session.validateOpenShiftAccess();
 	const outputChannel = vscode.window.createOutputChannel('IBM Operator Collection SDK');
-
 
 
 	const operatorTreeProvider = new OperatorsTreeProvider(session);
@@ -375,4 +397,186 @@ function deleteCustomResource(command: string) {
 			vscode.window.showErrorMessage(`Failed to delete ${kind} resource: ${e}`);
 		});
 	});
+}
+
+async function updateDiagnostics(document: vscode.TextDocument, collection: vscode.DiagnosticCollection): Promise<void> {
+	if (document && ( path.basename(document.uri.fsPath) === 'operator-config.yaml' ) || ( path.basename(document.uri.fsPath) === 'operator-config.yml' ) ){
+
+		//Try to read the galaxy.yml or galaxy.yaml document
+		let galaxyData;
+		try {
+			galaxyData = fs.readFileSync(path.join(path.dirname(document.uri.fsPath), 'galaxy.yaml'), 'utf8');
+		} catch (err) {}
+		if(!galaxyData){
+			try {
+				galaxyData = fs.readFileSync(path.join(path.dirname(document.uri.fsPath), 'galaxy.yml'), 'utf8');
+			} catch (err) {}
+		}
+
+		const configData = document.getText();
+		const diagnostics : vscode.Diagnostic[] = [];
+		const operatorConfig = yaml.load(configData) as OperatorConfig;
+
+		//Get document "symbols"
+		//These are provided by the yaml extension
+		//There is no way to check if the yaml extension has been loaded
+		//So the only way to wait for it to load is to keep calling this
+		//command until it succeeds.
+		let docSymbols = undefined;
+		while(!docSymbols){
+			docSymbols = await vscode.commands.executeCommand(
+				'vscode.executeDocumentSymbolProvider',
+				document.uri
+			) as vscode.DocumentSymbol[];
+			//[Optional] Sleep to be mindful and not overload the command queue
+			if(!docSymbols){
+				await util.sleep(100);
+			}
+		}
+
+		//If we succesfuly read the galaxy data we proceed to lint those features
+		if(galaxyData !== undefined){
+			const galaxyConfig = yaml.load(galaxyData) as AnsibleGalaxyYmlSchema;
+
+			//Validate that operatorConfig values name, version, and domain match galaxy name, version, and namespace
+			if((galaxyConfig.namespace && operatorConfig.domain) && galaxyConfig.namespace !== operatorConfig.domain){
+				//Get domain symbol
+				const domainSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'domain' && symbol.detail === operatorConfig.domain));
+				if(domainSymbol){
+					diagnostics.push({
+						range: domainSymbol.range,
+						message: 'Domain should match the namespace value specified in your galaxy.yml file, unless a fork/clone of an official Ansible Collection is desired.',
+						severity: vscode.DiagnosticSeverity.Warning,
+					});
+				}
+			}
+			if((galaxyConfig.name && operatorConfig.name) && galaxyConfig.name !== operatorConfig.name){
+				//Get name symbol
+				const nameSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'name' && symbol.detail === operatorConfig.name));
+				if(nameSymbol){
+					diagnostics.push({
+						range: nameSymbol.range,
+						message: 'Name should match the name specified in your galaxy.yml file, unless a fork/clone of an official Ansible Collection is desired.',
+						severity: vscode.DiagnosticSeverity.Warning,
+					});
+				}
+			}
+			if((galaxyConfig.version && operatorConfig.version) && galaxyConfig.version !== operatorConfig.version){
+				//Get version symbol
+				const versionSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'version' && symbol.detail === operatorConfig.version));
+				if(versionSymbol){
+					diagnostics.push({
+						range: versionSymbol.range,
+						message: 'Version should match the version specified in your galaxy.yml file.',
+						severity: vscode.DiagnosticSeverity.Error,
+					});
+				}
+			}
+		}
+
+		//validate that an ansible config file does not exist
+		try {
+			fs.readFileSync(path.join(path.dirname(document.uri.fsPath), 'ansible.cfg'), 'utf8');
+			diagnostics.push({
+				range: new vscode.Range(document.positionAt(0),document.positionAt(0)),
+				message: "Collection Must not contain an ansible.cfg file. Please delete it and reimport the collection",
+				severity: vscode.DiagnosticSeverity.Error,
+			});
+		} catch (err) {}
+
+		//Validate that playbook and finalizer paths exist
+		if(operatorConfig.resources){
+			//Get resources symbol
+			const resourcesSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'resources'));
+			
+			for (const resource of operatorConfig.resources) {
+				//Get resource symbol
+				const resourceSymbol = resourcesSymbol?.children.find( (symbol: vscode.DocumentSymbol) => {
+					return symbol.children.find((child_symbol: vscode.DocumentSymbol)=>(child_symbol.name === 'kind' && child_symbol.detail === resource.kind))
+				})
+				//Validate Playbook
+				if(resource.playbook){
+					//Get playbook symbol
+					const resourcePlaybookSymbol = resourceSymbol?.children.find((symbol: vscode.DocumentSymbol)=>(symbol.name === 'playbook' && symbol.detail === resource.playbook))
+					//Check if path is absolute
+					if(path.isAbsolute(resource.playbook)){
+						if(resourcePlaybookSymbol){
+							diagnostics.push({
+								range: resourcePlaybookSymbol.range,
+								message: `Playbook must not contain absolute paths - ${resource.playbook}`,
+								severity: vscode.DiagnosticSeverity.Error,
+							});
+						}
+					}else{
+						//Check if playbook exist
+						try {
+							fs.readFileSync(path.join(path.dirname(document.uri.fsPath), resource.playbook), 'utf8');
+							const playbookDoc = await vscode.workspace.openTextDocument(path.join(path.dirname(document.uri.fsPath), resource.playbook));
+							//Get playbook "symbols"
+							const playbookDocSymbols = await vscode.commands.executeCommand(
+								'vscode.executeDocumentSymbolProvider',
+								playbookDoc.uri
+							) as vscode.DocumentSymbol[];
+							let plays : vscode.DocumentSymbol[] = [];
+							playbookDocSymbols.forEach(symbol=>{
+								const play = symbol.children.find(child_symbol=>child_symbol.name==='hosts');
+								if(play){
+									plays.push(play);
+								}
+							});
+							if(plays.some(play=>play.detail !== 'all')){
+								if(resourcePlaybookSymbol){
+									diagnostics.push({
+										range: resourcePlaybookSymbol.range,
+										message: `Playbook must use a hosts: all value. - ${resource.playbook}`,
+										severity: vscode.DiagnosticSeverity.Error,
+									});
+								}
+							}
+
+						} catch (err) {
+							if(resourcePlaybookSymbol){
+								diagnostics.push({
+									range: resourcePlaybookSymbol.range,
+									message: `Invalid Playbook for Kind ${resource.kind} - ${resource.playbook}`,
+									severity: vscode.DiagnosticSeverity.Error,
+								});
+							}
+						}
+					}
+				}
+				//Validate Finalizer
+				if(resource.finalizer){
+					//Get finalizer symbol
+					const resourceFinalizerymbol = resourceSymbol?.children.find((symbol: vscode.DocumentSymbol)=>(symbol.name === 'finalizer' && symbol.detail === resource.finalizer))
+					//Check if path is absolute
+					if(path.isAbsolute(resource.finalizer)){
+						if(resourceFinalizerymbol){
+							diagnostics.push({
+								range: resourceFinalizerymbol.range,
+								message: `Finalizer must not contain absolute paths - ${resource.finalizer}`,
+								severity: vscode.DiagnosticSeverity.Error,
+							});
+						}
+					}else{
+						try {
+							fs.readFileSync(path.join(path.dirname(document.uri.fsPath), resource.finalizer), 'utf8');
+						} catch (err) {
+							if(resourceFinalizerymbol){
+								diagnostics.push({
+									range: resourceFinalizerymbol.range,
+									message: `Invalid Finalizer for Kind ${resource.kind} - ${resource.playbook}`,
+									severity: vscode.DiagnosticSeverity.Error,
+								});
+							}
+						}
+					}
+				}
+			}
+		}
+
+		collection.set(document.uri, diagnostics);
+	} else {
+		collection.clear();
+	}
 }
