@@ -604,12 +604,12 @@ describe('Extension Test Suite', async () => {
 			assert.equal(cicsCustomResources.length, 0);
 		});
 	});
-
 	
 	describe('When validating the operator-config yaml linter', async () => {
 
 		let doc : vscode.TextDocument | undefined;
 		let diagnostics : vscode.Diagnostic[] | undefined;
+		let postDiagnostics : vscode.Diagnostic[] | undefined;
 
 		before(async () => {
 
@@ -682,14 +682,17 @@ describe('Extension Test Suite', async () => {
 				throw(new Error('Error injecting version linter errors into operator-config file.'));
 			}
 
+			//Store valid playbook for later
+			let validPlaybook : string;
 			//Inject invalid playbook
 			//Get resources symbol
 			const resourcesSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'resources'));
-			if(resourcesSymbol){	
+			if(resourcesSymbol){
 				//Get resource symbol
 				const resourceSymbol = resourcesSymbol.children[0];
 				const playbook : vscode.DocumentSymbol | undefined = resourceSymbol.children.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'playbook'));
 				if(playbook){
+					validPlaybook = playbook.detail;
 					const playbookValueRange = new vscode.Range(new vscode.Position(playbook.selectionRange.end.line, playbook.selectionRange.end.character + 2), playbook.range.end);
 					await editor.edit(editBuilder=>{
 						editBuilder.replace(playbookValueRange, `${helper.cicsOperatorCollectionPath}/invalid_playbook.yml`);
@@ -718,8 +721,56 @@ describe('Extension Test Suite', async () => {
 				throw(new Error('Error injecting finalizer linter errors into operator-config file.'));
 			}
 			
-			await util.sleep(30000); // Wait for linter to lint
+			await util.sleep(3000); // Wait for linter to lint
 			diagnostics = vscode.languages.getDiagnostics(doc.uri);
+
+			//Open valid playbook and replace hosts: all value with other host to trigger linter error
+			fs.readFileSync(path.join(path.dirname(doc.uri.fsPath), validPlaybook), 'utf8');
+			const playbookDoc = await vscode.workspace.openTextDocument(path.join(path.dirname(doc.uri.fsPath), validPlaybook));
+			const playbookEditor = await vscode.window.showTextDocument(playbookDoc, vscode.ViewColumn.Beside, false);
+
+			//Get playbook "symbols"
+			const playbookDocSymbols = await vscode.commands.executeCommand(
+				'vscode.executeDocumentSymbolProvider',
+				playbookDoc.uri
+			) as vscode.DocumentSymbol[];
+			//Replace playbook hosts
+			for( const symbol of playbookDocSymbols){
+				const playbookHost = symbol.children.find(child_symbol=>child_symbol.name==='hosts');
+				if(playbookHost){
+					const playbookHostValueRange = new vscode.Range(new vscode.Position(playbookHost.selectionRange.end.line, playbookHost.selectionRange.end.character + 2), playbookHost.range.end);
+					//const playbookHostValueRange = doc.getWordRangeAtPosition(doc.positionAt(doc.offsetAt(new vscode.Position(playbookHost.selectionRange.end.line, playbookHost.selectionRange.end.character + 2))));
+					if(playbookHostValueRange){
+						await playbookEditor.edit(editBuilder=>{
+							editBuilder.replace(playbookHostValueRange, 'invalidHost');
+						});
+					}
+					await playbookDoc.save();
+				}
+			}
+
+			//Restore valid playbook
+			if(resourcesSymbol){
+				//Get resource symbol
+				const resourceSymbol = resourcesSymbol.children[0];
+				const playbook : vscode.DocumentSymbol | undefined = resourceSymbol.children.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'playbook'));
+				if(playbook){
+					const playbookValueRange = doc.getWordRangeAtPosition(doc.positionAt(doc.offsetAt(new vscode.Position(playbook.selectionRange.end.line, playbook.selectionRange.end.character + 2))));
+					if(playbookValueRange){
+						await editor.edit(editBuilder=>{
+							editBuilder.replace(playbookValueRange, validPlaybook);
+						});
+					}
+				}else{
+					throw(new Error('Error injecting playbook linter errors into operator-config file.'));
+				}
+			}else{
+				throw(new Error('Error injecting playbook linter errors into operator-config file.'));
+			}
+
+            await util.sleep(3000); // Wait for linter to lint again
+            postDiagnostics = vscode.languages.getDiagnostics(doc.uri);
+
 		});
 
 		it('Should validate the linter lints missing required fields', () => {
@@ -743,32 +794,38 @@ describe('Extension Test Suite', async () => {
 		it('Should validate the linter lints version mismatch', () => {
 			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
 				diagnostic.message.includes("Version should match")
-			)))
+			)));
 		});
 
 		it('Should validate the linter lists unknown key errors', () => {
 			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
 				diagnostic.message.includes("Property linterShouldFlagThis is not allowed")
-			)))
+			)));
 		});
 
 		it('Should validate the linter detects ansible.cfg file as error', () => {
 			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
 				diagnostic.message.includes("Collection Must not contain an ansible.cfg file")
-			)))
+			)));
 		});
 
 		it('Should validate the linter lints invalid playbook/finalizer absolute paths', () => {
 			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
 				diagnostic.message.includes("Playbook must not contain absolute paths")
-			)))
+			)));
 		});
 
 		it('Should validate the linter lints invalid playbooks/finalizers', () => {
 			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
 				diagnostic.message.includes("Invalid Finalizer for Kind")
-			)))
+			)));
 		});
+
+		it('Should validate the linter lints playbooks host value', () => {
+            assert.ok(postDiagnostics && postDiagnostics.some((diagnostic) => (
+				diagnostic.message.includes("Playbook must use a hosts: all value")
+			)));
+        });
 
 	});
 
