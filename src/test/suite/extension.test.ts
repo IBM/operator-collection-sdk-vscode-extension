@@ -20,6 +20,7 @@ import {SubOperatorConfigsItem} from '../../treeViews/resourceItems/subOperatorC
 import {CustomResourceItem} from '../../treeViews/resourceItems/customResourceItem';
 import {initResources, getPassingIcons, getFailingIcons} from '../../treeViews/icons';
 import {Session} from "../../utilities/session";
+import * as util from "../../utilities/util";
 import * as k8sClient from '@kubernetes/client-node';
 import {OcSdkCommand} from '../../shellCommands/ocSdkCommands';
 
@@ -76,7 +77,7 @@ describe('Extension Test Suite', async () => {
 			let args: Array<string> = [`--server="${testClusterInfo.ocpServerUrl}"`, `--token="${testClusterInfo.ocpToken}"`];
 			try {
 				vscode.commands.executeCommand(VSCodeCommands.login, args, ocLoginLogPath);
-				await helper.sleep(5000);
+				await util.sleep(5000);
 			} catch (e) {
 				console.log("Printing OC Login logs");
 				helper.displayCmdOutput(ocLoginLogPath);
@@ -106,7 +107,7 @@ describe('Extension Test Suite', async () => {
 		try {
 			const namespaceObj = new OpenShiftItem("OpenShift Namespace", namespace, new vscode.ThemeIcon("account"), "openshift-namespace");
 			vscode.commands.executeCommand(VSCodeCommands.updateProject, namespaceObj, updateProjectLogPath);
-			await helper.sleep(5000);
+			await util.sleep(5000);
 		} catch (e) {
 			console.log("Printing Update Project command logs");
 			helper.displayCmdOutput(updateProjectLogPath);
@@ -214,7 +215,7 @@ describe('Extension Test Suite', async () => {
 		it('Should redeploy the operator', async () => {
 			try {
 				vscode.commands.executeCommand(VSCodeCommands.redeployOperator, imsOperatorItem, redeployOperatorLogPath);
-				await helper.sleep(20000);
+				await util.sleep(20000);
 				await helper.pollOperatorInstallStatus(imsOperatorItem.operatorName, 40);
 			} catch (e) {
 				console.log("Printing Redeploy Operator logs");
@@ -229,7 +230,7 @@ describe('Extension Test Suite', async () => {
 			for (const containerItem of operatorContainerItems) {
 				try {
 					vscode.commands.executeCommand(VSCodeCommands.viewLogs, containerItem);
-					await helper.sleep(5000);
+					await util.sleep(5000);
 					const fileData = vscode.window.activeTextEditor?.document.getText();
 					assert.notEqual(fileData, undefined);
 					if (containerItem.containerStatus.name.startsWith("init")) {
@@ -604,35 +605,178 @@ describe('Extension Test Suite', async () => {
 		});
 	});
 
-	describe('When validating the operator-config yaml linter', () => {
-		it('Should validate the linter lists unknown key errors', async() => {
-			const doc = await vscode.workspace.openTextDocument(`${helper.cicsOperatorCollectionPath}/operator-config.yml`);
-			const editor = await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, false);
-			const text = doc.getText();
-			const match = text.match('displayName');
-			if(match && match.index){
-				const matchRange = doc.getWordRangeAtPosition(doc.positionAt(match.index));
-				if(matchRange){
-					editor.edit(editBuilder=>{
-						editBuilder.replace(matchRange, 'linterShouldFlagThis:');
+	
+	describe('When validating the operator-config yaml linter', async () => {
+
+		let doc : vscode.TextDocument | undefined;
+		let diagnostics : vscode.Diagnostic[] | undefined;
+
+		before(async () => {
+
+			doc = vscode.workspace.textDocuments.find((document : vscode.TextDocument)=>document.fileName === `${helper.cicsOperatorCollectionPath}/operator-config.yml`);
+			if(doc === undefined){
+				doc = await vscode.workspace.openTextDocument(`${helper.cicsOperatorCollectionPath}/operator-config.yml`);
+			}
+			const editor = vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri === doc.uri ? vscode.window.activeTextEditor : await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, false);
+
+			//Get document "symbols"
+			//These are provided by the yaml extension
+			//There is no way to check if the yaml extension has been loaded
+			//So the only way to wait for it to load is to keep calling this
+			//command until it succeeds.
+			let docSymbols = undefined;
+			while(!docSymbols){
+				docSymbols = await vscode.commands.executeCommand(
+					'vscode.executeDocumentSymbolProvider',
+					doc.uri
+				) as vscode.DocumentSymbol[];
+				//[Optional] Sleep to be mindful and not overload the command queue
+				if(!docSymbols){
+					await util.sleep(100);
+				}
+			}
+
+			//Create ansible.cfg file
+			await vscode.workspace.fs.writeFile(vscode.Uri.file(`${helper.cicsOperatorCollectionPath}/ansible.cfg`), new TextEncoder().encode(""));
+
+			//Inject invalid key
+			const displayNameSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'displayName'));
+			if(displayNameSymbol){
+				await editor.edit(editBuilder=>{
+					editBuilder.replace(displayNameSymbol.selectionRange, 'linterShouldFlagThis');
+				});
+			}else{
+				throw(new Error('Error injecting invalid key linter errors into operator-config file.'));
+			}
+
+			//Inject invalid domain
+			const domainSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'domain'));
+			if(domainSymbol){
+				const domainSymbolValueRange = new vscode.Range(new vscode.Position(domainSymbol.selectionRange.end.line, domainSymbol.selectionRange.end.character + 2), domainSymbol.range.end);
+				await editor.edit(editBuilder=>{
+					editBuilder.replace(domainSymbolValueRange, 'invalidDomain');
+				});
+			}else{
+				throw(new Error('Error injecting domain linter errors into operator-config file.'));
+			}
+
+			//Inject invalid name
+			const nameSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'name'));
+			if(nameSymbol){
+				const nameSymbolValueRange = new vscode.Range(new vscode.Position(nameSymbol.selectionRange.end.line, nameSymbol.selectionRange.end.character + 2), nameSymbol.range.end);
+				await editor.edit(editBuilder=>{
+					editBuilder.replace(nameSymbolValueRange, 'invalid_name');
+				});
+			}else{
+				throw(new Error('Error injecting name linter errors into operator-config file.'));
+			}
+
+			//Inject invalid version
+			const versionSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'version'));
+			if(versionSymbol){
+				const versionSymbolValueRange = new vscode.Range(new vscode.Position(versionSymbol.selectionRange.end.line, versionSymbol.selectionRange.end.character + 2), versionSymbol.range.end);
+				await editor.edit(editBuilder=>{
+					editBuilder.replace(versionSymbolValueRange, 'invalidVersion');
+				});
+			}else{
+				throw(new Error('Error injecting version linter errors into operator-config file.'));
+			}
+
+			//Inject invalid playbook
+			//Get resources symbol
+			const resourcesSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'resources'));
+			if(resourcesSymbol){	
+				//Get resource symbol
+				const resourceSymbol = resourcesSymbol.children[0];
+				const playbook : vscode.DocumentSymbol | undefined = resourceSymbol.children.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'playbook'));
+				if(playbook){
+					const playbookValueRange = new vscode.Range(new vscode.Position(playbook.selectionRange.end.line, playbook.selectionRange.end.character + 2), playbook.range.end);
+					await editor.edit(editBuilder=>{
+						editBuilder.replace(playbookValueRange, `${helper.cicsOperatorCollectionPath}/invalid_playbook.yml`);
 					});
 				}else{
-					assert.fail('Error injecting linter errors into operator-config file.');
+					throw(new Error('Error injecting playbook linter errors into operator-config file.'));
 				}
 			}else{
-				assert.fail('Error injecting linter errors into operator-config file.');
+				throw(new Error('Error injecting playbook linter errors into operator-config file.'));
 			}
-			await helper.sleep(2000); // Wait for linter
-			let diagnostics = vscode.languages.getDiagnostics(doc.uri);
-			assert.equal(diagnostics[0].message, "Property linterShouldFlagThis is not allowed.");
+
+			//Inject invalid finalizer
+			if(resourcesSymbol){	
+				//Get resource symbol
+				const resourceSymbol = resourcesSymbol.children[0];
+				const finalizer : vscode.DocumentSymbol | undefined = resourceSymbol.children.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'finalizer'));
+				if(finalizer){
+					const finalizerValueRange = new vscode.Range(new vscode.Position(finalizer.selectionRange.end.line, finalizer.selectionRange.end.character + 2), finalizer.range.end);
+					await editor.edit(editBuilder=>{
+						editBuilder.replace(finalizerValueRange, `invalid_finalizer.yml`);
+					});
+				}else{
+					throw(new Error('Error injecting finalizer linter errors into operator-config file.'));
+				}
+			}else{
+				throw(new Error('Error injecting finalizer linter errors into operator-config file.'));
+			}
+			
+			await util.sleep(30000); // Wait for linter to lint
+			diagnostics = vscode.languages.getDiagnostics(doc.uri);
 		});
+
+		it('Should validate the linter lints missing required fields', () => {
+			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
+				diagnostic.message.includes("Missing property \"displayName\".")
+			)));
+		});
+
+		it('Should validate the linter lints domain mismatch', () => {
+			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
+				diagnostic.message.includes("Domain should match")
+			)));
+		});
+
+		it('Should validate the linter lints name mismatch', () => {
+			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
+				diagnostic.message.includes("Name should match")
+			)));
+		});
+
+		it('Should validate the linter lints version mismatch', () => {
+			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
+				diagnostic.message.includes("Version should match")
+			)))
+		});
+
+		it('Should validate the linter lists unknown key errors', () => {
+			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
+				diagnostic.message.includes("Property linterShouldFlagThis is not allowed")
+			)))
+		});
+
+		it('Should validate the linter detects ansible.cfg file as error', () => {
+			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
+				diagnostic.message.includes("Collection Must not contain an ansible.cfg file")
+			)))
+		});
+
+		it('Should validate the linter lints invalid playbook/finalizer absolute paths', () => {
+			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
+				diagnostic.message.includes("Playbook must not contain absolute paths")
+			)))
+		});
+
+		it('Should validate the linter lints invalid playbooks/finalizers', () => {
+			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
+				diagnostic.message.includes("Invalid Finalizer for Kind")
+			)))
+		});
+
 	});
 
 });
 
 async function installOperatorCollectionSDK(installSdkLogPath: string) {
 	vscode.commands.executeCommand(VSCodeCommands.install, installSdkLogPath);
-	await helper.sleep(15000);
+	await util.sleep(15000);
 	try {
 		child_process.execSync("ansible-galaxy collection verify ibm.operator_collection_sdk");
 	} catch (e) {
