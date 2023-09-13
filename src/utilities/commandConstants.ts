@@ -5,6 +5,9 @@
 
 export enum VSCodeCommands {
 	sdkInstalled = "operator-collection-sdk.sdkInstalled",
+	sdkOutdatedVersion = "operator-collection-sdk.sdkOutdatedVersion",
+	sdkUpgradeVersion = "operator-collection-sdk.sdkUpgradeVersion",
+	sdkUpgradeVersionSkip = "operator-collection-sdk.sdkUpgradeVersionSkip",
 	loggedIn = "operator-collection-sdk.loggedIn",
 	login = "operator-collection-sdk.login",
 	install = "operator-collection-sdk.install",
