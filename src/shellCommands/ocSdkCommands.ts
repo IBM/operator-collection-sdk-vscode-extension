@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import * as child_process from 'child_process';
 import * as fs from 'fs-extra';
+import * as https from 'https';
 
 export class OcSdkCommand {
     constructor(private pwd?: string | undefined) {}
@@ -18,8 +19,10 @@ export class OcSdkCommand {
      * @param logPath - Log path to store command output
      * @returns - A Promise containing the the return code of the executed command
      */
-     private async run(cmd: string, args?: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
+     private async run(cmd: string, args?: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string, callbackFunction?: (outputValue : string) => void ): Promise<any> {
         process.env.PWD = this.pwd;
+        let outputValue ="";
+
         const options: child_process.SpawnOptions = {
             cwd: this.pwd,
             env: process.env,
@@ -44,6 +47,7 @@ export class OcSdkCommand {
        
         childProcess.stdout?.on('data', data => {
             outputChannel?.appendLine(data);
+            outputValue += data.toString()
         });
 
         childProcess.stderr?.on('data', data => {
@@ -61,6 +65,9 @@ export class OcSdkCommand {
                         return reject(code);
                     }
                 } else {
+                    if (callbackFunction!== undefined) {
+                        callbackFunction(outputValue)
+                    }
                     return resolve(code);
                 }
             });
@@ -96,6 +103,69 @@ export class OcSdkCommand {
             "collection",
             "install",
             "ibm.operator_collection_sdk"
+        ];
+        return this.run(cmd, args, outputChannel, logPath);
+    }
+
+    /**
+     * Determinate if the installed local collection is the same as the latest collection in galaxy server
+     * @param outputChannel - The VS Code output channel to display command output
+     * @param logPath - Log path to store command output
+     * @returns - A Promise container the return code of the command being executed
+     */
+    async runDeterminateOcSdkIsOutdated(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<boolean> {
+        let versionInstalled =""
+        let latestVersion =""
+
+        // ansible-galaxy collection list | grep ibm.operator_collection_sdk 
+        const cmd: string = "ansible-galaxy"; 
+        let args: Array<string> = [
+            "collection",
+            "list",
+            "|",
+            "grep",
+            "ibm.operator_collection_sdk"
+        ];
+
+        let jsonData : any = await new Promise( (resolve, reject)=>{
+            https.get('https://galaxy.ansible.com/api/internal/ui/repo-or-collection-detail/?namespace=ibm&name=operator_collection_sdk',
+            (resp) => {
+                let data = '';
+                resp.on('data', (chunk) => {
+                    data += chunk;
+                });
+                resp.on('end', () => {
+                    resolve(JSON.parse(data));
+                });
+            }).on("error", (err) => {
+                reject(err);
+            });
+        });
+
+        latestVersion = jsonData?.data?.collection?.latest_version.version
+
+        let setVersionInstalled = (outputValue: string) => {
+            versionInstalled = outputValue.split(" ")?.[1] // item in [1] is the version
+        }
+
+        await this.run(cmd, args, outputChannel, logPath, setVersionInstalled);
+            return new Promise<boolean> ((resolve) => resolve(!(versionInstalled === latestVersion))) 
+    }
+
+     /**
+     * Upgrade a collection to the latest available version from the Galaxy server
+     * @param outputChannel - The VS Code output channel to display command output
+     * @param logPath - Log path to store command output
+     * @returns - A Promise container the return code of the command being executed
+     */
+     async upgradeOCSDKtoLatestVersion(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<boolean> {
+        // ansible-galaxy collection install ibm.operator_collection_sdk --upgrade
+        const cmd: string = "ansible-galaxy";
+        let args: Array<string> = [
+            "collection",
+            "install",
+            "ibm.operator_collection_sdk",
+            "--upgrade"
         ];
         return this.run(cmd, args, outputChannel, logPath);
     }

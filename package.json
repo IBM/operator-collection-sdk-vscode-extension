@@ -165,6 +165,11 @@
         "when": "!operator-collection-sdk.sdkInstalled"
       },
       {
+        "view": "operator-collection-sdk.operators",
+        "contents": "A new IBM Operator Collection version is available\n[Update Now](command:operator-collection-sdk.sdkUpgradeVersion)\n[Later](command:operator-collection-sdk.sdkUpgradeVersionSkip)",
+        "when": "operator-collection-sdk.sdkInstalled && operator-collection-sdk.sdkOutdatedVersion"
+      },
+      {
         "view": "operator-collection-sdk.resources",
         "contents": "Install the IBM Operator Collection SDk to use this extension",
         "when": "!operator-collection-sdk.sdkInstalled"
