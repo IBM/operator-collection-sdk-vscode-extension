@@ -65,8 +65,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Register Commands
 	vscode.commands.executeCommand("setContext", VSCodeCommands.sdkInstalled, await session.validateOcSDKInstallation());
 	vscode.commands.executeCommand("setContext", VSCodeCommands.loggedIn, await session.validateOpenShiftAccess());
+	vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, await session.determinateOcSdkIsOutdated());
 	context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
 	context.subscriptions.push(installOcSdk(VSCodeCommands.install, ocSdkCmd, session, outputChannel));
+	context.subscriptions.push(updateOcSdkVersion(VSCodeCommands.sdkUpgradeVersion, ocSdkCmd, session, outputChannel));
 	context.subscriptions.push(updateProject(VSCodeCommands.updateProject, ocCmd));
 	context.subscriptions.push(executeSdkCommandWithUserInput(VSCodeCommands.createOperator, outputChannel));
 	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.deleteOperator, outputChannel));
@@ -94,6 +96,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand(VSCodeCommands.refreshOpenShiftInfo, () => {
 		openshiftTreeProvider.refresh();
 	}));
+	context.subscriptions.push(vscode.commands.registerCommand(VSCodeCommands.sdkUpgradeVersionSkip, () => {
+		session.setSkipOcSdkVersionUpdateFlag().then( () => {
+			session.determinateOcSdkIsOutdated().then((isOutdated) => {
+				vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion,isOutdated);
+				vscode.commands.executeCommand(VSCodeCommands.refresh);
+			})
+		})
+
+	}));
 }
 
 function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
@@ -113,6 +124,7 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 			ocSdkCmd.installOcSDKCommand(outputChannel, logPath).then(()=> {
 				session.ocSdkInstalled = true;
 				vscode.window.showInformationMessage("Successfully installed the IBM Operator Collection SDK");
+				vscode.commands.executeCommand("setContext", VSCodeCommands.sdkInstalled, session.ocSdkInstalled);
 				vscode.commands.executeCommand(VSCodeCommands.login);
 				vscode.commands.executeCommand(VSCodeCommands.refresh);
 			}).catch((e) => {
@@ -121,6 +133,26 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 		}
 	});
 }
+
+function updateOcSdkVersion (command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel) : vscode.Disposable {
+	return vscode.commands.registerCommand(command, async (logPath?: string) => {
+		try {
+			vscode.window.showInformationMessage("Upgrading the IBM Operator Collection SDK to the latest version available in galaxy server");
+			ocSdkCmd.upgradeOCSDKtoLatestVersion().then(()=>{
+				vscode.window.showInformationMessage("Successfully upgraded to the latest IBM Operator Collection SDK available in galaxy server");
+				vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion,false);
+				vscode.commands.executeCommand(VSCodeCommands.refresh);
+			})
+		
+		} catch(e) {
+			vscode.window.showErrorMessage(`Failure upgrading the IBM Operator Collection SDK: ${e}`);
+			vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion,true);
+			vscode.commands.executeCommand(VSCodeCommands.refresh);
+		}
+
+	});
+}
+
 
 function updateProject(command: string, ocCmd: OcCommand, outputChannel?: vscode.OutputChannel): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (arg: OpenShiftItem, logPath?: string) => {
