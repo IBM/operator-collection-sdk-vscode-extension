@@ -8,6 +8,7 @@ import * as k8s from '@kubernetes/client-node';
 import * as util from '../utilities/util';
 import {OcCommand} from "../shellCommands/ocCommand";
 import {KubernetesContext} from "./kubernetesContext";
+import { VSCodeCommands } from '../utilities/commandConstants';
 
 export interface ObjectList {
     apiVersion: string;
@@ -479,5 +480,37 @@ export class KubernetesObj extends KubernetesContext {
             vscode.window.showErrorMessage(msg);
             return undefined;
         });
+    }
+
+    /**
+     * Validates if the namespace exists on the cluster
+     * @returns - A promise containing a boolean
+     */
+    public async validateNamespaceExists(): Promise<boolean | undefined> {
+        try {
+            const namespaceList = await this.getNamespaceList();
+            if (namespaceList?.includes(this.namespace)) {
+                return true;
+            } else {
+                vscode.window.showWarningMessage(`Project "${this.namespace}" does not exist on your current cluster. Please update your project`);
+
+                const projectSelection = await util.generateProjectDropDown(namespaceList);
+                if (projectSelection) {
+                    try {
+                        const ocCmd = new OcCommand();
+                        const _ = await ocCmd.runOcProjectCommand(projectSelection);
+                        vscode.window.showInformationMessage("Successfully updated Project on OpenShift cluster");
+                        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+                    } catch (error) {
+                        vscode.window.showErrorMessage(`Failure updating Project on OpenShift cluster: ${error}`);
+                    }
+                    return false;
+                }
+            }
+        } catch (error) {
+            const errorObjectString = JSON.stringify(error);
+            console.error(`Failure validating namespace exists: ${errorObjectString}`);
+            return undefined;
+        }
     }
 }
