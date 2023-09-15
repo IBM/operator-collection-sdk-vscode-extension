@@ -63,8 +63,10 @@ export async function activate(context: vscode.ExtensionContext) {
 	// Register Commands
 	vscode.commands.executeCommand("setContext", VSCodeCommands.sdkInstalled, await session.validateOcSDKInstallation());
 	vscode.commands.executeCommand("setContext", VSCodeCommands.loggedIn, await session.validateOpenShiftAccess());
+	vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, await session.determinateOcSdkIsOutdated());
 	context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
 	context.subscriptions.push(installOcSdk(VSCodeCommands.install, ocSdkCmd, session, outputChannel));
+	context.subscriptions.push(updateOcSdkVersion(VSCodeCommands.sdkUpgradeVersion, ocSdkCmd, session, outputChannel));
 	context.subscriptions.push(updateProject(VSCodeCommands.updateProject, ocCmd));
 	context.subscriptions.push(executeSdkCommandWithUserInput(VSCodeCommands.createOperator, outputChannel));
 	context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.deleteOperator, outputChannel));
@@ -92,6 +94,15 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand(VSCodeCommands.refreshOpenShiftInfo, () => {
 		openshiftTreeProvider.refresh();
 	}));
+	context.subscriptions.push(vscode.commands.registerCommand(VSCodeCommands.sdkUpgradeVersionSkip, () => {
+		session.setSkipOcSdkVersionUpdateFlag().then( () => {
+			session.determinateOcSdkIsOutdated().then((isOutdated) => {
+				vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion,isOutdated);
+				vscode.commands.executeCommand(VSCodeCommands.refresh);
+			})
+		})
+
+	}));
 }
 
 function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
@@ -111,6 +122,7 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 			ocSdkCmd.installOcSDKCommand(outputChannel, logPath).then(()=> {
 				session.ocSdkInstalled = true;
 				vscode.window.showInformationMessage("Successfully installed the IBM Operator Collection SDK");
+				vscode.commands.executeCommand("setContext", VSCodeCommands.sdkInstalled, session.ocSdkInstalled);
 				if (!session.loggedIntoOpenShift) {
 					vscode.commands.executeCommand(VSCodeCommands.login);
 				}
@@ -121,6 +133,26 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
 		}
 	});
 }
+
+function updateOcSdkVersion (command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel) : vscode.Disposable {
+	return vscode.commands.registerCommand(command, async (logPath?: string) => {
+		try {
+			vscode.window.showInformationMessage("Upgrading the IBM Operator Collection SDK to the latest version available in galaxy server");
+			ocSdkCmd.upgradeOCSDKtoLatestVersion().then(()=>{
+				vscode.window.showInformationMessage("Successfully upgraded to the latest IBM Operator Collection SDK available in galaxy server");
+				vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion,false);
+				vscode.commands.executeCommand(VSCodeCommands.refresh);
+			})
+		
+		} catch(e) {
+			vscode.window.showErrorMessage(`Failure upgrading the IBM Operator Collection SDK: ${e}`);
+			vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion,true);
+			vscode.commands.executeCommand(VSCodeCommands.refresh);
+		}
+
+	});
+}
+
 
 function updateProject(command: string, ocCmd: OcCommand, outputChannel?: vscode.OutputChannel): vscode.Disposable {
 	return vscode.commands.registerCommand(command, async (arg: OpenShiftItem, logPath?: string) => {
@@ -269,44 +301,48 @@ function executeSimpleSdkCommand(command: string, outputChannel?: vscode.OutputC
 			}
 		}
 		if (workspacePath) {
-			let ocSdkCommand = new OcSdkCommand(workspacePath);
-			outputChannel?.show();
-			switch(command) {
-				case VSCodeCommands.deleteOperator: {
-					vscode.window.showInformationMessage("Delete Operator request in progress");
-					const poll = util.pollRun(10);
-					const runDeleteOperatorCommand = ocSdkCommand.runDeleteOperatorCommand(outputChannel, logPath);
-					Promise.all([poll, runDeleteOperatorCommand]).then(() => {
-						vscode.window.showInformationMessage("Delete Operator command executed successfully");
-						vscode.commands.executeCommand(VSCodeCommands.refresh);
-					}).catch((e) => {
-						vscode.window.showInformationMessage(`Failure executing Delete Operator command: RC ${e}`);
-					});
-					break;
-				}
-				case VSCodeCommands.redeployCollection: {
-					vscode.window.showInformationMessage("Redeploy Collection request in progress");
-					const poll = util.pollRun(30);
-					const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel, logPath);
-					Promise.all([poll, runRedeployCollectionCommand]).then(() => {
-						vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
-						vscode.commands.executeCommand(VSCodeCommands.refresh);
-					}).catch((e) => {
-						vscode.window.showInformationMessage(`Failure executing Redeploy Collection command: RC ${e}`);
-					});
-					break;
-				}
-				case VSCodeCommands.redeployOperator: {
-					vscode.window.showInformationMessage("Redeploy Operator request in progress");
-					const poll = util.pollRun(40);
-					const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
-					Promise.all([poll, runRedeployOperatorCommand]).then(() => {
-						vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
-						vscode.commands.executeCommand(VSCodeCommands.refresh);
-					}).catch((e) => {
-						vscode.window.showInformationMessage(`Failure executing Redeploy Operator command: RC ${e}`);
-					});
-					break;
+			const k8s = new KubernetesObj();
+			const validNamespace = await k8s.validateNamespaceExists();
+			if (validNamespace) {
+				let ocSdkCommand = new OcSdkCommand(workspacePath);
+				outputChannel?.show();
+				switch(command) {
+					case VSCodeCommands.deleteOperator: {
+						vscode.window.showInformationMessage("Delete Operator request in progress");
+						const poll = util.pollRun(10);
+						const runDeleteOperatorCommand = ocSdkCommand.runDeleteOperatorCommand(outputChannel, logPath);
+						Promise.all([poll, runDeleteOperatorCommand]).then(() => {
+							vscode.window.showInformationMessage("Delete Operator command executed successfully");
+							vscode.commands.executeCommand(VSCodeCommands.refresh);
+						}).catch((e) => {
+							vscode.window.showInformationMessage(`Failure executing Delete Operator command: RC ${e}`);
+						});
+						break;
+					}
+					case VSCodeCommands.redeployCollection: {
+						vscode.window.showInformationMessage("Redeploy Collection request in progress");
+						const poll = util.pollRun(30);
+						const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel, logPath);
+						Promise.all([poll, runRedeployCollectionCommand]).then(() => {
+							vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
+							vscode.commands.executeCommand(VSCodeCommands.refresh);
+						}).catch((e) => {
+							vscode.window.showInformationMessage(`Failure executing Redeploy Collection command: RC ${e}`);
+						});
+						break;
+					}
+					case VSCodeCommands.redeployOperator: {
+						vscode.window.showInformationMessage("Redeploy Operator request in progress");
+						const poll = util.pollRun(40);
+						const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
+						Promise.all([poll, runRedeployOperatorCommand]).then(() => {
+							vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
+							vscode.commands.executeCommand(VSCodeCommands.refresh);
+						}).catch((e) => {
+							vscode.window.showInformationMessage(`Failure executing Redeploy Operator command: RC ${e}`);
+						});
+						break;
+					}
 				}
 			}
 		}
@@ -331,24 +367,28 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 			}
 		}
 		if (workspacePath) {
-			outputChannel?.show();
-			if (command === VSCodeCommands.createOperator) {
-				let playbookArgs = await util.requestOperatorInfo(workspacePath);
-				if (playbookArgs) {
-					let ocSdkCommand = new OcSdkCommand(workspacePath);
-					if (playbookArgs.length === 1 && playbookArgs[0].includes("ocsdk-extra-vars")) {
-						vscode.window.showInformationMessage("Create Operator request in progress using local variables file");
-					} else {
-						vscode.window.showInformationMessage("Create Operator request in progress");
+			const k8s = new KubernetesObj();
+			const validNamespace = await k8s.validateNamespaceExists();
+			if (validNamespace) {
+				outputChannel?.show();
+				if (command === VSCodeCommands.createOperator) {
+					let playbookArgs = await util.requestOperatorInfo(workspacePath);
+					if (playbookArgs) {
+						let ocSdkCommand = new OcSdkCommand(workspacePath);
+						if (playbookArgs.length === 1 && playbookArgs[0].includes("ocsdk-extra-vars")) {
+							vscode.window.showInformationMessage("Create Operator request in progress using local variables file");
+						} else {
+							vscode.window.showInformationMessage("Create Operator request in progress");
+						}
+						const poll = util.pollRun(40);
+						const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel, logPath);
+						Promise.all([poll, runCreateOperatorCommand]).then(() => {
+							vscode.window.showInformationMessage("Create Operator command executed successfully");
+							vscode.commands.executeCommand(VSCodeCommands.refresh);
+						}).catch((e) => {
+							vscode.window.showInformationMessage(`Failure executing Create Operator command: RC ${e}`);
+						});
 					}
-					const poll = util.pollRun(40);
-					const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel, logPath);
-					Promise.all([poll, runCreateOperatorCommand]).then(() => {
-						vscode.window.showInformationMessage("Create Operator command executed successfully");
-						vscode.commands.executeCommand(VSCodeCommands.refresh);
-					}).catch((e) => {
-						vscode.window.showInformationMessage(`Failure executing Create Operator command: RC ${e}`);
-					});
 				}
 			}
 		};
@@ -358,21 +398,26 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 function deleteCustomResource(command: string) {
 	return vscode.commands.registerCommand(command, async (customResourcArg: CustomResourcesItem) => {
 		const k8s = new KubernetesObj();
-		const name = customResourcArg.customResourceObj.metadata.name;
-		const apiVersion = customResourcArg.customResourceObj.apiVersion.split("/")[1];
-		const kind = customResourcArg.customResourceObj.kind;
-		const poll = util.pollRun(15);
-		const deleteCustomResourceCmd = k8s.deleteCustomResource(name, apiVersion, kind);
-		Promise.all([poll, deleteCustomResourceCmd]).then((values) => {
-			const deleteSuccessful = values[1];
-			if (deleteSuccessful) {
-				vscode.window.showInformationMessage(`Successfully deleted ${kind} resource`);
-				vscode.commands.executeCommand(VSCodeCommands.resourceRefresh);
-			} else {
-				vscode.window.showErrorMessage(`Failed to delete ${kind} resource`);
-			}
-		}).catch((e) => {
-			vscode.window.showErrorMessage(`Failed to delete ${kind} resource: ${e}`);
-		});
+		const validNamespace = await k8s.validateNamespaceExists();
+
+		// validation may not be necessary in this case
+		if (validNamespace) {
+			const name = customResourcArg.customResourceObj.metadata.name;
+			const apiVersion = customResourcArg.customResourceObj.apiVersion.split("/")[1];
+			const kind = customResourcArg.customResourceObj.kind;
+			const poll = util.pollRun(15);
+			const deleteCustomResourceCmd = k8s.deleteCustomResource(name, apiVersion, kind);
+			Promise.all([poll, deleteCustomResourceCmd]).then((values) => {
+				const deleteSuccessful = values[1];
+				if (deleteSuccessful) {
+					vscode.window.showInformationMessage(`Successfully deleted ${kind} resource`);
+					vscode.commands.executeCommand(VSCodeCommands.resourceRefresh);
+				} else {
+					vscode.window.showErrorMessage(`Failed to delete ${kind} resource`);
+				}
+			}).catch((e) => {
+				vscode.window.showErrorMessage(`Failed to delete ${kind} resource: ${e}`);
+			});
+		}
 	});
 }
