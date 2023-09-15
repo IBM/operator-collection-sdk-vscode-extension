@@ -57,8 +57,6 @@ describe('Extension Test Suite', async () => {
 	let extensionContext: vscode.ExtensionContext;
 	
 	before(async () => {
-		process.env.OCSDK_EXTENSION_MODE = "test";
-		
 		const extension = vscode.extensions.getExtension("ibm.operator-collection-sdk");
 		await extension?.activate();
 		extensionContext = (global as any).testExtensionContext;
@@ -140,8 +138,6 @@ describe('Extension Test Suite', async () => {
 	});
 
 	after(async () => {
-		process.env.OCSDK_EXTENSION_MODE = "";
-
 		if (fs.existsSync(installSdkLogPath)) {
 			fs.unlinkSync(installSdkLogPath);
 		}

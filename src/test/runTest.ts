@@ -2,8 +2,6 @@ import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as helper from './helper';
 import * as cp from 'child_process';
-import * as vscode from 'vscode';
-
 
 import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
 

@@ -225,7 +225,7 @@ export class KubernetesObj extends KubernetesContext {
     public async deleteCustomResource(name: string, apiVersion: string, kind: string): Promise<boolean> {
         if (this.customObjectsApi) {
             return this.customObjectsApi?.deleteNamespacedCustomObject(
-                "suboperator.zoscb.ibm.com",
+                util.customResourceGroup,
                 apiVersion,
                 this.namespace,
                 `${kind.toLowerCase()}s`,
