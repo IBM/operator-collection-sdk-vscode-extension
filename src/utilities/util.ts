@@ -454,10 +454,10 @@ async function promptForPassphrase(): Promise<string | undefined> {
 	});
 }
 
-export async function generateProjectDropDown(): Promise<string | undefined> {
+export async function generateProjectDropDown(nslist?: Array<string>): Promise<string | undefined> {
 	const args: Array<string> = [];
 	const k8s = new KubernetesObj();
-	const namespaceList = await k8s.getNamespaceList();
+	const namespaceList = nslist ? nslist : await k8s.getNamespaceList();
 	if (namespaceList) {
 		const namespaceSelection = await vscode.window.showQuickPick(namespaceList, {
 			canPickMany: false,
