@@ -499,7 +499,7 @@ export class KubernetesObj extends KubernetesContext {
                     try {
                         const ocCmd = new OcCommand();
                         const _ = await ocCmd.runOcProjectCommand(projectSelection);
-                        vscode.window.showInformationMessage("Successfully updating Project on OpenShift cluster");
+                        vscode.window.showInformationMessage("Successfully updated Project on OpenShift cluster");
                         vscode.commands.executeCommand(VSCodeCommands.refreshAll);
                     } catch (error) {
                         vscode.window.showErrorMessage(`Failure updating Project on OpenShift cluster: ${error}`);
