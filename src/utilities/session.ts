@@ -10,6 +10,8 @@ import {KubernetesContext} from "../kubernetes/kubernetesContext";
 export class Session {
     public ocSdkInstalled: boolean = false;
     public loggedIntoOpenShift: boolean = false;
+    public ocSdkOutdated: boolean = false;
+    public skipSdkUpdated: boolean = false;
     
     constructor(public readonly ocSdkCmd: OcSdkCommand){};
 
@@ -28,6 +30,26 @@ export class Session {
             this.ocSdkInstalled = false;
             return false;
         }
+    }
+
+    /**
+     * Determinate if the installed IBM Operator Collection SDK can be updated to a newer version
+     * @returns - A promise containing a boolean, returning true if the installed IBM Operator Collection SDK can be updated to a newer version
+     */
+    async determinateOcSdkIsOutdated(): Promise<boolean> {
+        if (this.ocSdkInstalled && !this.skipSdkUpdated ){
+           this.ocSdkOutdated = await  this.ocSdkCmd.runDeterminateOcSdkIsOutdated()
+           return this.ocSdkOutdated
+        }else return false
+    }
+
+    /**
+     * Set skip OCSDK update version flag
+     * @returns - A promise containing a boolean, returning the skip Sdk Update version flag
+     */
+    async setSkipOcSdkVersionUpdateFlag(): Promise<boolean> {
+        this.skipSdkUpdated = !this.skipSdkUpdated
+        return new Promise<boolean>((resolve: any) => resolve(this.skipSdkUpdated))
     }
 
     /**
