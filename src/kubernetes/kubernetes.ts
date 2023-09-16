@@ -422,7 +422,7 @@ export class KubernetesObj extends KubernetesContext {
         
     }
 
-    private async isCustomResourceOperatorInstalled(csvName: string): Promise<boolean | undefined> {
+    public async isCustomResourceOperatorInstalled(csvName: string): Promise<boolean | undefined> {
         return this. customObjectsApi.getNamespacedCustomObject(
             util.clusterServiceVersionGroup,
             util.clusterServiceVersionApiVersion,
