@@ -196,7 +196,6 @@ export async function selectOperatorInWorkspace(workspace: string, operatorName?
 	} else {
 		return undefined;
 	}
-	
 }
 
 /**
