@@ -1,16 +1,15 @@
 ## Contributing
+
 Our project welcomes external contributions.
 
 This project uses the "Git flow" Git branching strategy for development and release management.
 
 ![Git Flow](./resources/docs/media/Gitflow.png)
 
-
-To contribute code or documentation, you should first create a fork of this repo, and once the feature is complete, 
+To contribute code or documentation, you should first create a fork of this repo, and once the feature is complete,
 submit a [pull request](https://github.com/IBM/operator-collection-sdk/pulls) to the `develop` branch.
 
 Please refer to the [Development Guide](./resources/docs/development-guide.md), for further guidance during development.
-
 
 ### Proposing new features
 
@@ -18,7 +17,6 @@ If you would like to implement a new feature, please [raise an issue](https://gi
 before sending a pull request so the feature can be discussed. This is to avoid
 you wasting your valuable time working on a feature that the project developers
 are not interested in accepting into the code base.
-
 
 ### Fixing bugs
 
