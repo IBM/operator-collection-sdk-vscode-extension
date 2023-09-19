@@ -38,28 +38,28 @@ export async function activate(context: vscode.ExtensionContext) {
   (global as any).testExtensionContext = context;
   initResources(context);
 
-	//Setup Linter
-	const collection = vscode.languages.createDiagnosticCollection('linter');
-	if (vscode.window.activeTextEditor) {
-		updateDiagnostics(vscode.window.activeTextEditor.document, collection);
-	}
-	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
-		if (editor) {
-			updateDiagnostics(editor.document, collection);
-		}
-	}));
-	context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(textDocument => {
-		if (textDocument) {
-			updateDiagnostics(textDocument, collection);
-		}
-	}));
-	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(textDocumentChangeEvent => {
-			updateDiagnostics(textDocumentChangeEvent.document, collection);
-	}));
+  //Setup Linter
+  const collection = vscode.languages.createDiagnosticCollection('linter');
+  if (vscode.window.activeTextEditor) {
+  	updateDiagnostics(vscode.window.activeTextEditor.document, collection);
+  }
+  context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(editor => {
+  	if (editor) {
+  		updateDiagnostics(editor.document, collection);
+  	}
+  }));
+  context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(textDocument => {
+  	if (textDocument) {
+  		updateDiagnostics(textDocument, collection);
+  	}
+  }));
+  context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(textDocumentChangeEvent => {
+  		updateDiagnostics(textDocumentChangeEvent.document, collection);
+  }));
 
-	const ocSdkCmd = new OcSdkCommand();
-	const ocCmd = new OcCommand();
-	const session = new Session(ocSdkCmd);
+  const ocSdkCmd = new OcSdkCommand();
+  const ocCmd = new OcCommand();
+  const session = new Session(ocSdkCmd);
 
   await session.validateOcSDKInstallation();
   await session.validateOpenShiftAccess();
@@ -747,7 +747,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 		//There is no way to check if the yaml extension has been loaded
 		//So the only way to wait for it to load is to keep calling this
 		//command until it succeeds.
-		let docSymbols = undefined;
+		let docSymbols : any = undefined;
 		while(!docSymbols){
 			docSymbols = await vscode.commands.executeCommand(
 				'vscode.executeDocumentSymbolProvider',

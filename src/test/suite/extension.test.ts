@@ -1144,7 +1144,7 @@ describe("Extension Test Suite", async () => {
 				throw(new Error('Error injecting finalizer linter errors into operator-config file.'));
 			}
 			
-			await util.sleep(3000); // Wait for linter to lint
+			await util.sleep(5000); // Wait for linter to lint
 			diagnostics = vscode.languages.getDiagnostics(doc.uri);
 
 			//Open valid playbook and replace hosts: all value with other host to trigger linter error
@@ -1191,9 +1191,8 @@ describe("Extension Test Suite", async () => {
 				throw(new Error('Error injecting playbook linter errors into operator-config file.'));
 			}
 
-            await util.sleep(3000); // Wait for linter to lint again
-            postDiagnostics = vscode.languages.getDiagnostics(doc.uri);
-
+      await util.sleep(5000); // Wait for linter to lint again
+      postDiagnostics = vscode.languages.getDiagnostics(doc.uri);
 		});
 
 		it('Should validate the linter lints missing required fields', () => {
@@ -1250,6 +1249,7 @@ describe("Extension Test Suite", async () => {
 		  )));
     });
   });
+});
 
 async function installOperatorCollectionSDK(installSdkLogPath: string) {
   vscode.commands.executeCommand(VSCodeCommands.install, installSdkLogPath);
