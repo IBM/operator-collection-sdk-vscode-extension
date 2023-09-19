@@ -1,68 +1,92 @@
-import * as path from 'path';
-import * as fs from 'fs-extra';
-import * as helper from './helper';
-import * as cp from 'child_process';
+import * as path from "path";
+import * as fs from "fs-extra";
+import * as helper from "./helper";
+import * as cp from "child_process";
 
-import { runTests, downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
+import {
+  runTests,
+  downloadAndUnzipVSCode,
+  resolveCliArgsFromVSCodeExecutablePath,
+} from "@vscode/test-electron";
 
 async function go() {
-	const extensionDevelopmentPath = path.resolve(__dirname, '../../');
-	const extensionTestsPath = path.resolve(__dirname, './suite/index');
+  const extensionDevelopmentPath = path.resolve(__dirname, "../../");
+  const extensionTestsPath = path.resolve(__dirname, "./suite/index");
 
-	// Download VS Code, unzip it 
-	let vscodeExecutablePath;
-	if (process.platform === 'win32') {
-    	vscodeExecutablePath = await downloadAndUnzipVSCode('1.80.0', 'win32-x64-archive');
-	}else{
-    	vscodeExecutablePath = await downloadAndUnzipVSCode('1.80.0');
-	}
-	const [cliPath, ...args] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
+  // Download VS Code, unzip it
+  let vscodeExecutablePath;
+  if (process.platform === "win32") {
+    vscodeExecutablePath = await downloadAndUnzipVSCode(
+      "1.80.0",
+      "win32-x64-archive",
+    );
+  } else {
+    vscodeExecutablePath = await downloadAndUnzipVSCode("1.80.0");
+  }
+  const [cliPath, ...args] =
+    resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);
 
-	try {
-		fs.copySync(
-			path.resolve(__dirname, '../../testFixures/vscode-user/User'),
-			path.join(helper.tmpDir, 'User')
-		);
-		
-		if (!fs.existsSync(`${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`)) {
-			fs.copySync(helper.extraVarsFile, `${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`);
-		} else {
-			fs.unlinkSync(`${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`);
-			fs.copySync(helper.extraVarsFile, `${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`);
-		}
+  try {
+    fs.copySync(
+      path.resolve(__dirname, "../../testFixures/vscode-user/User"),
+      path.join(helper.tmpDir, "User"),
+    );
 
-		if (!fs.existsSync(`${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`)) {
-			fs.copySync(helper.extraVarsFile, `${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`);
-		} else {
-			fs.unlinkSync(`${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`);
-			fs.copySync(helper.extraVarsFile, `${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`);
-		}
+    if (
+      !fs.existsSync(`${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`)
+    ) {
+      fs.copySync(
+        helper.extraVarsFile,
+        `${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+      );
+    } else {
+      fs.unlinkSync(`${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`);
+      fs.copySync(
+        helper.extraVarsFile,
+        `${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+      );
+    }
 
-		// Custom setup of extension dependencies
-		cp.spawnSync(
-			cliPath,
-			[...args, '--install-extension', 'redhat.vscode-yaml'],
-			{
-				encoding: 'utf-8',
-				stdio: 'inherit'
-			}
-		);
+    if (
+      !fs.existsSync(
+        `${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+      )
+    ) {
+      fs.copySync(
+        helper.extraVarsFile,
+        `${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+      );
+    } else {
+      fs.unlinkSync(
+        `${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+      );
+      fs.copySync(
+        helper.extraVarsFile,
+        `${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+      );
+    }
 
-		//Run the integration test
-		await runTests({ 
-			vscodeExecutablePath,
-			extensionDevelopmentPath, 
-			extensionTestsPath,
-			launchArgs: [
-				helper.ocWorkspacePath,
-				`--user-data-dir=${helper.tmpDir}`
-			],
-		});
-		
-	} catch (err) {
-		console.error('Failed to run tests', err);
-		process.exit(1);
-	}
+    // Custom setup of extension dependencies
+    cp.spawnSync(
+      cliPath,
+      [...args, "--install-extension", "redhat.vscode-yaml"],
+      {
+        encoding: "utf-8",
+        stdio: "inherit",
+      },
+    );
+
+    //Run the integration test
+    await runTests({
+      vscodeExecutablePath,
+      extensionDevelopmentPath,
+      extensionTestsPath,
+      launchArgs: [helper.ocWorkspacePath, `--user-data-dir=${helper.tmpDir}`],
+    });
+  } catch (err) {
+    console.error("Failed to run tests", err);
+    process.exit(1);
+  }
 }
 
 go();
