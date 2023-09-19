@@ -839,7 +839,7 @@ export class TestKubernetesObj extends KubernetesContext {
     csvName: string,
   ): Promise<boolean | undefined> {
     return this.customObjectsApi
-      .getNamespacedCustomObject(
+      ?.getNamespacedCustomObject(
         clusterServiceVersionGroup,
         clusterServiceVersionApiVersion,
         this.namespace,
