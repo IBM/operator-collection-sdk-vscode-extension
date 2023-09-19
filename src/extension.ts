@@ -402,20 +402,29 @@ function deleteCustomResource(command: string) {
 async function updateDiagnostics(document: vscode.TextDocument, collection: vscode.DiagnosticCollection): Promise<void> {
 	if (document && ( path.basename(document.uri.fsPath) === 'operator-config.yaml' ) || ( path.basename(document.uri.fsPath) === 'operator-config.yml' ) ){
 
+		const configData = document.getText();
+		const diagnostics : vscode.Diagnostic[] = [];
+		const operatorConfig = yaml.load(configData) as OperatorConfig;
+
 		//Try to read the galaxy.yml or galaxy.yaml document
 		let galaxyData;
+		let galaxyConfig;
 		try {
 			galaxyData = fs.readFileSync(path.join(path.dirname(document.uri.fsPath), 'galaxy.yaml'), 'utf8');
+			galaxyConfig = yaml.load(galaxyData) as AnsibleGalaxyYmlSchema;
 		} catch (err) {}
 		if(!galaxyData){
 			try {
 				galaxyData = fs.readFileSync(path.join(path.dirname(document.uri.fsPath), 'galaxy.yml'), 'utf8');
-			} catch (err) {}
+				galaxyConfig = yaml.load(galaxyData) as AnsibleGalaxyYmlSchema;
+			} catch (err) {
+				diagnostics.push({
+					range: new vscode.Range(document.positionAt(0),document.positionAt(0)),
+					message: 'Missing galaxy.yaml file.',
+					severity: vscode.DiagnosticSeverity.Error,
+				});
+			}
 		}
-
-		const configData = document.getText();
-		const diagnostics : vscode.Diagnostic[] = [];
-		const operatorConfig = yaml.load(configData) as OperatorConfig;
 
 		//Get document "symbols"
 		//These are provided by the yaml extension
@@ -435,11 +444,10 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 		}
 
 		//If we succesfuly read the galaxy data we proceed to lint those features
-		if(galaxyData !== undefined){
-			const galaxyConfig = yaml.load(galaxyData) as AnsibleGalaxyYmlSchema;
+		if(galaxyConfig !== undefined){
 
 			//Validate that operatorConfig values name, version, and domain match galaxy name, version, and namespace
-			if((galaxyConfig.namespace && operatorConfig.domain) && galaxyConfig.namespace !== operatorConfig.domain){
+			if((galaxyConfig.namespace && operatorConfig.domain) && galaxyConfig.namespace.toLowerCase() !== operatorConfig.domain.toLowerCase()){
 				//Get domain symbol
 				const domainSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'domain' && symbol.detail === operatorConfig.domain));
 				if(domainSymbol){
@@ -450,7 +458,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 					});
 				}
 			}
-			if((galaxyConfig.name && operatorConfig.name) && galaxyConfig.name !== operatorConfig.name){
+			if((galaxyConfig.name && operatorConfig.name) && galaxyConfig.name.toLowerCase().replace('_','-') !== operatorConfig.name.toLowerCase().replace('_','-')){
 				//Get name symbol
 				const nameSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'name' && symbol.detail === operatorConfig.name));
 				if(nameSymbol){
@@ -472,16 +480,19 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 					});
 				}
 			}
+
 		}
 
-		//validate that an ansible config file does not exist
+		//Validate that an ansible config file does not exist or that it's listed in the build_ignore section of the galaxy.yml file
 		try {
 			fs.readFileSync(path.join(path.dirname(document.uri.fsPath), 'ansible.cfg'), 'utf8');
-			diagnostics.push({
-				range: new vscode.Range(document.positionAt(0),document.positionAt(0)),
-				message: "Collection Must not contain an ansible.cfg file. Please delete it and reimport the collection",
-				severity: vscode.DiagnosticSeverity.Error,
-			});
+			if( !(galaxyConfig !== undefined && galaxyConfig.build_ignore?.find(ignore=>ignore==='ansible.cfg')) ){
+				diagnostics.push({
+					range: new vscode.Range(document.positionAt(0),document.positionAt(0)),
+					message: "Collection build MUST not contain an ansible.cfg file. Please delete it or add this file to the build_ignore section of the galaxy.yml file.",
+					severity: vscode.DiagnosticSeverity.Error,
+				});
+			}
 		} catch (err) {}
 
 		//Validate that playbook and finalizer paths exist
@@ -503,7 +514,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 						if(resourcePlaybookSymbol){
 							diagnostics.push({
 								range: resourcePlaybookSymbol.range,
-								message: `Playbook must not contain absolute paths - ${resource.playbook}`,
+								message: `Playbook path MUST be relative to the root of the Operator Collection - ${resource.playbook}`,
 								severity: vscode.DiagnosticSeverity.Error,
 							});
 						}
@@ -528,7 +539,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 								if(resourcePlaybookSymbol){
 									diagnostics.push({
 										range: resourcePlaybookSymbol.range,
-										message: `Playbook must use a hosts: all value. - ${resource.playbook}`,
+										message: `Playbook MUST use a "hosts: all" value. - ${resource.playbook}`,
 										severity: vscode.DiagnosticSeverity.Error,
 									});
 								}
@@ -554,7 +565,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 						if(resourceFinalizerymbol){
 							diagnostics.push({
 								range: resourceFinalizerymbol.range,
-								message: `Finalizer must not contain absolute paths - ${resource.finalizer}`,
+								message: `Finalizer playbook path MUST be relative to the root of the Operator Collection - ${resource.finalizer}`,
 								severity: vscode.DiagnosticSeverity.Error,
 							});
 						}
