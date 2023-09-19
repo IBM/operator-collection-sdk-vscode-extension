@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import * as path from "path";
-import * as util from "../utilities/util";
 import * as k8s from "@kubernetes/client-node";
 import * as fs from "fs";
 import { VSCodeCommands } from '../utilities/commandConstants';
@@ -46,10 +45,10 @@ export class KubernetesContext {
                     // oc login successful, kube config configured
                     kc.loadFromDefault();
                     vscode.window.showInformationMessage("KubeConfig context has been configured.");
-                    this.openshiftServerURL = kc.getCurrentCluster()?.server;
-                    this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
-                    this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
-                    vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+                    // this.openshiftServerURL = kc.getCurrentCluster()?.server;
+                    // this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
+                    // this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
+                    // vscode.commands.executeCommand(VSCodeCommands.refreshAll);
                 }
             });
         } else {
@@ -72,7 +71,7 @@ export class KubernetesContext {
      */
     public async attemptOCLogin (ocCmd: OcCommand): Promise<Boolean> {
         return new Promise (async (resolve, reject) => {
-            const args = await util.requestLogInInfo();
+            const args = await this.requestLogInInfo();
             if (args) {
                 try {
                     const response = await ocCmd.runOcLoginCommand(args);
@@ -89,4 +88,42 @@ export class KubernetesContext {
             }
         });
     }
+
+    /**
+     * A copy of the requestLogInInfo from utilities. Copied to avoid circular dependency issue.
+     * @returns - A Promise containing an array of `oc login` arguments or undefined.
+     */
+    private async requestLogInInfo(): Promise<string[] | undefined> {
+        let args: Array<string> = [];
+      
+        const serverURL = await vscode.window.showInputBox({
+          prompt: "Enter your OpenShift Server URL",
+          ignoreFocusOut: true,
+        });
+      
+        if (serverURL === undefined) {
+          return undefined;
+        } else if (serverURL === "") {
+          vscode.window.showErrorMessage(
+            "OpenShift server URL is required to log in",
+          );
+          return undefined;
+        }
+      
+        args.push(`--server="${serverURL}"`);
+        const token = await vscode.window.showInputBox({
+          prompt: "Enter your OpenShift token",
+          password: true,
+          ignoreFocusOut: true,
+        });
+      
+        if (token === undefined) {
+          return undefined;
+        } else if (token === "") {
+          vscode.window.showErrorMessage("OpenShift token is required to log in");
+          return undefined;
+        }
+        args.push(`--token="${token}"`);
+        return args;
+      }
 }

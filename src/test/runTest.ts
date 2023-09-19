@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs-extra";
-import * as helper from "./helper";
+import * as testVars from "./testVars";
 import * as cp from "child_process";
 
 import {
@@ -29,40 +29,40 @@ async function go() {
   try {
     fs.copySync(
       path.resolve(__dirname, "../../testFixures/vscode-user/User"),
-      path.join(helper.tmpDir, "User"),
+      path.join(testVars.tmpDir, "User"),
     );
 
     if (
-      !fs.existsSync(`${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`)
+      !fs.existsSync(`${testVars.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`)
     ) {
       fs.copySync(
-        helper.extraVarsFile,
-        `${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+        testVars.extraVarsFile,
+        `${testVars.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
       );
     } else {
-      fs.unlinkSync(`${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`);
+      fs.unlinkSync(`${testVars.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`);
       fs.copySync(
-        helper.extraVarsFile,
-        `${helper.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+        testVars.extraVarsFile,
+        `${testVars.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
       );
     }
 
     if (
       !fs.existsSync(
-        `${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+        `${testVars.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
       )
     ) {
       fs.copySync(
-        helper.extraVarsFile,
-        `${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+        testVars.extraVarsFile,
+        `${testVars.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
       );
     } else {
       fs.unlinkSync(
-        `${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+        `${testVars.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
       );
       fs.copySync(
-        helper.extraVarsFile,
-        `${helper.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+        testVars.extraVarsFile,
+        `${testVars.cicsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
       );
     }
 
@@ -81,7 +81,7 @@ async function go() {
       vscodeExecutablePath,
       extensionDevelopmentPath,
       extensionTestsPath,
-      launchArgs: [helper.ocWorkspacePath, `--user-data-dir=${helper.tmpDir}`],
+      launchArgs: [testVars.ocWorkspacePath, `--user-data-dir=${testVars.tmpDir}`],
     });
   } catch (err) {
     console.error("Failed to run tests", err);
