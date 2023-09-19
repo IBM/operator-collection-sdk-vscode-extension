@@ -4,6 +4,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import * as child_process from "child_process";
 import { VSCodeCommands } from "../../utilities/commandConstants";
+import * as testVars from "../testVars";
 import * as helper from "../helper";
 import { OperatorItem } from "../../treeViews/operatorItems/operatorItem";
 import { OpenShiftItem } from "../../treeViews/openshiftItems/openshiftItem";
@@ -33,12 +34,12 @@ describe("Extension Test Suite", async () => {
   const imsOperatorItem: OperatorItem | undefined = new OperatorItem(
     "IBM Z and Cloud Modernization Stack - IMS Operator",
     "zos-ims-operator",
-    helper.imsOperatorCollectionPath,
+    testVars.imsOperatorCollectionPath,
   );
   const cicsOperatorItem: OperatorItem | undefined = new OperatorItem(
     "IBM Z and Cloud Modernization Stack - CICS TS Operator",
     "zos-cics-ts-operator",
-    helper.cicsOperatorCollectionPath,
+    testVars.cicsOperatorCollectionPath,
   );
   const ocLoginLogPath = path.join(__dirname, "ocLogin.log");
   const installSdkLogPath = path.join(__dirname, "installOcSdk.log");
@@ -1030,7 +1031,7 @@ describe("Extension Test Suite", async () => {
   describe("When validating the operator-config yaml linter", () => {
     it("Should validate the linter lists unknown key errors", async () => {
       const doc = await vscode.workspace.openTextDocument(
-        `${helper.cicsOperatorCollectionPath}/operator-config.yml`,
+        `${testVars.cicsOperatorCollectionPath}/operator-config.yml`,
       );
       const editor = await vscode.window.showTextDocument(
         doc,
