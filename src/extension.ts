@@ -221,9 +221,9 @@ function installOcSdk(
             VSCodeCommands.sdkInstalled,
             session.ocSdkInstalled,
           );
-				if (!session.loggedIntoOpenShift) {
-	          vscode.commands.executeCommand(VSCodeCommands.login);
-				}
+          if (!session.loggedIntoOpenShift) {
+            vscode.commands.executeCommand(VSCodeCommands.login);
+          }
           vscode.commands.executeCommand(VSCodeCommands.refresh);
         })
         .catch((e) => {

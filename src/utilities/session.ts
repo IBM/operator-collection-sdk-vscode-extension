@@ -63,27 +63,27 @@ export class Session {
   async validateOpenShiftAccess(): Promise<boolean> {
     const k8s = new KubernetesContext();
 
-        if (k8s?.coreV1Api) {
-        return k8s.coreV1Api
-      .listNamespacedPod(k8s.namespace)
-      .then(() => {
-            this.loggedIntoOpenShift = true;
-            return true;
-          })
-      .catch((e) => {
-            console.log(
-          "Log in to an OpenShift Cluster to use this extension: " +
-            JSON.stringify(e),
-            );
-        vscode.window.showWarningMessage(
-          "Log in to an OpenShift Cluster to use this extension",
-        );
-            this.loggedIntoOpenShift = false;
-            return false;
-          });
-        } else {
-            this.loggedIntoOpenShift = false;
-            return false;
-        }
+    if (k8s?.coreV1Api) {
+      return k8s.coreV1Api
+        .listNamespacedPod(k8s.namespace)
+        .then(() => {
+          this.loggedIntoOpenShift = true;
+          return true;
+        })
+        .catch((e) => {
+          console.log(
+            "Log in to an OpenShift Cluster to use this extension: " +
+              JSON.stringify(e),
+          );
+          vscode.window.showWarningMessage(
+            "Log in to an OpenShift Cluster to use this extension",
+          );
+          this.loggedIntoOpenShift = false;
+          return false;
+        });
+    } else {
+      this.loggedIntoOpenShift = false;
+      return false;
+    }
   }
 }

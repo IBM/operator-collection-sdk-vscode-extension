@@ -46,21 +46,21 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing a boolean
    */
   public async isUserLoggedIntoOCP(): Promise<boolean> {
-        if (this.coreV1Api) {
-            return this.coreV1Api
-            .listNamespacedPod(this.namespace)
-            .then(() => {
-                return true;
-            })
-            .catch(() => {
-                vscode.window.showWarningMessage(
+    if (this.coreV1Api) {
+      return this.coreV1Api
+        .listNamespacedPod(this.namespace)
+        .then(() => {
+          return true;
+        })
+        .catch(() => {
+          vscode.window.showWarningMessage(
             "Log in to an OpenShift Cluster to use this extension",
-            );
-                return false;
-            });
-        } else {
-            return false;
-        }
+          );
+          return false;
+        });
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -278,32 +278,32 @@ export class KubernetesObj extends KubernetesContext {
     apiVersion: string,
     kind: string,
   ): Promise<boolean> {
-        if (this.customObjectsApi) {
-        return this.customObjectsApi
-      ?.deleteNamespacedCustomObject(
-            util.customResourceGroup,
-            apiVersion,
-            this.namespace,
-            `${kind.toLowerCase()}s`,
-            name,
-          )
-      .then(() => {
-            return true;
-          })
-      .catch((e) => {
-            if (e.response.statusCode && e.response.statusCode === 404) {
-          // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
-              return false;
-            } else {
-              const msg = `Failure deleting Custom Resource object. ${e.response.statusMessage}`;
-              console.error(msg);
-              vscode.window.showErrorMessage(msg);
-              return false;
-            }
-          });
-        } else {
+    if (this.customObjectsApi) {
+      return this.customObjectsApi
+        ?.deleteNamespacedCustomObject(
+          util.customResourceGroup,
+          apiVersion,
+          this.namespace,
+          `${kind.toLowerCase()}s`,
+          name,
+        )
+        .then(() => {
+          return true;
+        })
+        .catch((e) => {
+          if (e.response.statusCode && e.response.statusCode === 404) {
+            // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return false;
-        }
+          } else {
+            const msg = `Failure deleting Custom Resource object. ${e.response.statusMessage}`;
+            console.error(msg);
+            vscode.window.showErrorMessage(msg);
+            return false;
+          }
+        });
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -498,7 +498,9 @@ export class KubernetesObj extends KubernetesContext {
       "routes",
       "console",
     );
-    let consoleRouteString = JSON.stringify(consoleRoute ? consoleRoute.body : "");
+    let consoleRouteString = JSON.stringify(
+      consoleRoute ? consoleRoute.body : "",
+    );
     let routeObj: RouteObject = JSON.parse(consoleRouteString);
     return routeObj.spec.host;
   }
