@@ -426,7 +426,7 @@ function executeContainerViewLogCommand(command: string): vscode.Disposable {
 
           if (!workspacePath) {
             vscode.window.showErrorMessage(
-              "Unable to locace valid operator collection in workspace",
+              "Unable to locate valid operator collection in workspace",
             );
           } else {
             workspacePath = path.parse(workspacePath).dir;
