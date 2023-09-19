@@ -403,25 +403,29 @@ function executeSdkCommandWithUserInput(command: string, outputChannel?: vscode.
 
 function deleteCustomResource(command: string) {
 	return vscode.commands.registerCommand(command, async (customResourcArg: CustomResourcesItem) => {
-		const k8s = new KubernetesObj();
-		const validNamespace = await k8s.validateNamespaceExists();
-		if (validNamespace) {
-			const name = customResourcArg.customResourceObj.metadata.name;
-			const apiVersion = customResourcArg.customResourceObj.apiVersion.split("/")[1];
-			const kind = customResourcArg.customResourceObj.kind;
-			const poll = util.pollRun(15);
-			const deleteCustomResourceCmd = k8s.deleteCustomResource(name, apiVersion, kind);
-			Promise.all([poll, deleteCustomResourceCmd]).then((values) => {
-				const deleteSuccessful = values[1];
-				if (deleteSuccessful) {
-					vscode.window.showInformationMessage(`Successfully deleted ${kind} resource`);
-					vscode.commands.executeCommand(VSCodeCommands.resourceRefresh);
-				} else {
-					vscode.window.showErrorMessage(`Failed to delete ${kind} resource`);
-				}
-			}).catch((e) => {
-				vscode.window.showErrorMessage(`Failed to delete ${kind} resource: ${e}`);
-			});
+		if (customResourcArg) {
+			const k8s = new KubernetesObj();
+			const validNamespace = await k8s.validateNamespaceExists();
+			if (validNamespace) {
+				const name = customResourcArg.customResourceObj.metadata.name;
+				const apiVersion = customResourcArg.customResourceObj.apiVersion.split("/")[1];
+				const kind = customResourcArg.customResourceObj.kind;
+				const poll = util.pollRun(15);
+				const deleteCustomResourceCmd = k8s.deleteCustomResource(name, apiVersion, kind);
+				Promise.all([poll, deleteCustomResourceCmd]).then((values) => {
+					const deleteSuccessful = values[1];
+					if (deleteSuccessful) {
+						vscode.window.showInformationMessage(`Successfully deleted ${kind} resource`);
+						vscode.commands.executeCommand(VSCodeCommands.resourceRefresh);
+					} else {
+						vscode.window.showErrorMessage(`Failed to delete ${kind} resource`);
+					}
+				}).catch((e) => {
+					vscode.window.showErrorMessage(`Failed to delete ${kind} resource: ${e}`);
+				});
+			}
+		} else {
+			vscode.window.showErrorMessage("Failed to delete custom resource. Please try again.");
 		}
 	});
 }
