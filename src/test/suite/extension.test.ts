@@ -805,13 +805,13 @@ describe('Extension Test Suite', async () => {
 
 		it('Should validate the linter detects ansible.cfg file as error', () => {
 			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
-				diagnostic.message.includes("Collection Must not contain an ansible.cfg file")
+				diagnostic.message.includes("Collection build MUST not contain an ansible.cfg file")
 			)));
 		});
 
 		it('Should validate the linter lints invalid playbook/finalizer absolute paths', () => {
 			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
-				diagnostic.message.includes("Playbook must not contain absolute paths")
+				diagnostic.message.includes("Playbook path MUST be relative")
 			)));
 		});
 
@@ -823,7 +823,7 @@ describe('Extension Test Suite', async () => {
 
 		it('Should validate the linter lints playbooks host value', () => {
             assert.ok(postDiagnostics && postDiagnostics.some((diagnostic) => (
-				diagnostic.message.includes("Playbook must use a hosts: all value")
+				diagnostic.message.includes("Playbook MUST use a \"hosts: all\" value")
 			)));
         });
 
