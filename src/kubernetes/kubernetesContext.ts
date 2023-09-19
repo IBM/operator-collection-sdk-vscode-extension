@@ -53,9 +53,15 @@ export class KubernetesContext {
                 }
             });
         } else {
-            this.openshiftServerURL = kc.getCurrentCluster()?.server;
-            this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
-            this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
+            // validate kube config by trying to make APi Client
+            try {
+                this.openshiftServerURL = kc.getCurrentCluster()?.server;
+                this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
+                this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
+            } catch(error) {
+                vscode.window.showErrorMessage(`Failed to validate KubeConfig file. ${error}`);
+                vscode.window.showInformationMessage("Please log into the OpenShift cluster again.");
+            }
         }
     }
 
