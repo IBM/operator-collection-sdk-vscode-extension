@@ -33,14 +33,18 @@ async function go() {
     );
 
     if (
-      !fs.existsSync(`${testVars.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`)
+      !fs.existsSync(
+        `${testVars.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+      )
     ) {
       fs.copySync(
         testVars.extraVarsFile,
         `${testVars.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
       );
     } else {
-      fs.unlinkSync(`${testVars.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`);
+      fs.unlinkSync(
+        `${testVars.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
+      );
       fs.copySync(
         testVars.extraVarsFile,
         `${testVars.imsOperatorCollectionPath}/ocsdk-extra-vars.yml`,
@@ -81,7 +85,10 @@ async function go() {
       vscodeExecutablePath,
       extensionDevelopmentPath,
       extensionTestsPath,
-      launchArgs: [testVars.ocWorkspacePath, `--user-data-dir=${testVars.tmpDir}`],
+      launchArgs: [
+        testVars.ocWorkspacePath,
+        `--user-data-dir=${testVars.tmpDir}`,
+      ],
     });
   } catch (err) {
     console.error("Failed to run tests", err);
