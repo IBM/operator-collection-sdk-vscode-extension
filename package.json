@@ -167,6 +167,11 @@
         "when": "!operator-collection-sdk.sdkInstalled"
       },
       {
+        "view": "operator-collection-sdk.operators",
+        "contents": "A new IBM Operator Collection version is available\n[Update Now](command:operator-collection-sdk.sdkUpgradeVersion)\n[Later](command:operator-collection-sdk.sdkUpgradeVersionSkip)",
+        "when": "operator-collection-sdk.sdkInstalled && operator-collection-sdk.sdkOutdatedVersion"
+      },
+      {
         "view": "operator-collection-sdk.resources",
         "contents": "Install the IBM Operator Collection SDk to use this extension",
         "when": "!operator-collection-sdk.sdkInstalled"
@@ -283,7 +288,9 @@
       }
     ]
   },
-  "extensionDependencies": ["redhat.vscode-yaml"],
+  "extensionDependencies": [
+    "redhat.vscode-yaml"
+  ],
   "scripts": {
     "vscode:prepublish": "npm run package",
     "webpack": "npm run clean && npm run compile && webpack --mode development",
@@ -297,7 +304,8 @@
     "clean": "rm -rf ./dist ./out",
     "test": "node ./out/test/runTest.js",
     "build": "npm run clean && vsce package",
-    "deploy": "extensionName=$(ls *.vsix) && code --install-extension ${extensionName}"
+    "deploy": "extensionName=$(ls *.vsix) && code --install-extension ${extensionName}",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.1",
@@ -311,7 +319,10 @@
     "eslint": "^8.41.0",
     "fs-extra": "^11.1.1",
     "glob": "^8.1.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.1",
     "mocha": "^10.2.0",
+    "prettier": "^3.0.3",
     "ts-loader": "^9.4.4",
     "typescript": "^5.1.3",
     "webpack": "^5.88.2",
@@ -320,5 +331,12 @@
   "dependencies": {
     "@kubernetes/client-node": "^0.18.1",
     "http": "^0.0.1-security"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --cache --fix",
+      "prettier --write --ignore-unknown"
+    ],
+    "**/*": "prettier --write --ignore-unknown"
   }
 }
