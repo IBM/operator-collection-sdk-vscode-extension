@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from "path";
 import * as util from "../utilities/util";
-import * as k8s from '@kubernetes/client-node';
+import * as k8s from "@kubernetes/client-node";
 import * as fs from "fs";
 import { VSCodeCommands } from '../utilities/commandConstants';
 import { OcCommand } from '../commands/ocCommand';
@@ -16,7 +16,7 @@ export class KubernetesContext {
         if (namespace === undefined) {
             if (fs.existsSync("/var/run/secrets/kubernetes.io/serviceaccount")) {
                 kc.loadFromCluster();
-                this.namespace = fs.readFileSync('/var/run/secrets/kubernetes.io/serviceaccount/namespace').toString();
+                this.namespace = fs.readFileSync("/var/run/secrets/kubernetes.io/serviceaccount/namespace").toString();
             } else {
                 kc.loadFromDefault();
                 if (kc.currentContext) {
