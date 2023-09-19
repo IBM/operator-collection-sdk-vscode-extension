@@ -538,7 +538,7 @@ export class KubernetesObj extends KubernetesContext {
     csvName: string,
   ): Promise<boolean | undefined> {
     return this.customObjectsApi
-      .getNamespacedCustomObject(
+      ?.getNamespacedCustomObject(
         util.clusterServiceVersionGroup,
         util.clusterServiceVersionApiVersion,
         this.namespace,
