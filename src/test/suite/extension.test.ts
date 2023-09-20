@@ -4,6 +4,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import * as child_process from "child_process";
 import { VSCodeCommands } from "../../utilities/commandConstants";
+import * as testVars from "../testVars";
 import * as helper from "../helper";
 import { OperatorItem } from "../../treeViews/operatorItems/operatorItem";
 import { OpenShiftItem } from "../../treeViews/openshiftItems/openshiftItem";
@@ -34,12 +35,12 @@ describe("Extension Test Suite", async () => {
   const imsOperatorItem: OperatorItem | undefined = new OperatorItem(
     "IBM Z and Cloud Modernization Stack - IMS Operator",
     "zos-ims-operator",
-    helper.imsOperatorCollectionPath,
+    testVars.imsOperatorCollectionPath,
   );
   const cicsOperatorItem: OperatorItem | undefined = new OperatorItem(
     "IBM Z and Cloud Modernization Stack - CICS TS Operator",
     "zos-cics-ts-operator",
-    helper.cicsOperatorCollectionPath,
+    testVars.cicsOperatorCollectionPath,
   );
   const ocLoginLogPath = path.join(__dirname, "ocLogin.log");
   const installSdkLogPath = path.join(__dirname, "installOcSdk.log");
@@ -769,7 +770,7 @@ describe("Extension Test Suite", async () => {
       const cicsApiVersion = "v1minor0patch0";
       const cicsCSVName = "ibm-zos-cics-ts-operator-operator.v1.0.0";
       consoleUrl = await k8s.getOpenshifConsoleUrl();
-      const createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/clusterserviceversions/${cicsCSVName}/suboperator.zoscb.ibm.com~${cicsApiVersion}~${cicsKind}/~new`;
+      const createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/suboperator.zoscb.ibm.com~${cicsApiVersion}~${cicsKind}/~new`;
 
       assert.equal(cicsCustomResourceParents.length, 1);
       assert.equal(cicsCustomResourceParents[0].kind, cicsKind);
