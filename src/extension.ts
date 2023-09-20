@@ -128,11 +128,7 @@ export async function activate(context: vscode.ExtensionContext) {
       if (event.selection[0]) {
         const item: vscode.TreeItem = event.selection[0];
         if (item instanceof LinkItem) {
-          let linkUri = vscode.Uri.parse(item.link);
-          let res = await vscode.env.openExternal(linkUri);
-          if (!res) {
-            vscode.window.showErrorMessage("Failure opening external link");
-          }
+          vscode.commands.executeCommand(VSCodeCommands.openLink, item);
         } else if (item instanceof OpenShiftItem) {
           if (item.contextValue === "openshift-namespace") {
             vscode.commands.executeCommand(VSCodeCommands.updateProject, item);
