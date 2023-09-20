@@ -77,10 +77,6 @@ export const operatorCollectionApiVersion: string = "v2beta2";
 export const zosCloudBrokerApiVersion: string = "v2beta1";
 export const zosCloudBrokerCsvVersion: string = "ibm-zoscb.v2.2.2";
 
-export async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export function displayCmdOutput(logPath: string) {
   if (fs.existsSync(logPath)) {
     const log = fs.readFileSync(logPath);
