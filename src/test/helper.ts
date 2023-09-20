@@ -1,16 +1,8 @@
 import * as path from "path";
-import * as os from "os";
 import * as fs from "fs-extra";
 import * as k8sClient from "@kubernetes/client-node";
 import { CustomResourcePhases } from "../utilities/commandConstants";
 import { KubernetesContext } from "../kubernetes/kubernetesContext";
-
-export const fixturePath = path.resolve(__dirname, "../../testFixures/");
-export const extraVarsFile = `${fixturePath}/ocsdk-extra-vars.yml`;
-export const cicsOperatorCollectionPath = `${fixturePath}/zos_cics_operator`;
-export const imsOperatorCollectionPath = `${fixturePath}/zos_ims_operator`;
-export const ocWorkspacePath = `${fixturePath}/operator-collections.code-workspace`;
-export const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "vscode-user"));
 
 interface ObjectList {
   apiVersion: string;
@@ -369,15 +361,19 @@ export class TestKubernetesObj extends KubernetesContext {
    * @returns - A promise containing a boolean
    */
   public async isUserLoggedIntoOCP(): Promise<boolean> {
-    return this.coreV1Api
-      .listNamespacedPod(this.namespace)
-      .then((res) => {
-        return true;
-      })
-      .catch((e) => {
-        console.log(JSON.stringify(e));
-        return false;
-      });
+    if (this.coreV1Api) {
+      return this.coreV1Api
+        ?.listNamespacedPod(this.namespace)
+        .then((res) => {
+          return true;
+        })
+        .catch((e) => {
+          console.log(JSON.stringify(e));
+          return false;
+        });
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -391,7 +387,7 @@ export class TestKubernetesObj extends KubernetesContext {
     const podList: Array<string> = [];
     const labelSelector = `operator-name=${operatorName}`;
     return this.coreV1Api
-      .listNamespacedPod(
+      ?.listNamespacedPod(
         this.namespace,
         undefined, // pretty
         undefined, // allowWatchBookmarks
@@ -496,7 +492,7 @@ export class TestKubernetesObj extends KubernetesContext {
     workspacePath: string,
   ): Promise<string | undefined> {
     return this.coreV1Api
-      .readNamespacedPodLog(podName, this.namespace, containerName)
+      ?.readNamespacedPodLog(podName, this.namespace, containerName)
       .then((res) => {
         if (!fs.existsSync(path.join(workspacePath, ".openshiftLogs"))) {
           fs.mkdirSync(path.join(workspacePath, ".openshiftLogs"));
@@ -551,7 +547,7 @@ export class TestKubernetesObj extends KubernetesContext {
   public async getNamespaceList(): Promise<string[] | undefined> {
     const namespaceList: Array<string> = [];
     return this.coreV1Api
-      .listNamespace()
+      ?.listNamespace()
       .then((res) => {
         let namespacesString = JSON.stringify(res.body);
         let namespacesbjectList: ObjectList = JSON.parse(namespacesString);
@@ -578,7 +574,7 @@ export class TestKubernetesObj extends KubernetesContext {
     kind: string,
   ): Promise<ObjectList | undefined> {
     return this.customObjectsApi
-      .listNamespacedCustomObject(
+      ?.listNamespacedCustomObject(
         customResourceGroup,
         apiVersion,
         this.namespace,
@@ -614,29 +610,33 @@ export class TestKubernetesObj extends KubernetesContext {
     apiVersion: string,
     kind: string,
   ): Promise<boolean> {
-    return this.customObjectsApi
-      .deleteNamespacedCustomObject(
-        customResourceGroup,
-        apiVersion,
-        this.namespace,
-        `${kind.toLowerCase()}s`,
-        name,
-      )
-      .then(() => {
-        return true;
-      })
-      .catch((e) => {
-        if (e.response.statusCode && e.response.statusCode === 404) {
-          // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
-          return false;
-        } else {
-          const errorObjectString = JSON.stringify(e);
-          console.error(
-            `Failure deleting Custom Resource object. ${errorObjectString}`,
-          );
-          return false;
-        }
-      });
+    if (this.customObjectsApi) {
+      return this.customObjectsApi
+        ?.deleteNamespacedCustomObject(
+          customResourceGroup,
+          apiVersion,
+          this.namespace,
+          `${kind.toLowerCase()}s`,
+          name,
+        )
+        .then(() => {
+          return true;
+        })
+        .catch((e) => {
+          if (e.response.statusCode && e.response.statusCode === 404) {
+            // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
+            return false;
+          } else {
+            const errorObjectString = JSON.stringify(e);
+            console.error(
+              `Failure deleting Custom Resource object. ${errorObjectString}`,
+            );
+            return false;
+          }
+        });
+    } else {
+      return false;
+    }
   }
 
   /**
@@ -678,7 +678,7 @@ export class TestKubernetesObj extends KubernetesContext {
     if (objPlural !== "zosendpoints" && operatorName) {
       const labelSelector = `operator-name=${operatorName}`;
       return this.customObjectsApi
-        .listNamespacedCustomObject(
+        ?.listNamespacedCustomObject(
           zosCloudBrokerGroup,
           subOperatorConfigApiVersion,
           this.namespace,
@@ -708,7 +708,7 @@ export class TestKubernetesObj extends KubernetesContext {
         });
     } else {
       return this.customObjectsApi
-        .listNamespacedCustomObject(
+        ?.listNamespacedCustomObject(
           zosCloudBrokerGroup,
           zosEndpointApiVersion,
           this.namespace,
@@ -746,7 +746,7 @@ export class TestKubernetesObj extends KubernetesContext {
   ): Promise<string[] | undefined> {
     let crInstanceNames: Array<string> = [];
     return this.customObjectsApi
-      .listNamespacedCustomObject(
+      ?.listNamespacedCustomObject(
         customResourceGroup,
         apiVersion,
         this.namespace,
@@ -783,14 +783,16 @@ export class TestKubernetesObj extends KubernetesContext {
    * @returns - A promise containing the OpenShift dashboard URL
    */
   public async getOpenshifConsoleUrl(): Promise<string> {
-    let consoleRoute = await this.customObjectsApi.getNamespacedCustomObject(
+    let consoleRoute = await this.customObjectsApi?.getNamespacedCustomObject(
       "route.openshift.io",
       "v1",
       "openshift-console",
       "routes",
       "console",
     );
-    let consoleRouteString = JSON.stringify(consoleRoute.body);
+    let consoleRouteString = JSON.stringify(
+      consoleRoute ? consoleRoute.body : "",
+    );
     let routeObj: RouteObject = JSON.parse(consoleRouteString);
     return routeObj.spec.host;
   }
@@ -798,7 +800,7 @@ export class TestKubernetesObj extends KubernetesContext {
   public async getZosCloudBrokerCsvName(): Promise<string | undefined> {
     const labelSelector = `operators.coreos.com/ibm-zoscb.${this.namespace}=`;
     return this.customObjectsApi
-      .listNamespacedCustomObject(
+      ?.listNamespacedCustomObject(
         clusterServiceVersionGroup,
         clusterServiceVersionApiVersion,
         this.namespace,
@@ -831,7 +833,7 @@ export class TestKubernetesObj extends KubernetesContext {
     csvName: string,
   ): Promise<boolean | undefined> {
     return this.customObjectsApi
-      .getNamespacedCustomObject(
+      ?.getNamespacedCustomObject(
         clusterServiceVersionGroup,
         clusterServiceVersionApiVersion,
         this.namespace,
@@ -891,7 +893,7 @@ export class TestKubernetesObj extends KubernetesContext {
   ): Promise<boolean | undefined> {
     const namespaceList: Array<string> = [];
     return this.coreV1Api
-      .listNamespace()
+      ?.listNamespace()
       .then((res) => {
         let namespacesString = JSON.stringify(res.body);
         let namespacesbjectList: ObjectList = JSON.parse(namespacesString);
@@ -927,7 +929,7 @@ export class TestKubernetesObj extends KubernetesContext {
       },
     };
     return this.coreV1Api
-      .createNamespace(ns)
+      ?.createNamespace(ns)
       .then((res) => {
         const namespaceObjString = JSON.stringify(res.body);
         const namespaceObj: ObjectInstance = JSON.parse(namespaceObjString);
@@ -943,7 +945,7 @@ export class TestKubernetesObj extends KubernetesContext {
     name: string,
   ): Promise<k8sClient.V1Namespace | undefined> {
     return this.coreV1Api
-      .readNamespace(name)
+      ?.readNamespace(name)
       .then((res) => {
         return res.body;
       })
@@ -963,7 +965,7 @@ export class TestKubernetesObj extends KubernetesContext {
       ns = name;
     }
     return this.coreV1Api
-      .deleteNamespace(ns)
+      ?.deleteNamespace(ns)
       .then(() => {})
       .catch((e) => {
         const errorObjectString = JSON.stringify(e);
@@ -1149,7 +1151,7 @@ export class TestKubernetesObj extends KubernetesContext {
     };
 
     return this.customObjectsApi
-      .createNamespacedCustomObject(
+      ?.createNamespacedCustomObject(
         "operators.coreos.com",
         "v1",
         this.namespace,
@@ -1171,7 +1173,7 @@ export class TestKubernetesObj extends KubernetesContext {
 
   private async getOperatorGroup(): Promise<ObjectInstance | undefined> {
     return this.customObjectsApi
-      .listNamespacedCustomObject(
+      ?.listNamespacedCustomObject(
         "operators.coreos.com",
         "v1",
         this.namespace,
@@ -1244,7 +1246,7 @@ export class TestKubernetesObj extends KubernetesContext {
     };
 
     return this.customObjectsApi
-      .createNamespacedCustomObject(
+      ?.createNamespacedCustomObject(
         "operators.coreos.com",
         "v1alpha1",
         this.namespace,
@@ -1274,7 +1276,7 @@ export class TestKubernetesObj extends KubernetesContext {
     SubscriptionObject | undefined
   > {
     return this.customObjectsApi
-      .getNamespacedCustomObject(
+      ?.getNamespacedCustomObject(
         "operators.coreos.com",
         "v1alpha1",
         this.namespace,
@@ -1306,7 +1308,7 @@ export class TestKubernetesObj extends KubernetesContext {
       csv = zosCloudBrokerCsvVersion;
     }
     return this.customObjectsApi
-      .getNamespacedCustomObject(
+      ?.getNamespacedCustomObject(
         "operators.coreos.com",
         "v1alpha1",
         this.namespace,
@@ -1372,7 +1374,7 @@ export class TestKubernetesObj extends KubernetesContext {
       },
     };
     return this.customObjectsApi
-      .createNamespacedCustomObject(
+      ?.createNamespacedCustomObject(
         zosCloudBrokerGroup,
         zosCloudBrokerApiVersion,
         this.namespace,
@@ -1400,7 +1402,7 @@ export class TestKubernetesObj extends KubernetesContext {
       csv = zosCloudBrokerCsvVersion;
     }
     return this.customObjectsApi
-      .getNamespacedCustomObject(
+      ?.getNamespacedCustomObject(
         zosCloudBrokerGroup,
         zosCloudBrokerApiVersion,
         this.namespace,
@@ -1427,7 +1429,7 @@ export class TestKubernetesObj extends KubernetesContext {
 
   private async deleteBrokerInstance() {
     try {
-      await this.customObjectsApi.deleteNamespacedCustomObject(
+      await this.customObjectsApi?.deleteNamespacedCustomObject(
         zosCloudBrokerGroup,
         zosCloudBrokerApiVersion,
         this.namespace,
@@ -1442,7 +1444,7 @@ export class TestKubernetesObj extends KubernetesContext {
 
   private async deleteZosEndpoint(): Promise<boolean> {
     try {
-      await this.customObjectsApi.deleteNamespacedCustomObject(
+      await this.customObjectsApi?.deleteNamespacedCustomObject(
         zosCloudBrokerGroup,
         zosEndpointApiVersion,
         this.namespace,
