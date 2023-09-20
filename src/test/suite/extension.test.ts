@@ -1037,9 +1037,9 @@ describe("Extension Test Suite", async () => {
 
 		before(async () => {
 
-			doc = vscode.workspace.textDocuments.find((document : vscode.TextDocument)=>document.fileName === `${helper.cicsOperatorCollectionPath}/operator-config.yml`);
+			doc = vscode.workspace.textDocuments.find((document : vscode.TextDocument)=>document.fileName === `${testVars.cicsOperatorCollectionPath}/operator-config.yml`);
 			if(doc === undefined){
-				doc = await vscode.workspace.openTextDocument(`${helper.cicsOperatorCollectionPath}/operator-config.yml`);
+				doc = await vscode.workspace.openTextDocument(`${testVars.cicsOperatorCollectionPath}/operator-config.yml`);
 			}
 			const editor = vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri === doc.uri ? vscode.window.activeTextEditor : await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, false);
 
@@ -1061,7 +1061,7 @@ describe("Extension Test Suite", async () => {
 			}
 
 			//Create ansible.cfg file
-			await vscode.workspace.fs.writeFile(vscode.Uri.file(`${helper.cicsOperatorCollectionPath}/ansible.cfg`), new TextEncoder().encode(""));
+			await vscode.workspace.fs.writeFile(vscode.Uri.file(`${testVars.cicsOperatorCollectionPath}/ansible.cfg`), new TextEncoder().encode(""));
 
 			//Inject invalid key
 			const displayNameSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'displayName'));
@@ -1119,7 +1119,7 @@ describe("Extension Test Suite", async () => {
 					validPlaybook = playbook.detail;
 					const playbookValueRange = new vscode.Range(new vscode.Position(playbook.selectionRange.end.line, playbook.selectionRange.end.character + 2), playbook.range.end);
 					await editor.edit(editBuilder=>{
-						editBuilder.replace(playbookValueRange, `${helper.cicsOperatorCollectionPath}/invalid_playbook.yml`);
+						editBuilder.replace(playbookValueRange, `${testVars.cicsOperatorCollectionPath}/invalid_playbook.yml`);
 					});
 				}else{
 					throw(new Error('Error injecting playbook linter errors into operator-config file.'));
