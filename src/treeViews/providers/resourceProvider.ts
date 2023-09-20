@@ -73,8 +73,15 @@ export class ResourcesTreeProvider
             element.workspacePath,
           );
           if (apiVersion && operatorCsvName) {
+            const customResourceCsvInstalled =
+              await k8s.isCustomResourceOperatorInstalled(operatorCsvName);
             for (const kind of kinds) {
-              const createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/clusterserviceversions/${operatorCsvName}/${util.customResourceGroup}~${apiVersion}~${kind}/~new`;
+              let createCustomResourceUrl: string = "";
+              if (customResourceCsvInstalled) {
+                createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/clusterserviceversions/${operatorCsvName}/${util.customResourceGroup}~${apiVersion}~${kind}/~new`;
+              } else {
+                createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/${util.customResourceGroup}~${apiVersion}~${kind}/~new`;
+              }
               resourceItems.push(
                 new CustomResourceItem(
                   kind,

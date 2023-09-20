@@ -536,7 +536,7 @@ export class KubernetesObj extends KubernetesContext {
       });
   }
 
-  private async isCustomResourceOperatorInstalled(
+  public async isCustomResourceOperatorInstalled(
     csvName: string,
   ): Promise<boolean | undefined> {
     return this.customObjectsApi
