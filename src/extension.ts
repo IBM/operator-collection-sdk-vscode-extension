@@ -81,6 +81,43 @@ export async function activate(context: vscode.ExtensionContext) {
     customResourceDisplayProvider,
   );
 
+  // Create Tree Views
+  const openshiftTreeView = vscode.window.createTreeView(
+    VSCodeViewIds.openshiftClusterInfo,
+    {
+      treeDataProvider: openshiftTreeProvider,
+    },
+  );
+  const linksTreeView = vscode.window.createTreeView(VSCodeViewIds.help, {
+    treeDataProvider: linksTreeProvider,
+  });
+
+  const treeViews = [linksTreeView, openshiftTreeView];
+
+  treeViews.forEach(async (treeView, index) => {
+    treeView.onDidChangeSelection(async (event) => {
+      if (event.selection[0]) {
+        const item: vscode.TreeItem = event.selection[0];
+        if (item instanceof LinkItem) {
+          let linkUri = vscode.Uri.parse(item.link);
+          let res = await vscode.env.openExternal(linkUri);
+          if (!res) {
+            vscode.window.showErrorMessage("Failure opening external link");
+          }
+        } else if (item instanceof OpenShiftItem) {
+          if (item.contextValue === "openshift-namespace") {
+            vscode.commands.executeCommand(VSCodeCommands.updateProject, item);
+          }
+        }
+      }
+    });
+  });
+
+  // Push TreeViews
+  treeViews.forEach((treeView) => {
+    context.subscriptions.push(treeView);
+  });
+
   // Register Commands
   vscode.commands.executeCommand(
     "setContext",
