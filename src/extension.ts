@@ -413,67 +413,76 @@ function executeContainerViewLogCommand(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(
     command,
     async (containerItemArgs: OperatorContainerItem, logPath?: string) => {
-      const k8s = new KubernetesObj();
-      const pwd = util.getCurrentWorkspaceRootFolder();
-      if (!pwd) {
-        vscode.window.showErrorMessage(
-          "Unable to execute command when workspace is empty",
-        );
-      } else {
-        let workspacePath = await util.selectOperatorInWorkspace(
-          pwd,
-          containerItemArgs.parentOperator.operatorName,
-        );
-        if (!workspacePath) {
+      if (containerItemArgs) {
+        const k8s = new KubernetesObj();
+        const pwd = util.getCurrentWorkspaceRootFolder();
+        if (!pwd) {
           vscode.window.showErrorMessage(
-            "Unable to locace valid operator collection in workspace",
+            "Unable to execute command when workspace is empty",
           );
         } else {
-          workspacePath = path.parse(workspacePath).dir;
-          switch (command) {
-            case VSCodeCommands.viewLogs: {
-              const logUri = util.buildContainerLogUri(
-                containerItemArgs.podObj.metadata?.name!,
-                containerItemArgs.containerStatus.name,
-              );
-              const doc = await vscode.workspace.openTextDocument(logUri);
-              await vscode.window.showTextDocument(doc, { preview: false });
-              break;
-            }
-            case VSCodeCommands.viewVerboseLogs: {
-              const apiVersion =
-                await util.getConvertedApiVersion(workspacePath);
-              const kind =
-                await util.selectCustomResourceFromOperatorInWorkspace(
-                  workspacePath,
+          let workspacePath = await util.selectOperatorInWorkspace(
+            pwd,
+            containerItemArgs.parentOperator.operatorName,
+          );
+
+          if (!workspacePath) {
+            vscode.window.showErrorMessage(
+              "Unable to locate valid operator collection in workspace",
+            );
+          } else {
+            workspacePath = path.parse(workspacePath).dir;
+            switch (command) {
+              case VSCodeCommands.viewLogs: {
+                const logUri = util.buildContainerLogUri(
+                  containerItemArgs.podObj.metadata?.name!,
+                  containerItemArgs.containerStatus.name,
                 );
-              let crInstance: string | undefined = "";
-              if (apiVersion) {
-                crInstance = await util.selectCustomResourceInstance(
-                  workspacePath,
-                  k8s,
-                  apiVersion,
-                  kind!,
-                );
-                if (kind && crInstance) {
-                  const logUri = util.buildVerboseContainerLogUri(
-                    containerItemArgs.podObj.metadata?.name!,
-                    containerItemArgs.containerStatus.name,
-                    apiVersion,
-                    kind,
-                    crInstance,
+                const doc = await vscode.workspace.openTextDocument(logUri);
+                await vscode.window.showTextDocument(doc, { preview: false });
+                break;
+              }
+              case VSCodeCommands.viewVerboseLogs: {
+                const apiVersion =
+                  await util.getConvertedApiVersion(workspacePath);
+                const kind =
+                  await util.selectCustomResourceFromOperatorInWorkspace(
+                    workspacePath,
                   );
-                  const doc = await vscode.workspace.openTextDocument(logUri);
-                  await vscode.window.showTextDocument(doc, { preview: false });
+                let crInstance: string | undefined = "";
+                if (apiVersion) {
+                  crInstance = await util.selectCustomResourceInstance(
+                    workspacePath,
+                    k8s,
+                    apiVersion,
+                    kind!,
+                  );
+                  if (kind && crInstance) {
+                    const logUri = util.buildVerboseContainerLogUri(
+                      containerItemArgs.podObj.metadata?.name!,
+                      containerItemArgs.containerStatus.name,
+                      apiVersion,
+                      kind,
+                      crInstance,
+                    );
+                    const doc = await vscode.workspace.openTextDocument(logUri);
+                    await vscode.window.showTextDocument(doc, {
+                      preview: false,
+                    });
+                  }
+                } else {
+                  vscode.window.showErrorMessage(
+                    "Unable to download log due to undefined version in operator-config",
+                  );
                 }
-              } else {
-                vscode.window.showErrorMessage(
-                  "Unable to download log due to undefined version in operator-config",
-                );
               }
             }
           }
         }
+      } else {
+        vscode.window.showInformationMessage(
+          "Please wait for the operator to finish loading, then try again.",
+        );
       }
     },
   );
@@ -655,40 +664,44 @@ function deleteCustomResource(command: string) {
   return vscode.commands.registerCommand(
     command,
     async (customResourcArg: CustomResourcesItem) => {
-      const k8s = new KubernetesObj();
-      const validNamespace = await k8s.validateNamespaceExists();
-
-      // validation may not be necessary in this case
-      if (validNamespace) {
-        const name = customResourcArg.customResourceObj.metadata.name;
-        const apiVersion =
-          customResourcArg.customResourceObj.apiVersion.split("/")[1];
-        const kind = customResourcArg.customResourceObj.kind;
-        const poll = util.pollRun(15);
-        const deleteCustomResourceCmd = k8s.deleteCustomResource(
-          name,
-          apiVersion,
-          kind,
-        );
-        Promise.all([poll, deleteCustomResourceCmd])
-          .then((values) => {
-            const deleteSuccessful = values[1];
-            if (deleteSuccessful) {
-              vscode.window.showInformationMessage(
-                `Successfully deleted ${kind} resource`,
-              );
-              vscode.commands.executeCommand(VSCodeCommands.resourceRefresh);
-            } else {
+      if (customResourcArg) {
+        const k8s = new KubernetesObj();
+        const validNamespace = await k8s.validateNamespaceExists();
+        if (validNamespace) {
+          const name = customResourcArg.customResourceObj.metadata.name;
+          const apiVersion =
+            customResourcArg.customResourceObj.apiVersion.split("/")[1];
+          const kind = customResourcArg.customResourceObj.kind;
+          const poll = util.pollRun(15);
+          const deleteCustomResourceCmd = k8s.deleteCustomResource(
+            name,
+            apiVersion,
+            kind,
+          );
+          Promise.all([poll, deleteCustomResourceCmd])
+            .then((values) => {
+              const deleteSuccessful = values[1];
+              if (deleteSuccessful) {
+                vscode.window.showInformationMessage(
+                  `Successfully deleted ${kind} resource`,
+                );
+                vscode.commands.executeCommand(VSCodeCommands.resourceRefresh);
+              } else {
+                vscode.window.showErrorMessage(
+                  `Failed to delete ${kind} resource`,
+                );
+              }
+            })
+            .catch((e) => {
               vscode.window.showErrorMessage(
-                `Failed to delete ${kind} resource`,
+                `Failed to delete ${kind} resource: ${e}`,
               );
-            }
-          })
-          .catch((e) => {
-            vscode.window.showErrorMessage(
-              `Failed to delete ${kind} resource: ${e}`,
-            );
-          });
+            });
+        }
+      } else {
+        vscode.window.showErrorMessage(
+          "Failed to delete custom resource. Please try again.",
+        );
       }
     },
   );
