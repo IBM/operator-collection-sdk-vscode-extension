@@ -784,7 +784,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 				if(domainSymbol){
 					diagnostics.push({
 						range: domainSymbol.range,
-						message: 'Domain should match the namespace value specified in your galaxy.yml file, unless a fork/clone of an official Ansible Collection is desired.',
+						message: 'Domain SHOULD match the namespace value specified in your galaxy.yml file, unless a fork/clone of an official Ansible Collection is desired.',
 						severity: vscode.DiagnosticSeverity.Warning,
 					});
 				}
@@ -795,7 +795,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 				if(nameSymbol){
 					diagnostics.push({
 						range: nameSymbol.range,
-						message: 'Name should match the name specified in your galaxy.yml file, unless a fork/clone of an official Ansible Collection is desired.',
+						message: 'Name SHOULD match the name specified in your galaxy.yml file, unless a fork/clone of an official Ansible Collection is desired.',
 						severity: vscode.DiagnosticSeverity.Warning,
 					});
 				}
@@ -806,7 +806,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 				if(versionSymbol){
 					diagnostics.push({
 						range: versionSymbol.range,
-						message: 'Version should match the version specified in your galaxy.yml file.',
+						message: 'Version SHOULD match the version specified in your galaxy.yml file.',
 						severity: vscode.DiagnosticSeverity.Error,
 					});
 				}
