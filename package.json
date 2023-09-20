@@ -31,7 +31,9 @@
     "Hybrid Cloud",
     "Z"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:yaml"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
