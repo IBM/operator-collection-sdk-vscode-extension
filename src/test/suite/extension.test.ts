@@ -1204,19 +1204,19 @@ describe("Extension Test Suite", async () => {
 
 		it('Should validate the linter lints domain mismatch', () => {
 			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
-				diagnostic.message.includes("Domain should match")
+				diagnostic.message.includes("Domain SHOULD match")
 			)));
 		});
 
 		it('Should validate the linter lints name mismatch', () => {
 			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
-				diagnostic.message.includes("Name should match")
+				diagnostic.message.includes("Name SHOULD match")
 			)));
 		});
 
 		it('Should validate the linter lints version mismatch', () => {
 			assert.ok(diagnostics && diagnostics.some( ( diagnostic : vscode.Diagnostic )=> (
-				diagnostic.message.includes("Version should match")
+				diagnostic.message.includes("Version SHOULD match")
 			)));
 		});
 
