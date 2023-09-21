@@ -789,7 +789,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 					});
 				}
 			}
-			if((galaxyConfig.name && operatorConfig.name) && galaxyConfig.name.toLowerCase().replace('_','-') !== operatorConfig.name.toLowerCase().replace('_','-')){
+			if((galaxyConfig.name && operatorConfig.name) && galaxyConfig.name.toLowerCase().replace(/_/g,'-') !== operatorConfig.name.toLowerCase().replace(/_/g,'-')){
 				//Get name symbol
 				const nameSymbol : vscode.DocumentSymbol | undefined = docSymbols.find( (symbol: vscode.DocumentSymbol) => (symbol.name === 'name' && symbol.detail === operatorConfig.name));
 				if(nameSymbol){
