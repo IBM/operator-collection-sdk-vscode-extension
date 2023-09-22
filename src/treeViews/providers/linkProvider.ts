@@ -6,6 +6,7 @@
 import * as vscode from "vscode";
 import { LinkItem } from "../linkItems/linkItem";
 import * as util from "../../utilities/util";
+import { VSCodeCommands } from "../../utilities/commandConstants";
 
 export class LinksTreeProvider implements vscode.TreeDataProvider<LinkItem> {
   getTreeItem(element: LinkItem): vscode.TreeItem {
@@ -21,6 +22,11 @@ export class LinksTreeProvider implements vscode.TreeDataProvider<LinkItem> {
           "Operator Collection specification documentation",
           new vscode.ThemeIcon("book"),
           util.Links.ocSpecification,
+          {
+            command: VSCodeCommands.openLink,
+            title: "Open External Link",
+            arguments: [util.Links.ocSpecification],
+          },
         ),
       );
       links.push(
@@ -29,6 +35,11 @@ export class LinksTreeProvider implements vscode.TreeDataProvider<LinkItem> {
           "Report an Operator Collection SDK issue",
           new vscode.ThemeIcon("bug"),
           util.Links.ocSDKIssues,
+          {
+            command: VSCodeCommands.openLink,
+            title: "Open External Link",
+            arguments: [util.Links.ocSDKIssues],
+          },
         ),
       );
       links.push(
@@ -37,6 +48,11 @@ export class LinksTreeProvider implements vscode.TreeDataProvider<LinkItem> {
           "Report an Operator Collection SDK VS Code extension issue",
           new vscode.ThemeIcon("bug"),
           util.Links.vscodeExtensionIssues,
+          {
+            command: VSCodeCommands.openLink,
+            title: "Open External Link",
+            arguments: [util.Links.vscodeExtensionIssues],
+          },
         ),
       );
       links.push(
@@ -45,6 +61,11 @@ export class LinksTreeProvider implements vscode.TreeDataProvider<LinkItem> {
           "Learn more by trying the Operator Collection development tutorial",
           new vscode.ThemeIcon("mortar-board"),
           util.Links.tutorial,
+          {
+            command: VSCodeCommands.openLink,
+            title: "Open External Link",
+            arguments: [util.Links.tutorial],
+          },
         ),
       );
     }
