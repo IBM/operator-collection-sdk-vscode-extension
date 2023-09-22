@@ -24,7 +24,7 @@ export class LinksTreeProvider implements vscode.TreeDataProvider<LinkItem> {
           util.Links.ocSpecification,
           {
             command: VSCodeCommands.openLink,
-            title: "Open External Link",
+            title: "",
             arguments: [util.Links.ocSpecification],
           },
         ),
@@ -37,7 +37,7 @@ export class LinksTreeProvider implements vscode.TreeDataProvider<LinkItem> {
           util.Links.ocSDKIssues,
           {
             command: VSCodeCommands.openLink,
-            title: "Open External Link",
+            title: "",
             arguments: [util.Links.ocSDKIssues],
           },
         ),
@@ -50,7 +50,7 @@ export class LinksTreeProvider implements vscode.TreeDataProvider<LinkItem> {
           util.Links.vscodeExtensionIssues,
           {
             command: VSCodeCommands.openLink,
-            title: "Open External Link",
+            title: "",
             arguments: [util.Links.vscodeExtensionIssues],
           },
         ),
@@ -63,7 +63,7 @@ export class LinksTreeProvider implements vscode.TreeDataProvider<LinkItem> {
           util.Links.tutorial,
           {
             command: VSCodeCommands.openLink,
-            title: "Open External Link",
+            title: "",
             arguments: [util.Links.tutorial],
           },
         ),

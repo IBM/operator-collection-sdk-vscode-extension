@@ -11,12 +11,10 @@ export class OpenShiftItem extends vscode.TreeItem {
     public readonly description: string | undefined,
     public readonly icon: vscode.ThemeIcon,
     public readonly contextValue: string,
-    public command?: vscode.Command,
   ) {
     super(label, vscode.TreeItemCollapsibleState.None);
     this.contextValue = contextValue;
     this.description = description;
     this.iconPath = icon;
-    this.command = command;
   }
 }
