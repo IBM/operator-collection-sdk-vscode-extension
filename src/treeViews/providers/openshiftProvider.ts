@@ -74,20 +74,14 @@ export class OpenShiftTreeProvider
             "openshift-cluster",
           ),
         );
-
-        const namespaceOpenshiftItem = new OpenShiftItem(
-          "OpenShift Namespace",
-          k8s.namespace,
-          new vscode.ThemeIcon("account"),
-          "openshift-namespace",
+        links.push(
+          new OpenShiftItem(
+            "OpenShift Namespace",
+            k8s.namespace,
+            new vscode.ThemeIcon("account"),
+            "openshift-namespace",
+          ),
         );
-        const vsCodeCommand: vscode.Command = {
-          command: VSCodeCommands.updateProject,
-          title: "Update Project",
-          arguments: [namespaceOpenshiftItem],
-        };
-        namespaceOpenshiftItem.command = vsCodeCommand;
-        links.push(namespaceOpenshiftItem);
       }
 
       return links;
