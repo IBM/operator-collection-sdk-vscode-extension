@@ -7,6 +7,7 @@ import * as vscode from "vscode";
 import * as child_process from "child_process";
 import * as fs from "fs-extra";
 import * as https from "https";
+import {getAnsibleGalaxySetting, ConfigurationSettings} from "../utilities/util";
 
 export class OcSdkCommand {
   constructor(private pwd?: string | undefined) {}
@@ -89,11 +90,15 @@ export class OcSdkCommand {
     outputChannel?: vscode.OutputChannel,
     logPath?: string,
   ): Promise<string> {
+    const galaxyUrl = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyURL) as string;
+    const galaxyNamespace = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyNamespace) as string;
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
       "verify",
-      "ibm.operator_collection_sdk",
+      "-s",
+      galaxyUrl,
+      `${galaxyNamespace}.operator_collection_sdk`,
     ];
     return this.run(cmd, args, outputChannel, logPath);
   }
@@ -109,11 +114,15 @@ export class OcSdkCommand {
     logPath?: string,
   ): Promise<string> {
     // ansible-galaxy collection install ibm.operator_collection_sdk
+    const galaxyUrl = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyURL) as string;
+    const galaxyNamespace = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyNamespace) as string;
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
       "install",
-      "ibm.operator_collection_sdk",
+      "-s",
+      galaxyUrl,
+      `${galaxyNamespace}.operator_collection_sdk`,
     ];
     return this.run(cmd, args, outputChannel, logPath);
   }
@@ -128,6 +137,8 @@ export class OcSdkCommand {
     outputChannel?: vscode.OutputChannel,
     logPath?: string,
   ): Promise<boolean> {
+    const galaxyUrl = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyURL) as string;
+    const galaxyNamespace = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyNamespace) as string;
     let versionInstalled = "";
     let latestVersion = "";
 
@@ -138,13 +149,13 @@ export class OcSdkCommand {
       "list",
       "|",
       "grep",
-      "ibm.operator_collection_sdk",
+      `${galaxyNamespace}.operator_collection_sdk`,
     ];
 
     let jsonData: any = await new Promise((resolve, reject) => {
       https
         .get(
-          "https://galaxy.ansible.com/api/internal/ui/repo-or-collection-detail/?namespace=ibm&name=operator_collection_sdk",
+          `${galaxyUrl}/api/internal/ui/repo-or-collection-detail/?namespace=${galaxyNamespace}&name=operator_collection_sdk`,
           (resp) => {
             let data = "";
             resp.on("data", (chunk) => {
@@ -183,11 +194,15 @@ export class OcSdkCommand {
     logPath?: string,
   ): Promise<boolean> {
     // ansible-galaxy collection install ibm.operator_collection_sdk --upgrade
+    const galaxyUrl = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyURL) as string;
+    const galaxyNamespace = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyNamespace) as string;
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
       "install",
-      "ibm.operator_collection_sdk",
+      "-s",
+      galaxyUrl,
+      `${galaxyNamespace}.operator_collection_sdk`,
       "--upgrade",
     ];
     return this.run(cmd, args, outputChannel, logPath);

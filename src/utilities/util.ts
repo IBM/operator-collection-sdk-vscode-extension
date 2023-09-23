@@ -26,6 +26,18 @@ export enum ZosCloudBrokerKinds {
   operatorCollection = "OperatorCollection",
 }
 
+export enum ConfigurationSettings {
+  ansibleGalaxyConnectivity = "ansibleGalaxyConnectivity",
+  ansibleGalaxyURL = "ansibleGalaxyURL",
+  ansibleGalaxyNamespace = "ansibleGalaxyNamespace",
+  lintingEnabled = "lintingEnabled",
+}
+
+export enum ConfigurationSettingsDefaults {
+  ansibleGalaxyURL = "https://galaxy.ansible.com",
+  ansibleGalaxyNamespace = "ibm",
+}
+
 export const zosCloudBrokerGroup: string = "zoscb.ibm.com";
 export const clusterServiceVersionGroup: string = "operators.coreos.com";
 export const customResourceGroup: string = "suboperator.zoscb.ibm.com";
@@ -675,4 +687,21 @@ export function parseCustomResourceUri(uri: vscode.Uri): {
 
 export async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function getAnsibleGalaxySetting(property: string): any {
+  const configuration = vscode.workspace.getConfiguration("operatorCollectionSdk.ansibleGalaxy");
+  const setting = configuration.get(property);
+  if (setting instanceof String && setting === "") {
+    switch (property) {
+      case ConfigurationSettings.ansibleGalaxyNamespace: {
+        return ConfigurationSettingsDefaults.ansibleGalaxyNamespace;
+      } 
+      case ConfigurationSettings.ansibleGalaxyURL: {
+        return ConfigurationSettingsDefaults.ansibleGalaxyURL;
+      } 
+    }
+  } else {
+    return setting;
+  } 
 }
