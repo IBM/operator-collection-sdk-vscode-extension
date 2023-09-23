@@ -6,6 +6,7 @@
 import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesContext } from "../kubernetes/kubernetesContext";
+import { getAnsibleGalaxySetting, ConfigurationSettings } from "../utilities/util";
 
 export class Session {
   public ocSdkInstalled: boolean = false;
@@ -20,6 +21,11 @@ export class Session {
    * @returns - A promise containing a boolean, returning true if the IBM Operator Collection SDK is installed
    */
   async validateOcSDKInstallation(): Promise<boolean> {
+    const ansibleGalaxyConnectivity = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyConnectivity) as boolean;
+    if (!ansibleGalaxyConnectivity) {
+      this.ocSdkInstalled = true;
+      return true;
+    }
     try {
       await this.ocSdkCmd.runCollectionVerifyCommand();
       this.ocSdkInstalled = true;
@@ -39,6 +45,11 @@ export class Session {
    * @returns - A promise containing a boolean, returning true if the installed IBM Operator Collection SDK can be updated to a newer version
    */
   async determinateOcSdkIsOutdated(): Promise<boolean> {
+    const ansibleGalaxyConnectivity = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyConnectivity) as boolean;
+    if (!ansibleGalaxyConnectivity) {
+      this.ocSdkOutdated = false;
+      return false;
+    }
     if (this.ocSdkInstalled && !this.skipSdkUpdated) {
       this.ocSdkOutdated = await this.ocSdkCmd.runDeterminateOcSdkIsOutdated();
       return this.ocSdkOutdated;

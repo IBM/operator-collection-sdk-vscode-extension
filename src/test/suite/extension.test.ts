@@ -1160,7 +1160,7 @@ describe("Extension Test Suite", async () => {
 			) as vscode.DocumentSymbol[];
 			//Replace playbook hosts
 			for( const symbol of playbookDocSymbols){
-				const playbookHost = symbol.children.find(child_symbol=>child_symbol.name==='hosts');
+				const playbookHost = symbol.children.find(childSymbol=>childSymbol.name==='hosts');
 				if(playbookHost){
 					const playbookHostValueRange = new vscode.Range(new vscode.Position(playbookHost.selectionRange.end.line, playbookHost.selectionRange.end.character + 2), playbookHost.range.end);
 					//const playbookHostValueRange = doc.getWordRangeAtPosition(doc.positionAt(doc.offsetAt(new vscode.Position(playbookHost.selectionRange.end.line, playbookHost.selectionRange.end.character + 2))));

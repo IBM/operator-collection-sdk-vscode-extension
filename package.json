@@ -21,7 +21,8 @@
   },
   "categories": [
     "Debuggers",
-    "Testing"
+    "Testing",
+    "Linters"
   ],
   "keywords": [
     "IBM",
@@ -138,6 +139,38 @@
         "title": "Delete Custom Resource",
         "category": "OC-SDK",
         "icon": "$(trash)"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Ansible Galaxy",
+        "properties": {
+          "operatorCollectionSdk.ansibleGalaxy.ansibleGalaxyConnectivity": {
+            "type": "boolean",
+            "description": "Specifies if you have connectivity to Ansible Galaxy. Disabling this will prevent the extension from checking Ansible Galaxy for new Operator Collection SDK updates",
+            "default": true
+          },
+          "operatorCollectionSdk.ansibleGalaxy.ansibleGalaxyURL": {
+            "type": "string",
+            "markdownDescription": "The Ansible Galaxy URL to download the IBM Operator Collection SDK. Requires `#operatorCollectionSdk.ansibleGalaxyConnectivity#` to be enabled.",
+            "default": "https://galaxy.ansible.com"
+          },
+          "operatorCollectionSdk.ansibleGalaxy.ansibleGalaxyNamespace": {
+            "type": "string",
+            "markdownDescription": "The Ansible Galaxy namespace to download the IBM Operator Collection SDK. Requires `#operatorCollectionSdk.ansibleGalaxyConnectivity#` to be enabled.",
+            "default": "ibm"
+          }
+        }
+      },
+      {
+        "title": "Linter",
+        "properties": {
+          "operatorCollectionSdk.linter.lintingEnabled": {
+            "type": "boolean",
+            "description": "Enable linting",
+            "default": true
+          }
+        }
       }
     ],
     "views": {

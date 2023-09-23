@@ -29,8 +29,8 @@ import {KubernetesObj} from "./kubernetes/kubernetes";
 import {OcCommand} from "./shellCommands/ocCommand";
 import {OcSdkCommand} from './shellCommands/ocSdkCommands';
 import {Session} from "./utilities/session";
-import {OperatorConfig} from './linter/models'
-import {AnsibleGalaxyYmlSchema} from './linter/galaxy'
+import {OperatorConfig} from './linter/models';
+import {AnsibleGalaxyYmlSchema} from './linter/galaxy';
 import * as yaml from 'js-yaml';
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -834,12 +834,12 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 			for (const resource of operatorConfig.resources) {
 				//Get resource symbol
 				const resourceSymbol = resourcesSymbol?.children.find( (symbol: vscode.DocumentSymbol) => {
-					return symbol.children.find((child_symbol: vscode.DocumentSymbol)=>(child_symbol.name === 'kind' && child_symbol.detail === resource.kind))
-				})
+					return symbol.children.find((childSymbol: vscode.DocumentSymbol)=>(childSymbol.name === 'kind' && childSymbol.detail === resource.kind));
+				});
 				//Validate Playbook
 				if(resource.playbook){
 					//Get playbook symbol
-					const resourcePlaybookSymbol = resourceSymbol?.children.find((symbol: vscode.DocumentSymbol)=>(symbol.name === 'playbook' && symbol.detail === resource.playbook))
+					const resourcePlaybookSymbol = resourceSymbol?.children.find((symbol: vscode.DocumentSymbol)=>(symbol.name === 'playbook' && symbol.detail === resource.playbook));
 					//Check if path is absolute
 					if(path.isAbsolute(resource.playbook)){
 						if(resourcePlaybookSymbol){
@@ -861,7 +861,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 							) as vscode.DocumentSymbol[];
 							let plays : vscode.DocumentSymbol[] = [];
 							playbookDocSymbols.forEach(symbol=>{
-								const play = symbol.children.find(child_symbol=>child_symbol.name==='hosts');
+								const play = symbol.children.find(childSymbol=>childSymbol.name==='hosts');
 								if(play){
 									plays.push(play);
 								}
@@ -890,7 +890,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 				//Validate Finalizer
 				if(resource.finalizer){
 					//Get finalizer symbol
-					const resourceFinalizerymbol = resourceSymbol?.children.find((symbol: vscode.DocumentSymbol)=>(symbol.name === 'finalizer' && symbol.detail === resource.finalizer))
+					const resourceFinalizerymbol = resourceSymbol?.children.find((symbol: vscode.DocumentSymbol)=>(symbol.name === 'finalizer' && symbol.detail === resource.finalizer));
 					//Check if path is absolute
 					if(path.isAbsolute(resource.finalizer)){
 						if(resourceFinalizerymbol){
