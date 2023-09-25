@@ -192,12 +192,6 @@
       ]
     },
     "menus": {
-      "explorer/context": [
-        {
-          "command": "operator-collection-sdk.logout",
-          "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-namespace"
-        }
-      ],
       "view/title": [
         {
           "command": "operator-collection-sdk.refresh",
