@@ -117,6 +117,12 @@
         "icon": "$(log-in)"
       },
       {
+        "command": "operator-collection-sdk.logout",
+        "title": "Log out of your current cluster",
+        "category": "OC-SDK",
+        "icon": "$(log-out)"
+      },
+      {
         "command": "operator-collection-sdk.updateProject",
         "title": "Update OpenShift Project",
         "category": "OC-SDK",
@@ -186,6 +192,12 @@
       ]
     },
     "menus": {
+      "explorer/context": [
+        {
+          "command": "operator-collection-sdk.logout",
+          "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-namespace"
+        }
+      ],
       "view/title": [
         {
           "command": "operator-collection-sdk.refresh",
@@ -256,6 +268,11 @@
         },
         {
           "command": "operator-collection-sdk.login",
+          "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-cluster",
+          "group": "inline"
+        },
+        {
+          "command": "operator-collection-sdk.logout",
           "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-cluster",
           "group": "inline"
         },
