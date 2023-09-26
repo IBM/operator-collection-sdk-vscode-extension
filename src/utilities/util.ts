@@ -60,6 +60,7 @@ export async function getOperatorsInWorkspace(workspace: string): Promise<WorkSp
 		let data = await vscode.workspace.openTextDocument(file);
         if (validateOperatorConfig(data)) {
             let operatorName = data.getText().split("name: ")[1].split("\n")[0];
+			operatorName = operatorName.replace(/_/g, "-");
 		    wsOperators[operatorName] = file.fsPath;
         }
 	}

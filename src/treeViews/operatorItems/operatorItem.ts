@@ -30,6 +30,7 @@ export async function getOperatorItems(): Promise<OperatorItem[]> {
 		let data = await vscode.workspace.openTextDocument(file);
 		if (util.validateOperatorConfig(data)) {
 			let operatorName = data.getText().split("name: ")[1].split("\n")[0];
+			operatorName = operatorName.replace(/_/g, "-");
 			let operatorDisplayName = data.getText().split("displayName: ")[1].split("\n")[0];
 			let operatorItem = new OperatorItem(operatorDisplayName, operatorName, workspacePath);
 			operatorItems.push(operatorItem);
