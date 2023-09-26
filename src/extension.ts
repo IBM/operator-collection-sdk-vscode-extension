@@ -403,8 +403,11 @@ type CustomResources =
 function executeOpenLinkCommand(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(
     command,
-    async (args: CustomResources | LinkItem) => {
-      let linkUri = vscode.Uri.parse(args.link);
+    async (args: CustomResources | LinkItem | string) => {
+      let linkUri =
+        typeof args === "string"
+          ? vscode.Uri.parse(args)
+          : vscode.Uri.parse(args.link);
       let res = await vscode.env.openExternal(linkUri);
       if (!res) {
         vscode.window.showErrorMessage("Failure opening external link");

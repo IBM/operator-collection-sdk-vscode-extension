@@ -4,6 +4,7 @@
  */
 
 import * as vscode from "vscode";
+import { VSCodeCommands } from "../../utilities/commandConstants";
 import { OpenShiftItem } from "../openshiftItems/openshiftItem";
 import { KubernetesObj } from "../../kubernetes/kubernetes";
 import { Session } from "../../utilities/session";
