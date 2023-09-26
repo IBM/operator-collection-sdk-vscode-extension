@@ -26,6 +26,8 @@ Single-click actions to Create, Re-deploy, and Delete your operator in OpenShift
 
 Configure your OpenShift server URL, and select your OpenShift Project directly from your VS Code editor
 
+![OpenShift URL and Access Token](./resources/docs/media/oc-get-access-token.png)
+
 ![OpenShift configuration](./resources/docs/media/oc-sdk-openshift-connection.gif)
 
 ## Getting Started
