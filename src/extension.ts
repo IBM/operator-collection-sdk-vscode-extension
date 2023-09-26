@@ -139,22 +139,35 @@ export async function activate(context: vscode.ExtensionContext) {
     ),
   );
   context.subscriptions.push(
-    updateProject(VSCodeCommands.updateProject, ocCmd),
+    updateProject(VSCodeCommands.updateProject, ocCmd, session),
   );
   context.subscriptions.push(
     executeSdkCommandWithUserInput(
       VSCodeCommands.createOperator,
+      session,
       outputChannel,
     ),
   );
   context.subscriptions.push(
-    executeSimpleSdkCommand(VSCodeCommands.deleteOperator, outputChannel),
+    executeSimpleSdkCommand(
+      VSCodeCommands.deleteOperator,
+      session,
+      outputChannel,
+    ),
   );
   context.subscriptions.push(
-    executeSimpleSdkCommand(VSCodeCommands.redeployCollection, outputChannel),
+    executeSimpleSdkCommand(
+      VSCodeCommands.redeployCollection,
+      session,
+      outputChannel,
+    ),
   );
   context.subscriptions.push(
-    executeSimpleSdkCommand(VSCodeCommands.redeployOperator, outputChannel),
+    executeSimpleSdkCommand(
+      VSCodeCommands.redeployOperator,
+      session,
+      outputChannel,
+    ),
   );
   context.subscriptions.push(
     deleteCustomResource(VSCodeCommands.deleteCustomResource),
@@ -303,11 +316,19 @@ function updateOcSdkVersion(
 function updateProject(
   command: string,
   ocCmd: OcCommand,
+  session: Session,
   outputChannel?: vscode.OutputChannel,
 ): vscode.Disposable {
   return vscode.commands.registerCommand(
     command,
     async (arg: OpenShiftItem, logPath?: string) => {
+      if (session.operationPending) {
+        vscode.window.showWarningMessage(
+          "Please wait for the current operation to finish before switching projects.",
+        );
+        return;
+      }
+
       const k8s = new KubernetesObj();
       let namespace: string | undefined;
       if (arg.description === k8s.namespace) {
@@ -527,6 +548,7 @@ function executeContainerViewLogCommand(command: string): vscode.Disposable {
  */
 function executeSimpleSdkCommand(
   command: string,
+  session: Session,
   outputChannel?: vscode.OutputChannel,
 ): vscode.Disposable {
   return vscode.commands.registerCommand(
@@ -546,6 +568,7 @@ function executeSimpleSdkCommand(
         const k8s = new KubernetesObj();
         const validNamespace = await k8s.validateNamespaceExists();
         if (validNamespace) {
+          session.operationPending = true;
           let ocSdkCommand = new OcSdkCommand(workspacePath);
           outputChannel?.show();
           switch (command) {
@@ -558,12 +581,14 @@ function executeSimpleSdkCommand(
                 ocSdkCommand.runDeleteOperatorCommand(outputChannel, logPath);
               Promise.all([poll, runDeleteOperatorCommand])
                 .then(() => {
+                  session.operationPending = false;
                   vscode.window.showInformationMessage(
                     "Delete Operator command executed successfully",
                   );
                   vscode.commands.executeCommand(VSCodeCommands.refresh);
                 })
                 .catch((e) => {
+                  session.operationPending = false;
                   vscode.window.showInformationMessage(
                     `Failure executing Delete Operator command: RC ${e}`,
                   );
@@ -582,12 +607,14 @@ function executeSimpleSdkCommand(
                 );
               Promise.all([poll, runRedeployCollectionCommand])
                 .then(() => {
+                  session.operationPending = false;
                   vscode.window.showInformationMessage(
                     "Redeploy Collection command executed successfully",
                   );
                   vscode.commands.executeCommand(VSCodeCommands.refresh);
                 })
                 .catch((e) => {
+                  session.operationPending = false;
                   vscode.window.showInformationMessage(
                     `Failure executing Redeploy Collection command: RC ${e}`,
                   );
@@ -603,12 +630,14 @@ function executeSimpleSdkCommand(
                 ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
               Promise.all([poll, runRedeployOperatorCommand])
                 .then(() => {
+                  session.operationPending = false;
                   vscode.window.showInformationMessage(
                     "Redeploy Operator command executed successfully",
                   );
                   vscode.commands.executeCommand(VSCodeCommands.refresh);
                 })
                 .catch((e) => {
+                  session.operationPending = false;
                   vscode.window.showInformationMessage(
                     `Failure executing Redeploy Operator command: RC ${e}`,
                   );
@@ -629,6 +658,7 @@ function executeSimpleSdkCommand(
  */
 function executeSdkCommandWithUserInput(
   command: string,
+  session: Session,
   outputChannel?: vscode.OutputChannel,
 ): vscode.Disposable {
   return vscode.commands.registerCommand(
@@ -650,6 +680,7 @@ function executeSdkCommandWithUserInput(
         if (validNamespace) {
           outputChannel?.show();
           if (command === VSCodeCommands.createOperator) {
+            session.operationPending = true;
             let playbookArgs = await util.requestOperatorInfo(workspacePath);
             if (playbookArgs) {
               let ocSdkCommand = new OcSdkCommand(workspacePath);
@@ -674,12 +705,14 @@ function executeSdkCommandWithUserInput(
                 );
               Promise.all([poll, runCreateOperatorCommand])
                 .then(() => {
+                  session.operationPending = false;
                   vscode.window.showInformationMessage(
                     "Create Operator command executed successfully",
                   );
                   vscode.commands.executeCommand(VSCodeCommands.refresh);
                 })
                 .catch((e) => {
+                  session.operationPending = false;
                   vscode.window.showInformationMessage(
                     `Failure executing Create Operator command: RC ${e}`,
                   );
