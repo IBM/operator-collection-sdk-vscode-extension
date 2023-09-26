@@ -12,6 +12,7 @@ export class Session {
   public loggedIntoOpenShift: boolean = false;
   public ocSdkOutdated: boolean = false;
   public skipSdkUpdated: boolean = false;
+  public operationPending: boolean = false;
 
   constructor(public readonly ocSdkCmd: OcSdkCommand) {}
 
