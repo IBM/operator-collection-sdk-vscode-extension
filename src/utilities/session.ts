@@ -7,7 +7,6 @@ import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesContext } from "../kubernetes/kubernetesContext";
 import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
-import { VSCodeCommands } from '../utilities/commandConstants';
 
 export class Session {
   public ocSdkInstalled: boolean = false;
@@ -35,14 +34,7 @@ export class Session {
     } catch (e) {
       console.log("Install the IBM Operator Collection SDK use this extension");
       // vscode.window.showWarningMessage("Install the IBM Operator Collection SDK Ansible collection to use the IBM Operator Collection SDK extension");
-      const selection = await vscode.window.showWarningMessage(
-        "Install the IBM Operator Collection SDK Ansible collection to use the IBM Operator Collection SDK extension",
-        "Install SDK",
-        "Cancel"
-      );
-      if (selection !== undefined && selection === "Install SDK") {
-          vscode.commands.executeCommand(VSCodeCommands.install);
-      }
+      
       this.ocSdkInstalled = false;
       return false;
     }
@@ -81,7 +73,6 @@ export class Session {
    */
   async validateOpenShiftAccess(): Promise<boolean> {
     const k8s = new KubernetesContext();
-
     if (k8s?.coreV1Api) {
       return k8s.coreV1Api
         .listNamespacedPod(k8s.namespace)
@@ -93,9 +84,6 @@ export class Session {
           console.log(
             "Log in to an OpenShift Cluster to use this extension: " +
               JSON.stringify(e),
-          );
-          vscode.window.showWarningMessage(
-            "Log in to an OpenShift Cluster to use this extension",
           );
           this.loggedIntoOpenShift = false;
           return false;

@@ -12,6 +12,7 @@ import {
 import { getOperatorContainerItems } from "../operatorItems/operatorContainerItem";
 import { OperatorTreeItem } from "../operatorItems/operatorTreeItems";
 import { Session } from "../../utilities/session";
+import { VSCodeCommands } from "../../utilities/commandConstants";
 
 type TreeItem = OperatorTreeItem | undefined | void;
 
@@ -31,9 +32,25 @@ export class OperatorsTreeProvider
   }
 
   static async updateSession(): Promise<void> {
+    let ocSdkInstalled = true;
+    let loggedIntoOpenShift = true;
     for (const provider of OperatorsTreeProvider.operatorsTreeProviders) {
-      await provider.session.validateOcSDKInstallation();
-      await provider.session.validateOpenShiftAccess();
+      ocSdkInstalled = await provider.session.validateOcSDKInstallation();
+      loggedIntoOpenShift = await provider.session.validateOpenShiftAccess();
+    }
+    if (!ocSdkInstalled) {
+      vscode.commands.executeCommand(
+        "setContext",
+        VSCodeCommands.sdkInstalled,
+        ocSdkInstalled,
+      );
+    }
+    if (!loggedIntoOpenShift) {
+      vscode.commands.executeCommand(
+        "setContext",
+        VSCodeCommands.loggedIn,
+        loggedIntoOpenShift,
+      );
     }
   }
 
