@@ -33,7 +33,7 @@
     "Z"
   ],
   "activationEvents": [
-    "onLanguage:yaml"
+    "workspaceContains:{**/operator-config.yaml,**/operator-config.yml}"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -153,6 +153,7 @@
           "operatorCollectionSdk.ansibleGalaxy.ansibleGalaxyURL": {
             "type": "string",
             "markdownDescription": "The Ansible Galaxy URL to download the IBM Operator Collection SDK. Requires `#operatorCollectionSdk.ansibleGalaxyConnectivity#` to be enabled.",
+            "format": "uri",
             "default": "https://galaxy.ansible.com"
           },
           "operatorCollectionSdk.ansibleGalaxy.ansibleGalaxyNamespace": {

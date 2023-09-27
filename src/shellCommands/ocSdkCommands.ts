@@ -7,7 +7,8 @@ import * as vscode from "vscode";
 import * as child_process from "child_process";
 import * as fs from "fs-extra";
 import * as https from "https";
-import {getAnsibleGalaxySetting, ConfigurationSettings} from "../utilities/util";
+import * as http from "http";
+import {getAnsibleGalaxySettings, AnsibleGalaxySettings} from "../utilities/util";
 
 export class OcSdkCommand {
   constructor(private pwd?: string | undefined) {}
@@ -90,8 +91,8 @@ export class OcSdkCommand {
     outputChannel?: vscode.OutputChannel,
     logPath?: string,
   ): Promise<string> {
-    const galaxyUrl = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyURL) as string;
-    const galaxyNamespace = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyNamespace) as string;
+    const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
+    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
@@ -114,8 +115,8 @@ export class OcSdkCommand {
     logPath?: string,
   ): Promise<string> {
     // ansible-galaxy collection install ibm.operator_collection_sdk
-    const galaxyUrl = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyURL) as string;
-    const galaxyNamespace = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyNamespace) as string;
+    const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
+    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
@@ -137,8 +138,8 @@ export class OcSdkCommand {
     outputChannel?: vscode.OutputChannel,
     logPath?: string,
   ): Promise<boolean> {
-    const galaxyUrl = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyURL) as string;
-    const galaxyNamespace = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyNamespace) as string;
+    const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
+    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
     let versionInstalled = "";
     let latestVersion = "";
 
@@ -152,24 +153,7 @@ export class OcSdkCommand {
       `${galaxyNamespace}.operator_collection_sdk`,
     ];
 
-    let jsonData: any = await new Promise((resolve, reject) => {
-      https
-        .get(
-          `${galaxyUrl}/api/internal/ui/repo-or-collection-detail/?namespace=${galaxyNamespace}&name=operator_collection_sdk`,
-          (resp) => {
-            let data = "";
-            resp.on("data", (chunk) => {
-              data += chunk;
-            });
-            resp.on("end", () => {
-              resolve(JSON.parse(data));
-            });
-          },
-        )
-        .on("error", (err) => {
-          reject(err);
-        });
-    });
+    const jsonData = await getJsonData(galaxyUrl, galaxyNamespace);
 
     latestVersion = jsonData?.data?.collection?.latest_version.version;
 
@@ -194,8 +178,8 @@ export class OcSdkCommand {
     logPath?: string,
   ): Promise<boolean> {
     // ansible-galaxy collection install ibm.operator_collection_sdk --upgrade
-    const galaxyUrl = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyURL) as string;
-    const galaxyNamespace = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyNamespace) as string;
+    const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
+    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
@@ -293,4 +277,53 @@ export class OcSdkCommand {
     let args: Array<string> = [command];
     return this.run(cmd, args, outputChannel, logPath);
   }
+}
+
+async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<any> {
+  let jsonData: any;
+  const urlScheme = vscode.Uri.parse(galaxyUrl).scheme;
+  if (urlScheme === "https") {
+    jsonData = await new Promise((resolve, reject) => {
+      https
+        .get(
+          getApiUrl(galaxyUrl, galaxyNamespace),
+          (resp) => {
+            let data = "";
+            resp.on("data", (chunk) => {
+              data += chunk;
+            });
+            resp.on("end", () => {
+              resolve(JSON.parse(data));
+            });
+          },
+        )
+        .on("error", (err) => {
+          reject(err);
+        });
+    });
+  } else if (urlScheme === "http") {
+    jsonData = await new Promise((resolve, reject) => {
+      http
+        .get(
+          getApiUrl(galaxyUrl, galaxyNamespace),
+          (resp) => {
+            let data = "";
+            resp.on("data", (chunk) => {
+              data += chunk;
+            });
+            resp.on("end", () => {
+              resolve(JSON.parse(data));
+            });
+          },
+        )
+        .on("error", (err) => {
+          reject(err);
+        });
+    });
+  }
+  return jsonData;
+}
+
+function getApiUrl(galaxyUrl: string, galaxyNamespace: string): string {
+  return `${galaxyUrl}/api/internal/ui/repo-or-collection-detail/?namespace=${galaxyNamespace}&name=operator_collection_sdk`;
 }
