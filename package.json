@@ -94,12 +94,6 @@
         "icon": "$(add)"
       },
       {
-        "command": "operator-collection-sdk.openLink",
-        "title": "Open External Link",
-        "category": "OC-SDK",
-        "icon": "$(globe)"
-      },
-      {
         "command": "operator-collection-sdk.refresh",
         "title": "Refresh",
         "category": "OC-SDK",
@@ -287,11 +281,6 @@
         {
           "command": "operator-collection-sdk.openAddLink",
           "when": "view == operator-collection-sdk.resources && viewItem == customresources",
-          "group": "inline"
-        },
-        {
-          "command": "operator-collection-sdk.openLink",
-          "when": "view == operator-collection-sdk.help && viewItem == links",
           "group": "inline"
         },
         {
