@@ -3,157 +3,279 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as vscode from 'vscode';
-import * as child_process from 'child_process';
-import * as fs from 'fs-extra';
+import * as vscode from "vscode";
+import * as child_process from "child_process";
+import * as fs from "fs-extra";
+import * as https from "https";
 
 export class OcSdkCommand {
-    constructor(private pwd?: string | undefined) {}
-    
-    /**
-     * Executes the requested command
-     * @param cmd - The command to be executed
-     * @param args - The arguments to pass to the command
-     * @param outputChannel - The VS Code output channel to display command output
-     * @param logPath - Log path to store command output
-     * @returns - A Promise containing the the return code of the executed command
-     */
-     private async run(cmd: string, args?: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
-        process.env.PWD = this.pwd;
-        const options: child_process.SpawnOptions = {
-            cwd: this.pwd,
-            env: process.env,
-            shell: true,
-            stdio: 'pipe'
-        };
-        
-        let childProcess: child_process.ChildProcess;
+  constructor(private pwd?: string | undefined) {}
 
-        if (args) {
-            childProcess = child_process.spawn(cmd, args, options);
+  /**
+   * Executes the requested command
+   * @param cmd - The command to be executed
+   * @param args - The arguments to pass to the command
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise containing the the return code of the executed command
+   */
+  private async run(
+    cmd: string,
+    args?: Array<string>,
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+    callbackFunction?: (outputValue: string) => void,
+  ): Promise<any> {
+    process.env.PWD = this.pwd;
+    let outputValue = "";
+
+    const options: child_process.SpawnOptions = {
+      cwd: this.pwd,
+      env: process.env,
+      shell: true,
+      stdio: "pipe",
+    };
+
+    let childProcess: child_process.ChildProcess;
+
+    if (args) {
+      childProcess = child_process.spawn(cmd, args, options);
+    } else {
+      childProcess = child_process.spawn(cmd, options);
+    }
+
+    if (logPath) {
+      let logStream = fs.createWriteStream(logPath, { flags: "a" });
+      childProcess.stdout?.pipe(logStream);
+      childProcess.stderr?.pipe(logStream);
+    }
+
+    childProcess.stdout?.on("data", (data) => {
+      outputChannel?.appendLine(data);
+      outputValue += data.toString();
+    });
+
+    childProcess.stderr?.on("data", (data) => {
+      outputChannel?.appendLine(data);
+    });
+
+    return new Promise<string>((resolve: any, reject: any) => {
+      childProcess.on("error", (error: Error) => {
+        outputChannel?.appendLine(error.message);
+        return reject(error.message);
+      });
+      childProcess.on("close", (code: number) => {
+        if (code) {
+          if (code !== 0) {
+            return reject(code);
+          }
         } else {
-            childProcess = child_process.spawn(cmd, options);
+          if (callbackFunction !== undefined) {
+            callbackFunction(outputValue);
+          }
+          return resolve(code);
         }
+      });
+    });
+  }
 
+  /**
+   * Executes the collection verify command to validate the collection is installed
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async runCollectionVerifyCommand(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<string> {
+    const cmd: string = "ansible-galaxy";
+    let args: Array<string> = [
+      "collection",
+      "verify",
+      "ibm.operator_collection_sdk",
+    ];
+    return this.run(cmd, args, outputChannel, logPath);
+  }
 
-        if (logPath) {
-            let logStream = fs.createWriteStream(logPath, {flags: 'a'});
-            childProcess.stdout?.pipe(logStream);
-            childProcess.stderr?.pipe(logStream);
-        }
-       
-        childProcess.stdout?.on('data', data => {
-            outputChannel?.appendLine(data);
-        });
+  /**
+   * Executes the collection install command to install the Operator Collection SDK
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async installOcSDKCommand(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<string> {
+    // ansible-galaxy collection install ibm.operator_collection_sdk
+    const cmd: string = "ansible-galaxy";
+    let args: Array<string> = [
+      "collection",
+      "install",
+      "ibm.operator_collection_sdk",
+    ];
+    return this.run(cmd, args, outputChannel, logPath);
+  }
 
-        childProcess.stderr?.on('data', data => {
-            outputChannel?.appendLine(data);
-        });
+  /**
+   * Determinate if the installed local collection is the same as the latest collection in galaxy server
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async runDeterminateOcSdkIsOutdated(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<boolean> {
+    let versionInstalled = "";
+    let latestVersion = "";
 
-        return new Promise<string>((resolve: any, reject: any) => {
-            childProcess.on('error', (error: Error) => {
-                outputChannel?.appendLine(error.message);
-                return reject(error.message);
+    // ansible-galaxy collection list | grep ibm.operator_collection_sdk
+    const cmd: string = "ansible-galaxy";
+    let args: Array<string> = [
+      "collection",
+      "list",
+      "|",
+      "grep",
+      "ibm.operator_collection_sdk",
+    ];
+
+    let jsonData: any = await new Promise((resolve, reject) => {
+      https
+        .get(
+          "https://galaxy.ansible.com/api/internal/ui/repo-or-collection-detail/?namespace=ibm&name=operator_collection_sdk",
+          (resp) => {
+            let data = "";
+            resp.on("data", (chunk) => {
+              data += chunk;
             });
-            childProcess.on('close', (code: number) => {
-                if (code) {
-                    if (code !== 0) {
-                        return reject(code);
-                    }
-                } else {
-                    return resolve(code);
-                }
+            resp.on("end", () => {
+              resolve(JSON.parse(data));
             });
+          },
+        )
+        .on("error", (err) => {
+          reject(err);
         });
-    }
+    });
 
-    /**
-     * Executes the collection verify command to validate the collection is installed
-     * @param outputChannel - The VS Code output channel to display command output
-     * @param logPath - Log path to store command output
-     * @returns - A Promise container the return code of the command being executed
-     */
-     async runCollectionVerifyCommand(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string> {
-        const cmd: string = "ansible-galaxy";
-        let args: Array<string> = [
-            "collection",
-            "verify",
-            "ibm.operator_collection_sdk"
-        ];
-        return this.run(cmd, args, outputChannel, logPath);
-    }
+    latestVersion = jsonData?.data?.collection?.latest_version.version;
 
-    /**
-     * Executes the collection install command to install the Operator Collection SDK
-     * @param outputChannel - The VS Code output channel to display command output
-     * @param logPath - Log path to store command output
-     * @returns - A Promise container the return code of the command being executed
-     */
-    async installOcSDKCommand(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string> {
-        // ansible-galaxy collection install ibm.operator_collection_sdk
-        const cmd: string = "ansible-galaxy";
-        let args: Array<string> = [
-            "collection",
-            "install",
-            "ibm.operator_collection_sdk"
-        ];
-        return this.run(cmd, args, outputChannel, logPath);
-    }
+    let setVersionInstalled = (outputValue: string) => {
+      versionInstalled = outputValue.split(" ")?.[1]; // item in [1] is the version
+    };
 
-    /**
-     * Executes the Operator Collection SDK Create Operator command
-     * @param args - The arguments to pass to the command
-     * @param outputChannel - The VS Code output channel to display command output
-     * @param logPath - Log path to store command output
-     * @returns - A Promise container the return code of the command being executed
-     */
-    async runCreateOperatorCommand(args: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
-        process.env.ANSIBLE_JINJA2_NATIVE = "true";
-        const cmd: string = "ansible-playbook";
-        args = args.concat("ibm.operator_collection_sdk.create_operator");
-        return this.run(cmd, args, outputChannel, logPath);
-    }
+    await this.run(cmd, args, outputChannel, logPath, setVersionInstalled);
+    return new Promise<boolean>((resolve) =>
+      resolve(!(versionInstalled === latestVersion)),
+    );
+  }
 
-     /**
-     * Executes the Operator Collection SDK Delete Operator command
-     * @param outputChannel - The VS Code output channel to display command output
-     * @param logPath - Log path to store command output
-     * @returns - A Promise container the return code of the command being executed
-     */
-    async runDeleteOperatorCommand(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string> {
-        return this.executeSimpleCommand("ibm.operator_collection_sdk.delete_operator", outputChannel, logPath);
-    }
+  /**
+   * Upgrade a collection to the latest available version from the Galaxy server
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async upgradeOCSDKtoLatestVersion(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<boolean> {
+    // ansible-galaxy collection install ibm.operator_collection_sdk --upgrade
+    const cmd: string = "ansible-galaxy";
+    let args: Array<string> = [
+      "collection",
+      "install",
+      "ibm.operator_collection_sdk",
+      "--upgrade",
+    ];
+    return this.run(cmd, args, outputChannel, logPath);
+  }
 
-    /**
-     * Executes the Operator Collection SDK Redeploy Collection command
-     * @param outputChannel - The VS Code output channel to display command output
-     * @param logPath - Log path to store command output
-     * @returns - A Promise container the return code of the command being executed
-     */
-    async runRedeployCollectionCommand(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string> {
-        return this.executeSimpleCommand("ibm.operator_collection_sdk.redeploy_collection", outputChannel, logPath);
-    }
+  /**
+   * Executes the Operator Collection SDK Create Operator command
+   * @param args - The arguments to pass to the command
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async runCreateOperatorCommand(
+    args: Array<string>,
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<any> {
+    process.env.ANSIBLE_JINJA2_NATIVE = "true";
+    const cmd: string = "ansible-playbook";
+    args = args.concat("ibm.operator_collection_sdk.create_operator");
+    return this.run(cmd, args, outputChannel, logPath);
+  }
 
-     /**
-     * Executes the Operator Collection SDK Redeploy Operator command
-     * @param outputChannel - The VS Code output channel to display command output
-     * @param logPath - Log path to store command output
-     * @returns - A Promise container the return code of the command being executed
-     */
-    async runRedeployOperatorCommand(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string> {
-        return this.executeSimpleCommand("ibm.operator_collection_sdk.redeploy_operator", outputChannel, logPath);
-    }
+  /**
+   * Executes the Operator Collection SDK Delete Operator command
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async runDeleteOperatorCommand(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<string> {
+    return this.executeSimpleCommand(
+      "ibm.operator_collection_sdk.delete_operator",
+      outputChannel,
+      logPath,
+    );
+  }
 
-    /**
-     * Executes an Operator Collection SDK command without additional arguments
-     * @param command - The command to execute
-     * @param outputChannel - The VS Code output channel to display command output
-     * @param logPath - Log path to store command output
-     * @returns - A Promise container the return code of the command being executed
-     */
-    private executeSimpleCommand(command: string, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
-        const cmd: string = "ansible-playbook";
-        let args: Array<string> = [command];
-        return this.run(cmd, args, outputChannel, logPath);
-    }
+  /**
+   * Executes the Operator Collection SDK Redeploy Collection command
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async runRedeployCollectionCommand(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<string> {
+    return this.executeSimpleCommand(
+      "ibm.operator_collection_sdk.redeploy_collection",
+      outputChannel,
+      logPath,
+    );
+  }
+
+  /**
+   * Executes the Operator Collection SDK Redeploy Operator command
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async runRedeployOperatorCommand(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<string> {
+    return this.executeSimpleCommand(
+      "ibm.operator_collection_sdk.redeploy_operator",
+      outputChannel,
+      logPath,
+    );
+  }
+
+  /**
+   * Executes an Operator Collection SDK command without additional arguments
+   * @param command - The command to execute
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  private executeSimpleCommand(
+    command: string,
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<any> {
+    const cmd: string = "ansible-playbook";
+    let args: Array<string> = [command];
+    return this.run(cmd, args, outputChannel, logPath);
+  }
 }

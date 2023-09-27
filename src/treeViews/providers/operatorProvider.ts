@@ -3,22 +3,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as vscode from 'vscode';
-import {OperatorItem, getOperatorItems} from "../operatorItems/operatorItem";
-import {OperatorPodItem, getOperatorPodItems} from "../operatorItems/operatorPodItem";
-import {getOperatorContainerItems} from "../operatorItems/operatorContainerItem";
-import {OperatorTreeItem} from "../operatorItems/operatorTreeItems";
-import {Session} from "../../utilities/session";
+import * as vscode from "vscode";
+import { OperatorItem, getOperatorItems } from "../operatorItems/operatorItem";
+import {
+  OperatorPodItem,
+  getOperatorPodItems,
+} from "../operatorItems/operatorPodItem";
+import { getOperatorContainerItems } from "../operatorItems/operatorContainerItem";
+import { OperatorTreeItem } from "../operatorItems/operatorTreeItems";
+import { Session } from "../../utilities/session";
 
 type TreeItem = OperatorTreeItem | undefined | void;
 
-export class OperatorsTreeProvider implements vscode.TreeDataProvider<OperatorTreeItem> {
+export class OperatorsTreeProvider
+  implements vscode.TreeDataProvider<OperatorTreeItem>
+{
   // Static property to store the instances
   private static operatorsTreeProviders: OperatorsTreeProvider[] = [];
-  private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> = new vscode.EventEmitter<TreeItem>();
-	readonly onDidChangeTreeData: vscode.Event<TreeItem> = this._onDidChangeTreeData.event;
+  private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> =
+    new vscode.EventEmitter<TreeItem>();
+  readonly onDidChangeTreeData: vscode.Event<TreeItem> =
+    this._onDidChangeTreeData.event;
 
-  constructor(private readonly session: Session){
+  constructor(private readonly session: Session) {
     // Store the instances on the static property
     OperatorsTreeProvider.operatorsTreeProviders.push(this);
   }
@@ -31,14 +38,14 @@ export class OperatorsTreeProvider implements vscode.TreeDataProvider<OperatorTr
     }
   }
 
-	refresh(): void {
-		this._onDidChangeTreeData.fire();
-	}
+  refresh(): void {
+    this._onDidChangeTreeData.fire();
+  }
 
   getTreeItem(element: OperatorTreeItem): vscode.TreeItem {
     return element;
   }
-  
+
   async getChildren(element?: OperatorTreeItem): Promise<OperatorTreeItem[]> {
     const operatorTreeItems: Array<OperatorTreeItem> = [];
 
@@ -54,7 +61,7 @@ export class OperatorsTreeProvider implements vscode.TreeDataProvider<OperatorTr
         // Get root operator items
         return getOperatorItems();
       }
-    } 
+    }
     return operatorTreeItems;
-  } 
+  }
 }

@@ -1,0 +1,7 @@
+# General
+node_modules
+.github
+.vscode
+testFixures
+resources
+.eslintcache

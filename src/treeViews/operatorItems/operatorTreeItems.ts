@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 export abstract class OperatorTreeItem extends vscode.TreeItem {
-    contextValue = 'operator-tree-item';
+  contextValue = "operator-tree-item";
 }

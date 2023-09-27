@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 export abstract class ResourceTreeItem extends vscode.TreeItem {
-    contextValue = 'resource-tree-item';
+  contextValue = "resource-tree-item";
 }
