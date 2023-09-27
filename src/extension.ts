@@ -127,6 +127,7 @@ export async function activate(context: vscode.ExtensionContext) {
     await session.determinateOcSdkIsOutdated(),
   );
   context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
+  context.subscriptions.push(logOut(VSCodeCommands.logout, ocCmd, session));
   context.subscriptions.push(
     installOcSdk(VSCodeCommands.install, ocSdkCmd, session, outputChannel),
   );
@@ -387,6 +388,34 @@ function logIn(
             session.loggedIntoOpenShift = false;
             vscode.window.showErrorMessage(
               `Failure logging into OpenShift cluster`,
+            );
+          });
+      }
+    },
+  );
+}
+
+function logOut(
+  command: string,
+  ocCmd: OcCommand,
+  session: Session,
+): vscode.Disposable {
+  return vscode.commands.registerCommand(
+    command,
+    async (outputChannel?: vscode.OutputChannel, logPath?: string) => {
+      if (session.loggedIntoOpenShift) {
+        ocCmd
+          .runOcLogoutCommand(outputChannel, logPath)
+          .then(async () => {
+            vscode.window.showInformationMessage(
+              "Successfully logged out of OpenShift cluster",
+            );
+            await session.validateOpenShiftAccess();
+            vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+          })
+          .catch((e) => {
+            vscode.window.showErrorMessage(
+              `Failure logging out of OpenShift cluster: ${e}`,
             );
           });
       }
