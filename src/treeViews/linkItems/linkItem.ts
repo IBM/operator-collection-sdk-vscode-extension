@@ -11,10 +11,12 @@ export class LinkItem extends vscode.TreeItem {
     public readonly description: string,
     public readonly icon: vscode.ThemeIcon,
     public readonly link: string,
+    public readonly command: vscode.Command,
   ) {
     super(name, vscode.TreeItemCollapsibleState.None);
     this.contextValue = "links";
     this.description = description;
     this.iconPath = icon;
+    this.command = command;
   }
 }
