@@ -40,6 +40,11 @@ export class ResourcesTreeProvider
     for (const provider of ResourcesTreeProvider.resourceTreeProviders) {
       await provider.session.validateOcSDKInstallation();
       await provider.session.validateOpenShiftAccess();
+    }
+  }
+
+  static refreshAll(): void {
+    for (const provider of ResourcesTreeProvider.resourceTreeProviders) {
       provider.refresh();
     }
   }

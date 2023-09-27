@@ -6,7 +6,8 @@
 import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesContext } from "../kubernetes/kubernetesContext";
-import { getAnsibleGalaxySetting, ConfigurationSettings } from "../utilities/util";
+import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
+import { VSCodeCommands } from '../utilities/commandConstants';
 
 export class Session {
   public ocSdkInstalled: boolean = false;
@@ -21,7 +22,7 @@ export class Session {
    * @returns - A promise containing a boolean, returning true if the IBM Operator Collection SDK is installed
    */
   async validateOcSDKInstallation(): Promise<boolean> {
-    const ansibleGalaxyConnectivity = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyConnectivity) as boolean;
+    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyConnectivity) as boolean;
     if (!ansibleGalaxyConnectivity) {
       this.ocSdkInstalled = true;
       return true;
@@ -32,9 +33,15 @@ export class Session {
       return true;
     } catch (e) {
       console.log("Install the IBM Operator Collection SDK use this extension");
-      vscode.window.showWarningMessage(
-        "Install the IBM Operator Collection SDK use this extension",
+      // vscode.window.showWarningMessage("Install the IBM Operator Collection SDK Ansible collection to use the IBM Operator Collection SDK extension");
+      const selection = await vscode.window.showWarningMessage(
+        "Install the IBM Operator Collection SDK Ansible collection to use the IBM Operator Collection SDK extension",
+        "Install SDK",
+        "Cancel"
       );
+      if (selection !== undefined && selection === "Install SDK") {
+          vscode.commands.executeCommand(VSCodeCommands.install);
+      }
       this.ocSdkInstalled = false;
       return false;
     }
@@ -45,7 +52,7 @@ export class Session {
    * @returns - A promise containing a boolean, returning true if the installed IBM Operator Collection SDK can be updated to a newer version
    */
   async determinateOcSdkIsOutdated(): Promise<boolean> {
-    const ansibleGalaxyConnectivity = getAnsibleGalaxySetting(ConfigurationSettings.ansibleGalaxyConnectivity) as boolean;
+    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyConnectivity) as boolean;
     if (!ansibleGalaxyConnectivity) {
       this.ocSdkOutdated = false;
       return false;

@@ -30,6 +30,12 @@ export class OpenShiftTreeProvider
     OpenShiftTreeProvider.openshiftTreeProviders.push(this);
   }
 
+  static refreshAll(): void {
+    for (const provider of OpenShiftTreeProvider.openshiftTreeProviders) {
+      provider.refresh();
+    }
+  }  
+
   static async updateSession(): Promise<void> {
     for (const provider of OpenShiftTreeProvider.openshiftTreeProviders) {
       await provider.session.validateOcSDKInstallation();
@@ -49,8 +55,11 @@ export class OpenShiftTreeProvider
     const links: Array<OpenShiftItem> = [];
     const k8s = new KubernetesObj();
     const updateOpenshiftTree = OpenShiftTreeProvider.updateSession();
+    // const refreshOpenshiftTree = OpenShiftTreeProvider.refreshAll();
     const updateOperatorsTree = OperatorsTreeProvider.updateSession();
+    const refreshOperatorsTree = OperatorsTreeProvider.refreshAll();
     const updateResourcesTree = ResourcesTreeProvider.updateSession();
+    const refreshResourcesTree = ResourcesTreeProvider.refreshAll();
     const updateContainerLogsProvider = ContainerLogProvider.updateSession();
     const updateCustomResourceDeployProvider =
       CustomResourceDisplayProvider.updateSession();
@@ -58,8 +67,11 @@ export class OpenShiftTreeProvider
       VerboseContainerLogProvider.updateSession();
     return Promise.all([
       updateOpenshiftTree,
+      // refreshOpenshiftTree,
       updateOperatorsTree,
+      refreshOperatorsTree,
       updateResourcesTree,
+      refreshResourcesTree,
       updateContainerLogsProvider,
       updateCustomResourceDeployProvider,
       updateVerboseContainerLogProvider,

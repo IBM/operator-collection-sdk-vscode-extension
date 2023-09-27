@@ -26,14 +26,17 @@ export enum ZosCloudBrokerKinds {
   operatorCollection = "OperatorCollection",
 }
 
-export enum ConfigurationSettings {
+export enum AnsibleGalaxySettings {
   ansibleGalaxyConnectivity = "ansibleGalaxyConnectivity",
   ansibleGalaxyURL = "ansibleGalaxyURL",
   ansibleGalaxyNamespace = "ansibleGalaxyNamespace",
+}
+
+export enum LinterSettings {
   lintingEnabled = "lintingEnabled",
 }
 
-export enum ConfigurationSettingsDefaults {
+export enum AnsibleGalaxySettingsDefaults {
   ansibleGalaxyURL = "https://galaxy.ansible.com",
   ansibleGalaxyNamespace = "ibm",
 }
@@ -689,19 +692,24 @@ export async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function getAnsibleGalaxySetting(property: string): any {
+export function getAnsibleGalaxySettings(property: string): any {
   const configuration = vscode.workspace.getConfiguration("operatorCollectionSdk.ansibleGalaxy");
   const setting = configuration.get(property);
   if (setting instanceof String && setting === "") {
     switch (property) {
-      case ConfigurationSettings.ansibleGalaxyNamespace: {
-        return ConfigurationSettingsDefaults.ansibleGalaxyNamespace;
+      case AnsibleGalaxySettings.ansibleGalaxyNamespace: {
+        return AnsibleGalaxySettingsDefaults.ansibleGalaxyNamespace;
       } 
-      case ConfigurationSettings.ansibleGalaxyURL: {
-        return ConfigurationSettingsDefaults.ansibleGalaxyURL;
+      case AnsibleGalaxySettings.ansibleGalaxyURL: {
+        return AnsibleGalaxySettingsDefaults.ansibleGalaxyURL;
       } 
     }
   } else {
     return setting;
   } 
+}
+
+export function getLinterSettings(property: string): any {
+  const configuration = vscode.workspace.getConfiguration("operatorCollectionSdk.linter");
+  return configuration.get(property);
 }

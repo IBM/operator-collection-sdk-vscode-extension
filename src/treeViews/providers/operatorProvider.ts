@@ -34,12 +34,18 @@ export class OperatorsTreeProvider
     for (const provider of OperatorsTreeProvider.operatorsTreeProviders) {
       await provider.session.validateOcSDKInstallation();
       await provider.session.validateOpenShiftAccess();
+    }
+  }
+
+  static refreshAll(): void {
+    for (const provider of OperatorsTreeProvider.operatorsTreeProviders) {
       provider.refresh();
     }
   }
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
+    OperatorsTreeProvider.updateSession();
   }
 
   getTreeItem(element: OperatorTreeItem): vscode.TreeItem {
