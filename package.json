@@ -93,12 +93,6 @@
         "icon": "$(add)"
       },
       {
-        "command": "operator-collection-sdk.openLink",
-        "title": "Open External Link",
-        "category": "OC-SDK",
-        "icon": "$(globe)"
-      },
-      {
         "command": "operator-collection-sdk.refresh",
         "title": "Refresh",
         "category": "OC-SDK",
@@ -121,6 +115,12 @@
         "title": "Log in to new OpenShift cluster",
         "category": "OC-SDK",
         "icon": "$(log-in)"
+      },
+      {
+        "command": "operator-collection-sdk.logout",
+        "title": "Log out of your current cluster",
+        "category": "OC-SDK",
+        "icon": "$(log-out)"
       },
       {
         "command": "operator-collection-sdk.updateProject",
@@ -256,17 +256,17 @@
           "group": "inline"
         },
         {
-          "command": "operator-collection-sdk.openLink",
-          "when": "view == operator-collection-sdk.help && viewItem == links",
-          "group": "inline"
-        },
-        {
           "command": "operator-collection-sdk.deleteCustomResource",
           "when": "view == operator-collection-sdk.resources && viewItem == customresource-object",
           "group": "inline"
         },
         {
           "command": "operator-collection-sdk.login",
+          "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-cluster",
+          "group": "inline"
+        },
+        {
+          "command": "operator-collection-sdk.logout",
           "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-cluster",
           "group": "inline"
         },

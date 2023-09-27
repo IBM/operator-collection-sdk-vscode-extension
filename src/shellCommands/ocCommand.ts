@@ -149,6 +149,17 @@ export class OcCommand {
   }
 
   /**
+   * Executes the oc logout command
+   * @returns
+   */
+  async runOcLogoutCommand(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<any> {
+    return this.run(["logout"], outputChannel, logPath);
+  }
+
+  /**
    * Executes the oc login command
    * @param serverURL
    * @param token
