@@ -21,7 +21,6 @@ Single-click actions to Create, Re-deploy, and Delete your operator in OpenShift
 - Create and monitor the Custom Resources for your operator.
 
 ![Monitor operator status](./resources/docs/media/oc-sdk-view-create-resources.gif)
-resources/docs/media/oc-cluster-login-url-and-token.gif
 
 ## Manage your OpenShift cluster connection and project
 
