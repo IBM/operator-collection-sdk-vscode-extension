@@ -934,9 +934,9 @@ async function updateDiagnostics(
         const resourceSymbol = resourcesSymbol?.children.find(
           (symbol: vscode.DocumentSymbol) => {
             return symbol.children.find(
-              (child_symbol: vscode.DocumentSymbol) =>
-                child_symbol.name === "kind" &&
-                child_symbol.detail === resource.kind,
+              (childSymbol: vscode.DocumentSymbol) =>
+                childSymbol.name === "kind" &&
+                childSymbol.detail === resource.kind,
             );
           },
         );
@@ -974,7 +974,7 @@ async function updateDiagnostics(
               let plays: vscode.DocumentSymbol[] = [];
               playbookDocSymbols.forEach((symbol) => {
                 const play = symbol.children.find(
-                  (child_symbol) => child_symbol.name === "hosts",
+                  (childSymbol) => childSymbol.name === "hosts",
                 );
                 if (play) {
                   plays.push(play);
