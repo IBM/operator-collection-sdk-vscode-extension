@@ -410,7 +410,11 @@ function logOut(
             vscode.window.showInformationMessage(
               "Successfully logged out of OpenShift cluster",
             );
-            await session.validateOpenShiftAccess();
+            vscode.commands.executeCommand(
+              "setContext",
+              VSCodeCommands.loggedIn,
+              true,
+            );
             vscode.commands.executeCommand(VSCodeCommands.refreshAll);
           })
           .catch((e) => {
@@ -886,8 +890,8 @@ async function updateDiagnostics(
       if (
         galaxyConfig.name &&
         operatorConfig.name &&
-        galaxyConfig.name.toLowerCase().replace("_", "-") !==
-          operatorConfig.name.toLowerCase().replace("_", "-")
+        galaxyConfig.name.toLowerCase().replace(/_/g, "-") !==
+          operatorConfig.name.toLowerCase().replace(/_/g, "-")
       ) {
         //Get name symbol
         const nameSymbol: vscode.DocumentSymbol | undefined = docSymbols.find(
