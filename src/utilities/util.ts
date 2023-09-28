@@ -444,7 +444,7 @@ export async function requestOperatorInfo(
   const zosEndpointSSHKey = await vscode.window.showInputBox({
     prompt:
       "Enter the path to your private SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
-    value: "~/.ssh/id_rsa",
+    value: "~/.ssh/id_ed25519",
     ignoreFocusOut: true,
   });
 

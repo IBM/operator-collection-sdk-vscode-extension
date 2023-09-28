@@ -214,6 +214,11 @@
         "view": "operator-collection-sdk.openshiftClusterInfo",
         "contents": "Log in to an OpenShift Cluster to use this extension\n[Log in to OpenShift](command:operator-collection-sdk.login)",
         "when": "!operator-collection-sdk.loggedIn"
+      },
+      {
+        "view": "operator-collection-sdk.operators",
+        "contents": "Log in to an OpenShift Cluster to use this extension",
+        "when": "!operator-collection-sdk.loggedIn"
       }
     ],
     "viewsContainers": {

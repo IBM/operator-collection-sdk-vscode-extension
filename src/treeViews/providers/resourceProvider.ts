@@ -67,7 +67,9 @@ export class ResourcesTreeProvider
   }
 
   refresh(): void {
-    this._onDidChangeTreeData.fire();
+    ResourcesTreeProvider.updateSession().then(() => {
+      this._onDidChangeTreeData.fire();
+    });
   }
 
   getTreeItem(element: ResourceItem): vscode.TreeItem {

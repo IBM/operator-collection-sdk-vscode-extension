@@ -61,8 +61,9 @@ export class OperatorsTreeProvider
   }
 
   refresh(): void {
-    this._onDidChangeTreeData.fire();
-    OperatorsTreeProvider.updateSession();
+    OperatorsTreeProvider.updateSession().then(() => {
+      this._onDidChangeTreeData.fire();
+    });
   }
 
   getTreeItem(element: OperatorTreeItem): vscode.TreeItem {
