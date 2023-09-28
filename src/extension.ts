@@ -417,9 +417,6 @@ function logOut(
             vscode.window.showInformationMessage(
               "Successfully logged out of OpenShift cluster",
             );
-            session.validateOpenShiftAccess().then(() => {
-              vscode.commands.executeCommand(VSCodeCommands.refreshAll);
-            });
           })
           .catch((e) => {
             vscode.window.showErrorMessage(
