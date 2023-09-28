@@ -218,7 +218,7 @@
       {
         "view": "operator-collection-sdk.operators",
         "contents": "Log in to an OpenShift Cluster to use this extension",
-        "when": "!operator-collection-sdk.loggedIn"
+        "when": "!operator-collection-sdk.loggedIn && operator-collection-sdk.sdkInstalled"
       }
     ],
     "viewsContainers": {
