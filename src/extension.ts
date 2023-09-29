@@ -405,6 +405,13 @@ function logOut(
     command,
     async (outputChannel?: vscode.OutputChannel, logPath?: string) => {
       if (session.loggedIntoOpenShift) {
+        if (session.operationPending) {
+          vscode.window.showWarningMessage(
+            "Please wait for the current operation to finish before logging out of your current cluster.",
+          );
+          return;
+        }
+
         ocCmd
           .runOcLogoutCommand(outputChannel, logPath)
           .then(async () => {
@@ -891,6 +898,8 @@ async function updateDiagnostics(
       if (
         galaxyConfig.name &&
         operatorConfig.name &&
+        galaxyConfig.name.toLowerCase().replace(/_/g, "-") !==
+          operatorConfig.name.toLowerCase().replace(/_/g, "-")
         galaxyConfig.name.toLowerCase().replace(/_/g, "-") !==
           operatorConfig.name.toLowerCase().replace(/_/g, "-")
       ) {
