@@ -404,14 +404,19 @@ function logOut(
     command,
     async (outputChannel?: vscode.OutputChannel, logPath?: string) => {
       if (session.loggedIntoOpenShift) {
+        if (session.operationPending) {
+          vscode.window.showWarningMessage(
+            "Please wait for the current operation to finish before logging out of your current cluster.",
+          );
+          return;
+        }
+
         ocCmd
           .runOcLogoutCommand(outputChannel, logPath)
           .then(async () => {
             vscode.window.showInformationMessage(
               "Successfully logged out of OpenShift cluster",
             );
-            await session.validateOpenShiftAccess();
-            vscode.commands.executeCommand(VSCodeCommands.refreshAll);
           })
           .catch((e) => {
             vscode.window.showErrorMessage(
