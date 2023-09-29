@@ -900,8 +900,6 @@ async function updateDiagnostics(
         operatorConfig.name &&
         galaxyConfig.name.toLowerCase().replace(/_/g, "-") !==
           operatorConfig.name.toLowerCase().replace(/_/g, "-")
-        galaxyConfig.name.toLowerCase().replace(/_/g, "-") !==
-          operatorConfig.name.toLowerCase().replace(/_/g, "-")
       ) {
         //Get name symbol
         const nameSymbol: vscode.DocumentSymbol | undefined = docSymbols.find(
