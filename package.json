@@ -168,7 +168,7 @@
         "properties": {
           "operatorCollectionSdk.linter.lintingEnabled": {
             "type": "boolean",
-            "description": "Enable linting",
+            "markdownDescription": "Enable linting. **Note:** Restart VS Code to apply this setting after modification",
             "default": true
           }
         }
