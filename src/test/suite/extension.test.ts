@@ -1263,7 +1263,7 @@ describe("Extension Test Suite", async () => {
       //Replace playbook hosts
       for (const symbol of playbookDocSymbols) {
         const playbookHost = symbol.children.find(
-          (child_symbol) => child_symbol.name === "hosts",
+          (childSymbol) => childSymbol.name === "hosts",
         );
         if (playbookHost) {
           const playbookHostValueRange = new vscode.Range(

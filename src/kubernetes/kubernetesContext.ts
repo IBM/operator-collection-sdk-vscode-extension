@@ -3,7 +3,7 @@ import * as path from "path";
 import * as k8s from "@kubernetes/client-node";
 import * as fs from "fs";
 import { VSCodeCommands } from "../utilities/commandConstants";
-import { OcCommand } from "../commands/ocCommand";
+import { OcCommand } from "../shellCommands/ocCommand";
 
 export class KubernetesContext {
   public coreV1Api: k8s.CoreV1Api | undefined = undefined;
