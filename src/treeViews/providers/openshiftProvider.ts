@@ -50,7 +50,9 @@ export class OpenShiftTreeProvider
     const k8s = new KubernetesObj();
     const updateOpenshiftTree = OpenShiftTreeProvider.updateSession();
     const updateOperatorsTree = OperatorsTreeProvider.updateSession();
+    const refreshOperatorsTree = OperatorsTreeProvider.refreshAll();
     const updateResourcesTree = ResourcesTreeProvider.updateSession();
+    const refreshResourcesTree = ResourcesTreeProvider.refreshAll();
     const updateContainerLogsProvider = ContainerLogProvider.updateSession();
     const updateCustomResourceDeployProvider =
       CustomResourceDisplayProvider.updateSession();
@@ -59,7 +61,9 @@ export class OpenShiftTreeProvider
     return Promise.all([
       updateOpenshiftTree,
       updateOperatorsTree,
+      refreshOperatorsTree,
       updateResourcesTree,
+      refreshResourcesTree,
       updateContainerLogsProvider,
       updateCustomResourceDeployProvider,
       updateVerboseContainerLogProvider,

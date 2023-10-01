@@ -31,6 +31,7 @@ import { OcSdkCommand } from "./shellCommands/ocSdkCommands";
 import { Session } from "./utilities/session";
 import { OperatorConfig } from "./linter/models";
 import { AnsibleGalaxyYmlSchema } from "./linter/galaxy";
+import {getLinterSettings, LinterSettings} from "./utilities/util";
 import * as yaml from "js-yaml";
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -39,29 +40,32 @@ export async function activate(context: vscode.ExtensionContext) {
   initResources(context);
 
   //Setup Linter
-  const collection = vscode.languages.createDiagnosticCollection("linter");
-  if (vscode.window.activeTextEditor) {
-    updateDiagnostics(vscode.window.activeTextEditor.document, collection);
+  const linterEnabled = getLinterSettings(LinterSettings.lintingEnabled) as string;
+  if (linterEnabled) {
+    const collection = vscode.languages.createDiagnosticCollection("linter");
+    if (vscode.window.activeTextEditor) {
+      updateDiagnostics(vscode.window.activeTextEditor.document, collection);
+    }
+    context.subscriptions.push(
+      vscode.window.onDidChangeActiveTextEditor((editor) => {
+        if (editor) {
+          updateDiagnostics(editor.document, collection);
+        }
+      }),
+    );
+    context.subscriptions.push(
+      vscode.workspace.onDidSaveTextDocument((textDocument) => {
+        if (textDocument) {
+          updateDiagnostics(textDocument, collection);
+        }
+      }),
+    );
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeTextDocument((textDocumentChangeEvent) => {
+        updateDiagnostics(textDocumentChangeEvent.document, collection);
+      }),
+    );
   }
-  context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor((editor) => {
-      if (editor) {
-        updateDiagnostics(editor.document, collection);
-      }
-    }),
-  );
-  context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument((textDocument) => {
-      if (textDocument) {
-        updateDiagnostics(textDocument, collection);
-      }
-    }),
-  );
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeTextDocument((textDocumentChangeEvent) => {
-      updateDiagnostics(textDocumentChangeEvent.document, collection);
-    }),
-  );
 
   const ocSdkCmd = new OcSdkCommand();
   const ocCmd = new OcCommand();
@@ -264,9 +268,6 @@ function installOcSdk(
             VSCodeCommands.sdkInstalled,
             session.ocSdkInstalled,
           );
-          if (!session.loggedIntoOpenShift) {
-            vscode.commands.executeCommand(VSCodeCommands.login);
-          }
           vscode.commands.executeCommand(VSCodeCommands.refresh);
         })
         .catch((e) => {
@@ -417,6 +418,12 @@ function logOut(
             vscode.window.showInformationMessage(
               "Successfully logged out of OpenShift cluster",
             );
+            vscode.commands.executeCommand(
+              "setContext",
+              VSCodeCommands.loggedIn,
+              true,
+            );
+            vscode.commands.executeCommand(VSCodeCommands.refreshAll);
           })
           .catch((e) => {
             vscode.window.showErrorMessage(
@@ -968,9 +975,9 @@ async function updateDiagnostics(
         const resourceSymbol = resourcesSymbol?.children.find(
           (symbol: vscode.DocumentSymbol) => {
             return symbol.children.find(
-              (child_symbol: vscode.DocumentSymbol) =>
-                child_symbol.name === "kind" &&
-                child_symbol.detail === resource.kind,
+              (childSymbol: vscode.DocumentSymbol) =>
+                childSymbol.name === "kind" &&
+                childSymbol.detail === resource.kind,
             );
           },
         );
@@ -1008,7 +1015,7 @@ async function updateDiagnostics(
               let plays: vscode.DocumentSymbol[] = [];
               playbookDocSymbols.forEach((symbol) => {
                 const play = symbol.children.find(
-                  (child_symbol) => child_symbol.name === "hosts",
+                  (childSymbol) => childSymbol.name === "hosts",
                 );
                 if (play) {
                   plays.push(play);

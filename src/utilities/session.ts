@@ -6,6 +6,7 @@
 import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesContext } from "../kubernetes/kubernetesContext";
+import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
 
 export class Session {
   public ocSdkInstalled: boolean = false;
@@ -21,15 +22,19 @@ export class Session {
    * @returns - A promise containing a boolean, returning true if the IBM Operator Collection SDK is installed
    */
   async validateOcSDKInstallation(): Promise<boolean> {
+    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyConnectivity) as boolean;
+    if (!ansibleGalaxyConnectivity) {
+      this.ocSdkInstalled = true;
+      return true;
+    }
     try {
       await this.ocSdkCmd.runCollectionVerifyCommand();
       this.ocSdkInstalled = true;
       return true;
     } catch (e) {
       console.log("Install the IBM Operator Collection SDK use this extension");
-      vscode.window.showWarningMessage(
-        "Install the IBM Operator Collection SDK use this extension",
-      );
+      // vscode.window.showWarningMessage("Install the IBM Operator Collection SDK Ansible collection to use the IBM Operator Collection SDK extension");
+      
       this.ocSdkInstalled = false;
       return false;
     }
@@ -40,6 +45,11 @@ export class Session {
    * @returns - A promise containing a boolean, returning true if the installed IBM Operator Collection SDK can be updated to a newer version
    */
   async determinateOcSdkIsOutdated(): Promise<boolean> {
+    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyConnectivity) as boolean;
+    if (!ansibleGalaxyConnectivity) {
+      this.ocSdkOutdated = false;
+      return false;
+    }
     if (this.ocSdkInstalled && !this.skipSdkUpdated) {
       this.ocSdkOutdated = await this.ocSdkCmd.runDeterminateOcSdkIsOutdated();
       return this.ocSdkOutdated;
@@ -63,7 +73,6 @@ export class Session {
    */
   async validateOpenShiftAccess(): Promise<boolean> {
     const k8s = new KubernetesContext();
-
     if (k8s?.coreV1Api) {
       return k8s.coreV1Api
         .listNamespacedPod(k8s.namespace)
@@ -75,9 +84,6 @@ export class Session {
           console.log(
             "Log in to an OpenShift Cluster to use this extension: " +
               JSON.stringify(e),
-          );
-          vscode.window.showWarningMessage(
-            "Log in to an OpenShift Cluster to use this extension",
           );
           this.loggedIntoOpenShift = false;
           return false;
