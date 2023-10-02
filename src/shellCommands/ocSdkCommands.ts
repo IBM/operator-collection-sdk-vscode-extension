@@ -153,8 +153,15 @@ export class OcSdkCommand {
       `${galaxyNamespace}.operator_collection_sdk`,
     ];
 
-    const jsonData = await getJsonData(galaxyUrl, galaxyNamespace);
-
+    let jsonData: any;
+    try {
+      jsonData = await getJsonData(galaxyUrl, galaxyNamespace);
+    } catch (e) {
+      vscode.window.showErrorMessage(
+        `Failure retrieving data from Ansible Galaxy: ${e}`,
+      );
+    }
+   
     latestVersion = jsonData?.data?.collection?.latest_version.version;
 
     let setVersionInstalled = (outputValue: string) => {
@@ -292,9 +299,15 @@ async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<
             resp.on("data", (chunk) => {
               data += chunk;
             });
-            resp.on("end", () => {
-              resolve(JSON.parse(data));
-            });
+            if (resp.statusCode === 200) {
+              resp.on("end", () => {
+                resolve(JSON.parse(data));
+              });
+            } else {
+              resp.on("end", () => {
+                reject(data);
+              });
+            }
           },
         )
         .on("error", (err) => {
