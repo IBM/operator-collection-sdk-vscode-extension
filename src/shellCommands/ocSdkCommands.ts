@@ -324,9 +324,15 @@ async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<
             resp.on("data", (chunk) => {
               data += chunk;
             });
-            resp.on("end", () => {
-              resolve(JSON.parse(data));
-            });
+            if (resp.statusCode === 200) {
+              resp.on("end", () => {
+                resolve(JSON.parse(data));
+              });
+            } else {
+              resp.on("end", () => {
+                reject(data);
+              });
+            }
           },
         )
         .on("error", (err) => {
@@ -339,4 +345,5 @@ async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<
 
 function getApiUrl(galaxyUrl: string, galaxyNamespace: string): string {
   return `${galaxyUrl}/api/internal/ui/repo-or-collection-detail/?namespace=${galaxyNamespace}&name=operator_collection_sdk`;
+  "https://galaxy.ansible.com/api/v3/plugin/ansible/content/published/collections/index/ibm/operator_collection_sdk/versions/";
 }
