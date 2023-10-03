@@ -26,6 +26,21 @@ export enum ZosCloudBrokerKinds {
   operatorCollection = "OperatorCollection",
 }
 
+export enum AnsibleGalaxySettings {
+  ansibleGalaxyConnectivity = "ansibleGalaxyConnectivity",
+  ansibleGalaxyURL = "ansibleGalaxyURL",
+  ansibleGalaxyNamespace = "ansibleGalaxyNamespace",
+}
+
+export enum LinterSettings {
+  lintingEnabled = "lintingEnabled",
+}
+
+export enum AnsibleGalaxySettingsDefaults {
+  ansibleGalaxyURL = "https://galaxy.ansible.com",
+  ansibleGalaxyNamespace = "ibm",
+}
+
 export const zosCloudBrokerGroup: string = "zoscb.ibm.com";
 export const clusterServiceVersionGroup: string = "operators.coreos.com";
 export const customResourceGroup: string = "suboperator.zoscb.ibm.com";
@@ -429,7 +444,7 @@ export async function requestOperatorInfo(
   const zosEndpointSSHKey = await vscode.window.showInputBox({
     prompt:
       "Enter the path to your private SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
-    value: "~/.ssh/id_rsa",
+    value: "~/.ssh/id_ed25519",
     ignoreFocusOut: true,
   });
 
@@ -675,4 +690,26 @@ export function parseCustomResourceUri(uri: vscode.Uri): {
 
 export async function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function getAnsibleGalaxySettings(property: string): any {
+  const configuration = vscode.workspace.getConfiguration("operatorCollectionSdk.ansibleGalaxy");
+  const setting = configuration.get(property);
+  if (setting instanceof String && setting === "") {
+    switch (property) {
+      case AnsibleGalaxySettings.ansibleGalaxyNamespace: {
+        return AnsibleGalaxySettingsDefaults.ansibleGalaxyNamespace;
+      } 
+      case AnsibleGalaxySettings.ansibleGalaxyURL: {
+        return AnsibleGalaxySettingsDefaults.ansibleGalaxyURL;
+      } 
+    }
+  } else {
+    return setting;
+  } 
+}
+
+export function getLinterSettings(property: string): any {
+  const configuration = vscode.workspace.getConfiguration("operatorCollectionSdk.linter");
+  return configuration.get(property);
 }

@@ -21,7 +21,8 @@
   },
   "categories": [
     "Debuggers",
-    "Testing"
+    "Testing",
+    "Linters"
   ],
   "keywords": [
     "IBM",
@@ -32,7 +33,7 @@
     "Z"
   ],
   "activationEvents": [
-    "onLanguage:yaml"
+    "workspaceContains:{**/operator-config.yaml,**/operator-config.yml}"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -117,6 +118,12 @@
         "icon": "$(log-in)"
       },
       {
+        "command": "operator-collection-sdk.logout",
+        "title": "Log out of your current cluster",
+        "category": "OC-SDK",
+        "icon": "$(log-out)"
+      },
+      {
         "command": "operator-collection-sdk.updateProject",
         "title": "Update OpenShift Project",
         "category": "OC-SDK",
@@ -132,6 +139,39 @@
         "title": "Delete Custom Resource",
         "category": "OC-SDK",
         "icon": "$(trash)"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "Ansible Galaxy",
+        "properties": {
+          "operatorCollectionSdk.ansibleGalaxy.ansibleGalaxyConnectivity": {
+            "type": "boolean",
+            "description": "Specifies if you have connectivity to Ansible Galaxy. Disabling this will prevent the extension from checking Ansible Galaxy for new Operator Collection SDK updates",
+            "default": true
+          },
+          "operatorCollectionSdk.ansibleGalaxy.ansibleGalaxyURL": {
+            "type": "string",
+            "markdownDescription": "The Ansible Galaxy URL to download the IBM Operator Collection SDK. Requires `#operatorCollectionSdk.ansibleGalaxyConnectivity#` to be enabled.",
+            "format": "uri",
+            "default": "https://galaxy.ansible.com"
+          },
+          "operatorCollectionSdk.ansibleGalaxy.ansibleGalaxyNamespace": {
+            "type": "string",
+            "markdownDescription": "The Ansible Galaxy namespace to download the IBM Operator Collection SDK. Requires `#operatorCollectionSdk.ansibleGalaxyConnectivity#` to be enabled.",
+            "default": "ibm"
+          }
+        }
+      },
+      {
+        "title": "Linter",
+        "properties": {
+          "operatorCollectionSdk.linter.lintingEnabled": {
+            "type": "boolean",
+            "markdownDescription": "Enable linting. **Note:** Restart VS Code to apply this setting after modification",
+            "default": true
+          }
+        }
       }
     ],
     "views": {
@@ -174,6 +214,11 @@
         "view": "operator-collection-sdk.openshiftClusterInfo",
         "contents": "Log in to an OpenShift Cluster to use this extension\n[Log in to OpenShift](command:operator-collection-sdk.login)",
         "when": "!operator-collection-sdk.loggedIn"
+      },
+      {
+        "view": "operator-collection-sdk.operators",
+        "contents": "Log in to an OpenShift Cluster to use this extension",
+        "when": "!operator-collection-sdk.loggedIn && operator-collection-sdk.sdkInstalled"
       }
     ],
     "viewsContainers": {
@@ -256,6 +301,11 @@
         },
         {
           "command": "operator-collection-sdk.login",
+          "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-cluster",
+          "group": "inline"
+        },
+        {
+          "command": "operator-collection-sdk.logout",
           "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-cluster",
           "group": "inline"
         },

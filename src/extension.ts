@@ -31,6 +31,7 @@ import { OcSdkCommand } from "./shellCommands/ocSdkCommands";
 import { Session } from "./utilities/session";
 import { OperatorConfig } from "./linter/models";
 import { AnsibleGalaxyYmlSchema } from "./linter/galaxy";
+import {getLinterSettings, LinterSettings} from "./utilities/util";
 import * as yaml from "js-yaml";
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -39,29 +40,32 @@ export async function activate(context: vscode.ExtensionContext) {
   initResources(context);
 
   //Setup Linter
-  const collection = vscode.languages.createDiagnosticCollection("linter");
-  if (vscode.window.activeTextEditor) {
-    updateDiagnostics(vscode.window.activeTextEditor.document, collection);
+  const linterEnabled = getLinterSettings(LinterSettings.lintingEnabled) as string;
+  if (linterEnabled) {
+    const collection = vscode.languages.createDiagnosticCollection("linter");
+    if (vscode.window.activeTextEditor) {
+      updateDiagnostics(vscode.window.activeTextEditor.document, collection);
+    }
+    context.subscriptions.push(
+      vscode.window.onDidChangeActiveTextEditor((editor) => {
+        if (editor) {
+          updateDiagnostics(editor.document, collection);
+        }
+      }),
+    );
+    context.subscriptions.push(
+      vscode.workspace.onDidSaveTextDocument((textDocument) => {
+        if (textDocument) {
+          updateDiagnostics(textDocument, collection);
+        }
+      }),
+    );
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeTextDocument((textDocumentChangeEvent) => {
+        updateDiagnostics(textDocumentChangeEvent.document, collection);
+      }),
+    );
   }
-  context.subscriptions.push(
-    vscode.window.onDidChangeActiveTextEditor((editor) => {
-      if (editor) {
-        updateDiagnostics(editor.document, collection);
-      }
-    }),
-  );
-  context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument((textDocument) => {
-      if (textDocument) {
-        updateDiagnostics(textDocument, collection);
-      }
-    }),
-  );
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeTextDocument((textDocumentChangeEvent) => {
-      updateDiagnostics(textDocumentChangeEvent.document, collection);
-    }),
-  );
 
   const ocSdkCmd = new OcSdkCommand();
   const ocCmd = new OcCommand();
@@ -127,6 +131,7 @@ export async function activate(context: vscode.ExtensionContext) {
     await session.determinateOcSdkIsOutdated(),
   );
   context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
+  context.subscriptions.push(logOut(VSCodeCommands.logout, ocCmd, session));
   context.subscriptions.push(
     installOcSdk(VSCodeCommands.install, ocSdkCmd, session, outputChannel),
   );
@@ -263,9 +268,6 @@ function installOcSdk(
             VSCodeCommands.sdkInstalled,
             session.ocSdkInstalled,
           );
-          if (!session.loggedIntoOpenShift) {
-            vscode.commands.executeCommand(VSCodeCommands.login);
-          }
           vscode.commands.executeCommand(VSCodeCommands.refresh);
         })
         .catch((e) => {
@@ -387,6 +389,45 @@ function logIn(
             session.loggedIntoOpenShift = false;
             vscode.window.showErrorMessage(
               `Failure logging into OpenShift cluster`,
+            );
+          });
+      }
+    },
+  );
+}
+
+function logOut(
+  command: string,
+  ocCmd: OcCommand,
+  session: Session,
+): vscode.Disposable {
+  return vscode.commands.registerCommand(
+    command,
+    async (outputChannel?: vscode.OutputChannel, logPath?: string) => {
+      if (session.loggedIntoOpenShift) {
+        if (session.operationPending) {
+          vscode.window.showWarningMessage(
+            "Please wait for the current operation to finish before logging out of your current cluster.",
+          );
+          return;
+        }
+
+        ocCmd
+          .runOcLogoutCommand(outputChannel, logPath)
+          .then(async () => {
+            vscode.window.showInformationMessage(
+              "Successfully logged out of OpenShift cluster",
+            );
+            vscode.commands.executeCommand(
+              "setContext",
+              VSCodeCommands.loggedIn,
+              true,
+            );
+            vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+          })
+          .catch((e) => {
+            vscode.window.showErrorMessage(
+              `Failure logging out of OpenShift cluster: ${e}`,
             );
           });
       }
@@ -857,8 +898,8 @@ async function updateDiagnostics(
       if (
         galaxyConfig.name &&
         operatorConfig.name &&
-        galaxyConfig.name.toLowerCase().replace("_", "-") !==
-          operatorConfig.name.toLowerCase().replace("_", "-")
+        galaxyConfig.name.toLowerCase().replace(/_/g, "-") !==
+          operatorConfig.name.toLowerCase().replace(/_/g, "-")
       ) {
         //Get name symbol
         const nameSymbol: vscode.DocumentSymbol | undefined = docSymbols.find(
@@ -934,9 +975,9 @@ async function updateDiagnostics(
         const resourceSymbol = resourcesSymbol?.children.find(
           (symbol: vscode.DocumentSymbol) => {
             return symbol.children.find(
-              (child_symbol: vscode.DocumentSymbol) =>
-                child_symbol.name === "kind" &&
-                child_symbol.detail === resource.kind,
+              (childSymbol: vscode.DocumentSymbol) =>
+                childSymbol.name === "kind" &&
+                childSymbol.detail === resource.kind,
             );
           },
         );
@@ -974,7 +1015,7 @@ async function updateDiagnostics(
               let plays: vscode.DocumentSymbol[] = [];
               playbookDocSymbols.forEach((symbol) => {
                 const play = symbol.children.find(
-                  (child_symbol) => child_symbol.name === "hosts",
+                  (childSymbol) => childSymbol.name === "hosts",
                 );
                 if (play) {
                   plays.push(play);

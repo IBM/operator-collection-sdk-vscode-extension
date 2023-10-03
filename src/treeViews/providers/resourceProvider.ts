@@ -18,6 +18,7 @@ import { getCustomResourcesItem } from "../resourceItems/customResourcesItem";
 import { KubernetesObj } from "../../kubernetes/kubernetes";
 import { ResourceTreeItem } from "../resourceItems/resourceTreeItems";
 import { Session } from "../../utilities/session";
+import { VSCodeCommands } from "../../utilities/commandConstants";
 
 type TreeItem = ResourceTreeItem | undefined | void;
 
@@ -37,15 +38,38 @@ export class ResourcesTreeProvider
   }
 
   static async updateSession(): Promise<void> {
+    let ocSdkInstalled = true;
+    let loggedIntoOpenShift = true;
     for (const provider of ResourcesTreeProvider.resourceTreeProviders) {
-      await provider.session.validateOcSDKInstallation();
-      await provider.session.validateOpenShiftAccess();
+      ocSdkInstalled = await provider.session.validateOcSDKInstallation();
+      loggedIntoOpenShift = await provider.session.validateOpenShiftAccess();
+    }
+    if (!ocSdkInstalled) {
+      vscode.commands.executeCommand(
+        "setContext",
+        VSCodeCommands.sdkInstalled,
+        ocSdkInstalled,
+      );
+    }
+    if (!loggedIntoOpenShift) {
+      vscode.commands.executeCommand(
+        "setContext",
+        VSCodeCommands.loggedIn,
+        loggedIntoOpenShift,
+      );
+    }
+  }
+
+  static refreshAll(): void {
+    for (const provider of ResourcesTreeProvider.resourceTreeProviders) {
       provider.refresh();
     }
   }
 
   refresh(): void {
-    this._onDidChangeTreeData.fire();
+    ResourcesTreeProvider.updateSession().then(() => {
+      this._onDidChangeTreeData.fire();
+    });
   }
 
   getTreeItem(element: ResourceItem): vscode.TreeItem {
