@@ -1007,13 +1007,26 @@ async function updateDiagnostics(
               const playbookDoc = await vscode.workspace.openTextDocument(
                 path.join(path.dirname(document.uri.fsPath), resource.playbook),
               );
+
               //Get playbook "symbols"
-              const playbookDocSymbols = (await vscode.commands.executeCommand(
-                "vscode.executeDocumentSymbolProvider",
-                playbookDoc.uri,
-              )) as vscode.DocumentSymbol[];
+              //These are provided by the yaml extension
+              //There is no way to check if the yaml extension has been loaded
+              //So the only way to wait for it to load is to keep calling this
+              //command until it succeeds.
+              let playbookDocSymbols: any = undefined;
+              while (!playbookDocSymbols) {
+                playbookDocSymbols = (await vscode.commands.executeCommand(
+                  "vscode.executeDocumentSymbolProvider",
+                  playbookDoc.uri,
+                )) as vscode.DocumentSymbol[];
+                //[Optional] Sleep to be mindful and not overload the command queue
+                if (!playbookDocSymbols) {
+                  await util.sleep(100);
+                }
+              }
+
               let plays: vscode.DocumentSymbol[] = [];
-              playbookDocSymbols.forEach((symbol) => {
+              playbookDocSymbols.forEach((symbol: vscode.DocumentSymbol) => {
                 const play = symbol.children.find(
                   (childSymbol) => childSymbol.name === "hosts",
                 );
@@ -1030,8 +1043,8 @@ async function updateDiagnostics(
                   });
                 }
               }
-            } catch (err) {
-              if (resourcePlaybookSymbol) {
+            } catch (err: any) {
+              if (resourcePlaybookSymbol && err?.code === 'ENOENT') {
                 diagnostics.push({
                   range: resourcePlaybookSymbol.range,
                   message: `Invalid Playbook for Kind ${resource.kind} - ${resource.playbook}`,
