@@ -141,7 +141,7 @@ export class OcSdkCommand {
     const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
     const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
     let versionInstalled = "";
-    let latestVersion = "";
+    let latestVersion: string | undefined;
 
     // ansible-galaxy collection list | grep ibm.operator_collection_sdk
     const cmd: string = "ansible-galaxy";
@@ -162,16 +162,20 @@ export class OcSdkCommand {
       );
     }
    
-    latestVersion = jsonData?.data?.collection?.latest_version.version;
+    latestVersion = getLatestCollectionVersion(jsonData);
 
     let setVersionInstalled = (outputValue: string) => {
       versionInstalled = outputValue.split(" ")?.[1]; // item in [1] is the version
     };
 
     await this.run(cmd, args, outputChannel, logPath, setVersionInstalled);
-    return new Promise<boolean>((resolve) =>
-      resolve(!(versionInstalled === latestVersion)),
-    );
+    return new Promise<boolean>((resolve, reject) => {
+      if (latestVersion === undefined) {
+        reject("Unable to locate latest version");
+      } else {
+        resolve(!(versionInstalled === latestVersion));
+      }
+    });
   }
 
   /**
@@ -286,14 +290,32 @@ export class OcSdkCommand {
   }
 }
 
+
 async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<any> {
-  let jsonData: any;
-  const urlScheme = vscode.Uri.parse(galaxyUrl).scheme;
+  const apiUrl =  `${galaxyUrl}/api/v3/plugin/ansible/content/published/collections/index/${galaxyNamespace}/operator_collection_sdk/versions/`;
+  const legacyApiUrl = `${galaxyUrl}/api/internal/ui/repo-or-collection-detail/?namespace=${galaxyNamespace}&name=operator_collection_sdk`;
+  const galaxyResponse = getRequest(apiUrl);
+  const legacyGalaxyResponse = getRequest(legacyApiUrl);
+  return Promise.all([galaxyResponse, legacyGalaxyResponse]).then((responses) => {
+    if (responses[0] !== undefined) {
+      return responses[0];
+    }
+    if (responses[1] !== undefined) {
+      return responses[1];
+    }
+    return undefined; 
+  }).catch((e) => {
+    return e;
+  });
+}
+
+async function getRequest(apiUrl: string): Promise<string | undefined> {
+  const urlScheme = vscode.Uri.parse(apiUrl).scheme;
   if (urlScheme === "https") {
-    jsonData = await new Promise((resolve, reject) => {
+    return new Promise<string | undefined>((resolve, reject) => {
       https
         .get(
-          getApiUrl(galaxyUrl, galaxyNamespace),
+          apiUrl,
           (resp) => {
             let data = "";
             resp.on("data", (chunk) => {
@@ -305,7 +327,7 @@ async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<
               });
             } else {
               resp.on("end", () => {
-                reject(data);
+                resolve(undefined);
               });
             }
           },
@@ -315,10 +337,10 @@ async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<
         });
     });
   } else if (urlScheme === "http") {
-    jsonData = await new Promise((resolve, reject) => {
+    return new Promise<string | undefined>((resolve, reject) => {
       http
         .get(
-          getApiUrl(galaxyUrl, galaxyNamespace),
+          apiUrl,
           (resp) => {
             let data = "";
             resp.on("data", (chunk) => {
@@ -330,7 +352,7 @@ async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<
               });
             } else {
               resp.on("end", () => {
-                reject(data);
+                resolve(undefined);
               });
             }
           },
@@ -340,10 +362,14 @@ async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<
         });
     });
   }
-  return jsonData;
 }
 
-function getApiUrl(galaxyUrl: string, galaxyNamespace: string): string {
-  return `${galaxyUrl}/api/internal/ui/repo-or-collection-detail/?namespace=${galaxyNamespace}&name=operator_collection_sdk`;
-  "https://galaxy.ansible.com/api/v3/plugin/ansible/content/published/collections/index/ibm/operator_collection_sdk/versions/";
+function getLatestCollectionVersion(jsonData: any): string | undefined {
+  if (jsonData?.data?.collection?.latest_version.version !== undefined) {
+    return jsonData?.data?.collection?.latest_version.version;
+  } else if (jsonData?.data?.length > 0) {
+    return jsonData?.data[0].version;
+  } else {
+    return undefined;
+  }
 }
