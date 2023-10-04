@@ -120,7 +120,7 @@ export class OcSdkCommand {
    * the collection is not already installed
    * @param outputChannel - The VS Code output channel to display command output
    * @param logPath - Log path to store command output
-   * @returns - A Promise containing the return code of the command being executed
+   * @returns - A Promise containing a boolean signaling the success or failure of the command
    */
   async installOcSDKDependencies(
     outputChannel?: vscode.OutputChannel,
