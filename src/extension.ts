@@ -1012,22 +1012,25 @@ async function updateDiagnostics(
                 "vscode.executeDocumentSymbolProvider",
                 playbookDoc.uri,
               )) as vscode.DocumentSymbol[];
-              let plays: vscode.DocumentSymbol[] = [];
-              playbookDocSymbols.forEach((symbol) => {
-                const play = symbol.children.find(
-                  (childSymbol) => childSymbol.name === "hosts",
-                );
-                if (play) {
-                  plays.push(play);
-                }
-              });
-              if (plays.some((play) => play.detail !== "all")) {
-                if (resourcePlaybookSymbol) {
-                  diagnostics.push({
-                    range: resourcePlaybookSymbol.range,
-                    message: `Playbook MUST use a "hosts: all" value. - ${resource.playbook}`,
-                    severity: vscode.DiagnosticSeverity.Error,
-                  });
+              if (playbookDocSymbols !== undefined) {
+                let plays: vscode.DocumentSymbol[] = [];
+
+                playbookDocSymbols.forEach((symbol) => {
+                  const play = symbol.children.find(
+                    (childSymbol) => childSymbol.name === "hosts",
+                  );
+                  if (play) {
+                    plays.push(play);
+                  }
+                });
+                if (plays.some((play) => play.detail !== "all")) {
+                  if (resourcePlaybookSymbol) {
+                    diagnostics.push({
+                      range: resourcePlaybookSymbol.range,
+                      message: `Playbook MUST use a "hosts: all" value. - ${resource.playbook}`,
+                      severity: vscode.DiagnosticSeverity.Error,
+                    });
+                  }
                 }
               }
             } catch (err) {
