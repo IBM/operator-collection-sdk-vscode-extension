@@ -8,7 +8,10 @@ import * as child_process from "child_process";
 import * as fs from "fs-extra";
 import * as https from "https";
 import * as http from "http";
-import {getAnsibleGalaxySettings, AnsibleGalaxySettings} from "../utilities/util";
+import {
+  getAnsibleGalaxySettings,
+  AnsibleGalaxySettings,
+} from "../utilities/util";
 
 export class OcSdkCommand {
   constructor(private pwd?: string | undefined) {}
@@ -90,18 +93,79 @@ export class OcSdkCommand {
   async runCollectionVerifyCommand(
     outputChannel?: vscode.OutputChannel,
     logPath?: string,
+    namespace?: string,
+    collection: string = "operator_collection_sdk",
   ): Promise<string> {
-    const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
-    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
+    const galaxyUrl = getAnsibleGalaxySettings(
+      AnsibleGalaxySettings.ansibleGalaxyURL,
+    ) as string;
+    const galaxyNamespace =
+      namespace ??
+      (getAnsibleGalaxySettings(
+        AnsibleGalaxySettings.ansibleGalaxyNamespace,
+      ) as string);
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
       "verify",
       "-s",
       galaxyUrl,
-      `${galaxyNamespace}.operator_collection_sdk`,
+      `${galaxyNamespace}.${collection}`,
     ];
     return this.run(cmd, args, outputChannel, logPath);
+  }
+
+  /**
+   * Installs the "kubernetes.core" collection and "kubernetes" python module if
+   * the collection is not already installed
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise containing the return code of the command being executed
+   */
+  async installOcSDKDependencies(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<boolean> {
+    try {
+      await this.runCollectionVerifyCommand(
+        outputChannel,
+        logPath,
+        "kubernetes",
+        "core",
+      );
+
+      return true;
+    } catch (e) {
+      const moduleStatusCode = await this.run(
+        "pip",
+        ["install", "kubernetes"],
+        outputChannel,
+        logPath,
+      );
+
+      const galaxyUrl = getAnsibleGalaxySettings(
+        AnsibleGalaxySettings.ansibleGalaxyURL,
+      ) as string;
+      let cmd: string = "ansible-galaxy";
+      let args: Array<string> = [
+        "collection",
+        "install",
+        "-f",
+        "-s",
+        galaxyUrl,
+        "kubernetes.core",
+      ];
+      const collectionStatusCode = await this.run(
+        cmd,
+        args,
+        outputChannel,
+        logPath,
+      );
+
+      return (
+        collectionStatusCode === 0 && collectionStatusCode === moduleStatusCode
+      );
+    }
   }
 
   /**
@@ -115,8 +179,12 @@ export class OcSdkCommand {
     logPath?: string,
   ): Promise<string> {
     // ansible-galaxy collection install ibm.operator_collection_sdk
-    const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
-    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
+    const galaxyUrl = getAnsibleGalaxySettings(
+      AnsibleGalaxySettings.ansibleGalaxyURL,
+    ) as string;
+    const galaxyNamespace = getAnsibleGalaxySettings(
+      AnsibleGalaxySettings.ansibleGalaxyNamespace,
+    ) as string;
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
@@ -139,8 +207,12 @@ export class OcSdkCommand {
     outputChannel?: vscode.OutputChannel,
     logPath?: string,
   ): Promise<boolean> {
-    const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
-    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
+    const galaxyUrl = getAnsibleGalaxySettings(
+      AnsibleGalaxySettings.ansibleGalaxyURL,
+    ) as string;
+    const galaxyNamespace = getAnsibleGalaxySettings(
+      AnsibleGalaxySettings.ansibleGalaxyNamespace,
+    ) as string;
     let versionInstalled = "";
     let latestVersion: string | undefined;
 
@@ -162,7 +234,7 @@ export class OcSdkCommand {
         `Failure retrieving data from Ansible Galaxy: ${e}`,
       );
     }
-   
+
     latestVersion = getLatestCollectionVersion(jsonData);
 
     let setVersionInstalled = (outputValue: string) => {
@@ -190,8 +262,12 @@ export class OcSdkCommand {
     logPath?: string,
   ): Promise<boolean> {
     // ansible-galaxy collection install ibm.operator_collection_sdk --upgrade
-    const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
-    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
+    const galaxyUrl = getAnsibleGalaxySettings(
+      AnsibleGalaxySettings.ansibleGalaxyURL,
+    ) as string;
+    const galaxyNamespace = getAnsibleGalaxySettings(
+      AnsibleGalaxySettings.ansibleGalaxyNamespace,
+    ) as string;
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
@@ -291,23 +367,27 @@ export class OcSdkCommand {
   }
 }
 
-
-async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<any> {
-  const apiUrl =  `${galaxyUrl}/api/v3/plugin/ansible/content/published/collections/index/${galaxyNamespace}/operator_collection_sdk/versions/`;
+async function getJsonData(
+  galaxyUrl: string,
+  galaxyNamespace: string,
+): Promise<any> {
+  const apiUrl = `${galaxyUrl}/api/v3/plugin/ansible/content/published/collections/index/${galaxyNamespace}/operator_collection_sdk/versions/`;
   const legacyApiUrl = `${galaxyUrl}/api/internal/ui/repo-or-collection-detail/?namespace=${galaxyNamespace}&name=operator_collection_sdk`;
   const galaxyResponse = getRequest(apiUrl);
   const legacyGalaxyResponse = getRequest(legacyApiUrl);
-  return Promise.all([galaxyResponse, legacyGalaxyResponse]).then((responses) => {
-    if (responses[0] !== undefined) {
-      return responses[0];
-    }
-    if (responses[1] !== undefined) {
-      return responses[1];
-    }
-    return undefined; 
-  }).catch((e) => {
-    return e;
-  });
+  return Promise.all([galaxyResponse, legacyGalaxyResponse])
+    .then((responses) => {
+      if (responses[0] !== undefined) {
+        return responses[0];
+      }
+      if (responses[1] !== undefined) {
+        return responses[1];
+      }
+      return undefined;
+    })
+    .catch((e) => {
+      return e;
+    });
 }
 
 async function getRequest(apiUrl: string): Promise<string | undefined> {
@@ -315,24 +395,21 @@ async function getRequest(apiUrl: string): Promise<string | undefined> {
   if (urlScheme === "https") {
     return new Promise<string | undefined>((resolve, reject) => {
       https
-        .get(
-          apiUrl,
-          (resp) => {
-            let data = "";
-            resp.on("data", (chunk) => {
-              data += chunk;
+        .get(apiUrl, (resp) => {
+          let data = "";
+          resp.on("data", (chunk) => {
+            data += chunk;
+          });
+          if (resp.statusCode === 200) {
+            resp.on("end", () => {
+              resolve(JSON.parse(data));
             });
-            if (resp.statusCode === 200) {
-              resp.on("end", () => {
-                resolve(JSON.parse(data));
-              });
-            } else {
-              resp.on("end", () => {
-                resolve(undefined);
-              });
-            }
-          },
-        )
+          } else {
+            resp.on("end", () => {
+              resolve(undefined);
+            });
+          }
+        })
         .on("error", (err) => {
           reject(err);
         });
@@ -340,24 +417,21 @@ async function getRequest(apiUrl: string): Promise<string | undefined> {
   } else if (urlScheme === "http") {
     return new Promise<string | undefined>((resolve, reject) => {
       http
-        .get(
-          apiUrl,
-          (resp) => {
-            let data = "";
-            resp.on("data", (chunk) => {
-              data += chunk;
+        .get(apiUrl, (resp) => {
+          let data = "";
+          resp.on("data", (chunk) => {
+            data += chunk;
+          });
+          if (resp.statusCode === 200) {
+            resp.on("end", () => {
+              resolve(JSON.parse(data));
             });
-            if (resp.statusCode === 200) {
-              resp.on("end", () => {
-                resolve(JSON.parse(data));
-              });
-            } else {
-              resp.on("end", () => {
-                resolve(undefined);
-              });
-            }
-          },
-        )
+          } else {
+            resp.on("end", () => {
+              resolve(undefined);
+            });
+          }
+        })
         .on("error", (err) => {
           reject(err);
         });
