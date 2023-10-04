@@ -121,6 +121,7 @@ export class OcSdkCommand {
     let args: Array<string> = [
       "collection",
       "install",
+      "-f",
       "-s",
       galaxyUrl,
       `${galaxyNamespace}.operator_collection_sdk`,
