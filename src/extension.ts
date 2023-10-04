@@ -31,7 +31,7 @@ import { OcSdkCommand } from "./shellCommands/ocSdkCommands";
 import { Session } from "./utilities/session";
 import { OperatorConfig } from "./linter/models";
 import { AnsibleGalaxyYmlSchema } from "./linter/galaxy";
-import {getLinterSettings, LinterSettings} from "./utilities/util";
+import { getLinterSettings, LinterSettings } from "./utilities/util";
 import * as yaml from "js-yaml";
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -40,7 +40,9 @@ export async function activate(context: vscode.ExtensionContext) {
   initResources(context);
 
   //Setup Linter
-  const linterEnabled = getLinterSettings(LinterSettings.lintingEnabled) as string;
+  const linterEnabled = getLinterSettings(
+    LinterSettings.lintingEnabled,
+  ) as string;
   if (linterEnabled) {
     const collection = vscode.languages.createDiagnosticCollection("linter");
     if (vscode.window.activeTextEditor) {
@@ -256,6 +258,9 @@ function installOcSdk(
       vscode.window.showInformationMessage(
         "Installing the IBM Operator Collection SDK",
       );
+
+      await ocSdkCmd.installOcSDKDependencies(outputChannel, logPath);
+
       ocSdkCmd
         .installOcSDKCommand(outputChannel, logPath)
         .then(() => {
