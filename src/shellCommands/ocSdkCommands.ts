@@ -10,6 +10,9 @@ import * as https from "https";
 import * as http from "http";
 import {getAnsibleGalaxySettings, AnsibleGalaxySettings} from "../utilities/util";
 
+type HTTP = typeof http;
+type HTTPS = typeof https;
+
 export class OcSdkCommand {
   constructor(private pwd?: string | undefined) {}
 
@@ -312,65 +315,33 @@ async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<
 
 async function getRequest(apiUrl: string): Promise<string | undefined> {
   const urlScheme = vscode.Uri.parse(apiUrl).scheme;
-  if (urlScheme === "https") {
-    return new Promise<string | undefined>((resolve, reject) => {
-      https
-        .get(
-          apiUrl,
-          (resp) => {
-            let data = "";
-            resp.on("data", (chunk) => {
-              data += chunk;
+  const httpType: HTTP | HTTPS = urlScheme === "https" ? require("https") : require("http");
+  return new Promise<string | undefined>((resolve, reject) => {
+    httpType
+      .get(
+        apiUrl,
+        (resp) => {
+          let data = "";
+          resp.on("data", (chunk) => {
+            data += chunk;
+          });
+          if (resp.statusCode === 200) {
+            resp.on("end", () => {
+              resolve(JSON.parse(data));
             });
-            if (resp.statusCode === 200) {
-              resp.on("end", () => {
-                resolve(JSON.parse(data));
-              });
-            } else {
-              resp.on("end", () => {
-                resolve(undefined);
-              });
-            }
-          },
-        )
-        .on("error", (err) => {
-          reject(err);
-        });
-    });
-  } else if (urlScheme === "http") {
-    return new Promise<string | undefined>((resolve, reject) => {
-      http
-        .get(
-          apiUrl,
-          (resp) => {
-            let data = "";
-            resp.on("data", (chunk) => {
-              data += chunk;
+          } else {
+            resp.on("end", () => {
+              resolve(undefined);
             });
-            if (resp.statusCode === 200) {
-              resp.on("end", () => {
-                resolve(JSON.parse(data));
-              });
-            } else {
-              resp.on("end", () => {
-                resolve(undefined);
-              });
-            }
-          },
-        )
-        .on("error", (err) => {
-          reject(err);
-        });
-    });
-  }
+          }
+        },
+      )
+      .on("error", (err) => {
+        reject(err);
+      });
+  });
 }
 
 function getLatestCollectionVersion(jsonData: any): string | undefined {
-  if (jsonData?.data?.collection?.latest_version.version !== undefined) {
-    return jsonData?.data?.collection?.latest_version.version;
-  } else if (jsonData?.data?.length > 0) {
-    return jsonData?.data[0].version;
-  } else {
-    return undefined;
-  }
+  return jsonData?.data?.collection?.latest_version?.version ?? jsonData?.data[0]?.version;
 }
