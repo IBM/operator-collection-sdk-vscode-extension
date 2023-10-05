@@ -252,22 +252,22 @@
         {
           "command": "operator-collection-sdk.createOperator",
           "when": "view == operator-collection-sdk.operators && viewItem == operator",
-          "group": "inline"
+          "group": "inline@0"
         },
         {
           "command": "operator-collection-sdk.deleteOperator",
           "when": "view == operator-collection-sdk.operators && viewItem == operator",
-          "group": "inline"
+          "group": "inline@1"
         },
         {
           "command": "operator-collection-sdk.redeployCollection",
           "when": "view == operator-collection-sdk.operators && viewItem == operator",
-          "group": "inline"
+          "group": "inline@3"
         },
         {
           "command": "operator-collection-sdk.redeployOperator",
           "when": "view == operator-collection-sdk.operators && viewItem == operator",
-          "group": "inline"
+          "group": "inline@2"
         },
         {
           "command": "operator-collection-sdk.viewLogs",
