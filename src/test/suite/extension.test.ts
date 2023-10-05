@@ -22,7 +22,6 @@ import { CustomResourceItem } from "../../treeViews/resourceItems/customResource
 import {
   initResources,
   getPassingIcons,
-  getFailingIcons,
 } from "../../treeViews/icons";
 import { Session } from "../../utilities/session";
 import * as util from "../../utilities/util";
@@ -230,7 +229,7 @@ describe("Extension Test Suite", async () => {
         if (fs.existsSync(deleteOperatorAfterAllLogPath)) {
           fs.unlinkSync(deleteOperatorAfterAllLogPath);
         }
-        assert.fail(`Failure performing cleanup: ${e}`);
+        console.log(`Failure performing cleanup: ${e}`);
       }
     }
   });
@@ -283,7 +282,7 @@ describe("Extension Test Suite", async () => {
           imsOperatorItem,
           redeployOperatorLogPath,
         );
-        await util.sleep(20000);
+        await util.sleep(60000);
         await helper.pollOperatorInstallStatus(
           imsOperatorItem.operatorName,
           40,

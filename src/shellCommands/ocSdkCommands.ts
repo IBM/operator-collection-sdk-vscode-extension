@@ -10,6 +10,9 @@ import * as https from "https";
 import * as http from "http";
 import {getAnsibleGalaxySettings, AnsibleGalaxySettings} from "../utilities/util";
 
+type HTTP = typeof http;
+type HTTPS = typeof https;
+
 export class OcSdkCommand {
   constructor(private pwd?: string | undefined) {}
 
@@ -121,6 +124,7 @@ export class OcSdkCommand {
     let args: Array<string> = [
       "collection",
       "install",
+      "-f",
       "-s",
       galaxyUrl,
       `${galaxyNamespace}.operator_collection_sdk`,
@@ -141,7 +145,7 @@ export class OcSdkCommand {
     const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
     const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
     let versionInstalled = "";
-    let latestVersion = "";
+    let latestVersion: string | undefined;
 
     // ansible-galaxy collection list | grep ibm.operator_collection_sdk
     const cmd: string = "ansible-galaxy";
@@ -153,18 +157,29 @@ export class OcSdkCommand {
       `${galaxyNamespace}.operator_collection_sdk`,
     ];
 
-    const jsonData = await getJsonData(galaxyUrl, galaxyNamespace);
-
-    latestVersion = jsonData?.data?.collection?.latest_version.version;
+    let jsonData: any;
+    try {
+      jsonData = await getJsonData(galaxyUrl, galaxyNamespace);
+    } catch (e) {
+      vscode.window.showErrorMessage(
+        `Failure retrieving data from Ansible Galaxy: ${e}`,
+      );
+    }
+   
+    latestVersion = getLatestCollectionVersion(jsonData);
 
     let setVersionInstalled = (outputValue: string) => {
       versionInstalled = outputValue.split(" ")?.[1]; // item in [1] is the version
     };
 
     await this.run(cmd, args, outputChannel, logPath, setVersionInstalled);
-    return new Promise<boolean>((resolve) =>
-      resolve(!(versionInstalled === latestVersion)),
-    );
+    return new Promise<boolean>((resolve, reject) => {
+      if (latestVersion === undefined) {
+        reject("Unable to locate latest version");
+      } else {
+        resolve(!(versionInstalled === latestVersion));
+      }
+    });
   }
 
   /**
@@ -279,51 +294,54 @@ export class OcSdkCommand {
   }
 }
 
+
 async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<any> {
-  let jsonData: any;
-  const urlScheme = vscode.Uri.parse(galaxyUrl).scheme;
-  if (urlScheme === "https") {
-    jsonData = await new Promise((resolve, reject) => {
-      https
-        .get(
-          getApiUrl(galaxyUrl, galaxyNamespace),
-          (resp) => {
-            let data = "";
-            resp.on("data", (chunk) => {
-              data += chunk;
-            });
-            resp.on("end", () => {
-              resolve(JSON.parse(data));
-            });
-          },
-        )
-        .on("error", (err) => {
-          reject(err);
-        });
-    });
-  } else if (urlScheme === "http") {
-    jsonData = await new Promise((resolve, reject) => {
-      http
-        .get(
-          getApiUrl(galaxyUrl, galaxyNamespace),
-          (resp) => {
-            let data = "";
-            resp.on("data", (chunk) => {
-              data += chunk;
-            });
-            resp.on("end", () => {
-              resolve(JSON.parse(data));
-            });
-          },
-        )
-        .on("error", (err) => {
-          reject(err);
-        });
-    });
-  }
-  return jsonData;
+  const apiUrl =  `${galaxyUrl}/api/v3/plugin/ansible/content/published/collections/index/${galaxyNamespace}/operator_collection_sdk/versions/`;
+  const legacyApiUrl = `${galaxyUrl}/api/internal/ui/repo-or-collection-detail/?namespace=${galaxyNamespace}&name=operator_collection_sdk`;
+  const galaxyResponse = getRequest(apiUrl);
+  const legacyGalaxyResponse = getRequest(legacyApiUrl);
+  return Promise.all([galaxyResponse, legacyGalaxyResponse]).then((responses) => {
+    if (responses[0] !== undefined) {
+      return responses[0];
+    }
+    if (responses[1] !== undefined) {
+      return responses[1];
+    }
+    return undefined; 
+  }).catch((e) => {
+    return e;
+  });
 }
 
-function getApiUrl(galaxyUrl: string, galaxyNamespace: string): string {
-  return `${galaxyUrl}/api/internal/ui/repo-or-collection-detail/?namespace=${galaxyNamespace}&name=operator_collection_sdk`;
+async function getRequest(apiUrl: string): Promise<string | undefined> {
+  const urlScheme = vscode.Uri.parse(apiUrl).scheme;
+  const httpType: HTTP | HTTPS = urlScheme === "https" ? require("https") : require("http");
+  return new Promise<string | undefined>((resolve, reject) => {
+    httpType
+      .get(
+        apiUrl,
+        (resp) => {
+          let data = "";
+          resp.on("data", (chunk) => {
+            data += chunk;
+          });
+          if (resp.statusCode === 200) {
+            resp.on("end", () => {
+              resolve(JSON.parse(data));
+            });
+          } else {
+            resp.on("end", () => {
+              resolve(undefined);
+            });
+          }
+        },
+      )
+      .on("error", (err) => {
+        reject(err);
+      });
+  });
+}
+
+function getLatestCollectionVersion(jsonData: any): string | undefined {
+  return jsonData?.data?.collection?.latest_version?.version ?? jsonData?.data[0]?.version;
 }
