@@ -454,9 +454,10 @@ function executeOpenLinkCommand(command: string): vscode.Disposable {
         typeof args === "string"
           ? vscode.Uri.parse(args)
           : vscode.Uri.parse(args.link);
-      let res = await vscode.env.openExternal(linkUri);
-      if (!res) {
-        vscode.window.showErrorMessage("Failure opening external link");
+      try {
+        await vscode.env.openExternal(linkUri);
+      } catch (e) {
+        vscode.window.showErrorMessage(`Failure opening external link: ${e}`);
       }
     },
   );
