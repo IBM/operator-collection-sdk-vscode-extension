@@ -1,0 +1,13 @@
+{
+  "trailingComma": "es5",
+  "semi": true,
+  "tabWidth": 4,
+  "singleQuote": true,
+  "bracketSpacing": true,
+  "bracketSameLine": true,
+  "arrowParens": "avoid",
+  "printWidth": 300,
+  "maxLen": 100000,
+  "proseWrap": "always",
+  "objectPropertySplit": false
+}

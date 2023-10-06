@@ -1,0 +1,81 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '**.md'
+    tags-ignore:
+      - '**'
+  pull_request_target:
+
+jobs:
+  authorize:
+    name: Authorize
+    environment: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository && 'external' || 'internal' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: "true"
+
+  test:
+    name: Test
+    needs: authorize
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [macOS-latest, ubuntu-latest]
+
+    steps:
+      - name: Check-out repository for Branch builds
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+        if: github.event_name != 'pull_request_target'
+
+      - name: Check-out repository for PR builds
+        uses: actions/checkout@v3
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
+          submodules: recursive
+        if: github.event_name == 'pull_request_target'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install oc cli
+        uses: redhat-actions/openshift-tools-installer@v1
+        with:
+          oc: latest
+
+      - name: Install Python Requirements
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip
+
+      - name: Install Ansible
+        run: pip install ansible openshift pyyaml kubernetes
+
+      - name: Execute tests on Linux OS
+        run: xvfb-run -a npm run test
+        if: runner.os == 'Linux'
+        env:
+          OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
+          OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
+          OCP_NAMESPACE: vscode-${{ github.head_ref }}-${{ runner.os }}
+          CLEANUP_NAMESPACE: true
+
+      - name: Execute tests on Mac OS
+        run: npm run test
+        if: runner.os != 'Linux'
+        env:
+          OCP_SERVER_URL: ${{ secrets.OCP_SERVER_URL }}
+          OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
+          OCP_NAMESPACE: vscode-${{ github.head_ref }}-${{ runner.os }}
+          CLEANUP_NAMESPACE: true

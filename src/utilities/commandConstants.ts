@@ -4,29 +4,43 @@
  */
 
 export enum VSCodeCommands {
-	sdkInstalled = "operator-collection-sdk.sdkInstalled",
-	loggedIn = "operator-collection-sdk.loggedIn",
-	login = "operator-collection-sdk.login",
-	install = "operator-collection-sdk.install",
-	updateProject = "operator-collection-sdk.updateProject",
-	createOperator = "operator-collection-sdk.createOperator",
-	deleteOperator = "operator-collection-sdk.deleteOperator",
-	redeployCollection = "operator-collection-sdk.redeployCollection",
-	redeployOperator = "operator-collection-sdk.redeployOperator",
-	deleteCustomResource = "operator-collection-sdk.deleteCustomResource",
-	downloadLogs = "operator-collection-sdk.downloadLogs",
-	downloadVerboseLogs = "operator-collection-sdk.downloadVerboseLogs",
-	openEditLink = "operator-collection-sdk.openEditLink",
-	openAddLink = "operator-collection-sdk.openAddLink",
-	openLink = "operator-collection-sdk.openLink",
-	refresh = "operator-collection-sdk.refresh",
-	resourceRefresh = "operator-collection-sdk.resourceRefresh",
-	refreshAll = "operator-collection-sdk.refreshAll"
+  sdkInstalled = "operator-collection-sdk.sdkInstalled",
+  sdkOutdatedVersion = "operator-collection-sdk.sdkOutdatedVersion",
+  sdkUpgradeVersion = "operator-collection-sdk.sdkUpgradeVersion",
+  sdkUpgradeVersionSkip = "operator-collection-sdk.sdkUpgradeVersionSkip",
+  loggedIn = "operator-collection-sdk.loggedIn",
+  login = "operator-collection-sdk.login",
+  logout = "operator-collection-sdk.logout",
+  install = "operator-collection-sdk.install",
+  updateProject = "operator-collection-sdk.updateProject",
+  createOperator = "operator-collection-sdk.createOperator",
+  deleteOperator = "operator-collection-sdk.deleteOperator",
+  redeployCollection = "operator-collection-sdk.redeployCollection",
+  redeployOperator = "operator-collection-sdk.redeployOperator",
+  deleteCustomResource = "operator-collection-sdk.deleteCustomResource",
+  viewLogs = "operator-collection-sdk.viewLogs",
+  viewVerboseLogs = "operator-collection-sdk.viewVerboseLogs",
+  viewResource = "operator-collection-sdk.viewResource",
+  openEditLink = "operator-collection-sdk.openEditLink",
+  openAddLink = "operator-collection-sdk.openAddLink",
+  openLink = "operator-collection-sdk.openLink",
+  refresh = "operator-collection-sdk.refresh",
+  resourceRefresh = "operator-collection-sdk.resourceRefresh",
+  refreshAll = "operator-collection-sdk.refreshAll",
+  refreshOpenShiftInfo = "operator-collection-sdk.refreshOpenShiftInfo",
 }
 
 export enum VSCodeViewIds {
-	operators = "operator-collection-sdk.operators",
-	resources = "operator-collection-sdk.resources",
-	help = "operator-collection-sdk.help",
-	openshiftClusterInfo = "operator-collection-sdk.openshiftClusterInfo"
+  operators = "operator-collection-sdk.operators",
+  resources = "operator-collection-sdk.resources",
+  help = "operator-collection-sdk.help",
+  openshiftClusterInfo = "operator-collection-sdk.openshiftClusterInfo",
+  about = "operator-collection-sdk.about",
+}
+
+export enum CustomResourcePhases {
+  successful = "Successful",
+  succeeded = "Succeeded",
+  failed = "Failed",
+  pending = "Pending",
 }

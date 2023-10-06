@@ -1,0 +1,276 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://github.ibm.com/zoscb/common/apis/zoscb/v2beta2/operator-config",
+	"$ref": "#/$defs/OperatorConfig",
+	"$defs": {
+		"IconData": {
+			"properties": {
+				"base64data": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nThe based64-encoded image string."
+				},
+				"mediatype": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nThe media type of the base64-encoded image."
+				}
+			},
+			"additionalProperties": false,
+			"type": "object",
+			"required": [
+				"base64data",
+				"mediatype"
+			]
+		},
+		"ObjectVariables": {
+			"properties": {
+				"name": {
+					"type": "string"
+				},
+				"description": {
+					"type": "string"
+				},
+				"displayName": {
+					"type": "string"
+				},
+				"type": {
+					"type": "string"
+				},
+				"kindReference": {
+					"type": "string"
+				},
+				"default": {
+					"type": "string"
+				},
+				"options": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"required": {
+					"type": "boolean"
+				}
+			},
+			"additionalProperties": false,
+			"type": "object"
+		},
+		"OperatorConfig": {
+			"properties": {
+				"description": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nA markdown formatted string that provides information regarding the `OperatorCollection` and it's functionality within the OCP cluster. The markdown content MUST provide a new line after headers (`#`, `##`, etc) for proper compatibility within OCP."
+				},
+				"displayName": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nA short name that will be displayed in OperatorHub for the generated `OperatorCollection` tile."
+				},
+				"domain": {
+					"type": "string",
+					"maxLength": 253,
+					"pattern": "^(?![0-9]+$)(?!.*-$)(?!-)[a-zA-Z0-9-]{1,253}$",
+					"markdownDescription": "#### Description\r\nA unique value that will be used to construct the Kubernetes API group for the `resources` defined in this `OperatorCollection`.\r\nThis value MUST conform to the Kubernetes DNS Subdomain naming scheme as defined in RFC 1123.\r\nThis value SHOULD be the same as the `namespace` value specified in an Ansible Collection's `galaxy.yml` file. In scenarios where forks/clones of an official Ansible Collection are desired, the `domain` value MAY be set to another unique, conforming"
+				},
+				"name": {
+					"type": "string",
+					"maxLength": 253,
+					"pattern": "^(?![0-9]+$)(?!.*-$)(?!-)[a-zA-Z0-9-]{1,253}$",
+					"markdownDescription": "#### Description\r\nA unique value that will be prepended to the `domain` value to construct a full Kubernetes API Group for the `resources` defined in this `OperatorCollection`.\r\nThis value MUST conform to the Kubernetes DNS Subdomain naming scheme as defined in RFC 1123.\r\nThis value SHOULD be the same as the `name` value specified in an Ansible Collection's `galaxy.yml` file. In scenarios where forks/clones of an official Ansible Collection are desired, the `name` value MAY be set to another unique, conforming, value."
+				},
+				"provider": {
+					"type": "string"
+				},
+				"migrationPlaybook": {
+					"type": "string"
+				},
+				"resources": {
+					"items": {
+						"$ref": "#/$defs/OperatorResource"
+					},
+					"type": "array",
+					"markdownDescription": "#### Description\r\nA list of Kubernetes resources managed by this `OperatorCollection`."
+				},
+				"version": {
+					"type": "string",
+					"pattern": "^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:[.](?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:[+]([0-9a-zA-Z-]+(?:[.][0-9a-zA-Z-]+)*))?$",
+					"markdownDescription": "#### Description\r\nA semantic versioning compliant version number.\r\nThis value SHOULD be the same as the `version` value specified in an Ansible Collection's `galaxy.yml` file."
+				},
+				"icon": {
+					"items": {
+						"$ref": "#/$defs/IconData"
+					},
+					"type": "array",
+					"markdownDescription": "#### Description\r\nA base64-encoded icon unique to the Operator. See Icon Object"
+				},
+				"replaces": {
+					"type": "string"
+				},
+				"collectionPath": {
+					"type": "string"
+				},
+				"roles": {
+					"items": {
+						"$ref": "#/$defs/PolicyRule"
+					},
+					"type": "array"
+				},
+				"clusterRoles": {
+					"items": {
+						"$ref": "#/$defs/PolicyRule"
+					},
+					"type": "array"
+				}
+			},
+			"additionalProperties": false,
+			"type": "object",
+			"required": [
+				"displayName",
+				"domain",
+				"name",
+				"resources",
+				"version"
+			]
+		},
+		"OperatorResource": {
+			"properties": {
+				"description": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nA short description of what this `resource` enables or performs."
+				},
+				"displayName": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nA short name that will be displayed in OperatorHub for the generated `OperatorCollection` tile.\r\nIf a value is not provided, the tile in OCP will use the value given to the `kind`."
+				},
+				"kind": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nA functional name for the automation that will be managed by this Operator `resource`. This value MUST be Pascal Case (e.g. `SomeMiddleware`)."
+				},
+				"playbook": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nThe path to the Ansible Playbook that will be triggered for managing this `resource`. This path MUST be relative to the root of the Ansible Collection archive. An Ansible Collection with a playbook called `run.yml` in a `playbooks` directory would specify `playbooks/run.yml` for this value.\r\nThe playbook MUST use a `hosts: all` value. When z/OS Cloud Broker executes this playbook, the list of target hosts will be set to the z/OS Endpoint selected."
+				},
+				"vars": {
+					"items": {
+						"$ref": "#/$defs/ResourceVariable"
+					},
+					"type": "array",
+					"markdownDescription": "#### Description\r\nA list of variables that SHOULD be provided during playbook invocation."
+				},
+				"finalizer": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nAn Ansible Playbook MAY be provided that will be triggered when a `resource` is deleted from Kubernetes. This playbook MAY reference the same value specified in `playbook` or provide a secondary playbook to run for deletion actions.\r\nIf a `finalizer` is not provided, Kubernetes will perform clean-up of the references managed within Kubernetes, but resources in z/OS MAY become orphaned."
+				},
+				"hideResource": {
+					"type": "boolean",
+					"markdownDescription": "#### Description\r\nSpecifies whether the current resource should be hidden in the OCP \"Installed Operators\" view."
+				}
+			},
+			"additionalProperties": false,
+			"type": "object",
+			"required": [
+				"kind",
+				"playbook"
+			]
+		},
+		"PolicyRule": {
+			"properties": {
+				"verbs": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"apiGroups": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"resources": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"resourceNames": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				},
+				"nonResourceURLs": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array"
+				}
+			},
+			"additionalProperties": false,
+			"type": "object",
+			"required": [
+				"verbs"
+			]
+		},
+		"ResourceVariable": {
+			"properties": {
+				"name": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nThe variable name that SHALL be provided to the defined `playbook` as an \"extra vars\" (`-e`) input parameter during execution. The provided value MUST conform to an existing variable referenced in the `playbook` or underlying Ansible role."
+				},
+				"description": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nA short description that SHALL be visible in the OCP Kubernetes Custom Resource creation UIs under the provided `displayName`. This value MUST provide any relevant information for users to understand the purpose for the provided `var`."
+				},
+				"displayName": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nA short label that SHALL be visible in the OCP Kubernete's Custom Resource creation UIs."
+				},
+				"type": {
+					"type": "string",
+					"enum": [
+						"string",
+						"number",
+						"integer",
+						"boolean",
+						"password"
+					],
+					"markdownDescription": "#### Description\r\nThe variable type as is needed to be passed down to the Ansible `playbook`. Valid values for this include `string`, `number`, `integer`, `boolean`, `password`.\r\nThe `password` type will generate a dropdown list of the `Secrets` in the current namespace. This variable should be a reference to the `Secret` name selected by the user, in which the playbook/role should retrieve this `Secret` to read the private data.\r\nEnums (or \"dropdowns\") are also supported by setting `type: string` and providing an additional `options` field."
+				},
+				"kindReference": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nSpecify this field if the `playbook` requires information from other Kubernetes resources managed by the z/OS Cloud Broker.\r\nThis will enable a dynamically populated dropdown in the OCP UIs containing all previously created instances of the specified `kind`. Use this for running actions against previously created instances."
+				},
+				"default": {
+					"type": "string",
+					"markdownDescription": "#### Description\r\nA default value that should be set in the OCP UIs for this variable."
+				},
+				"options": {
+					"items": {
+						"type": "string"
+					},
+					"type": "array",
+					"markdownDescription": "#### Description\r\nA list of valid `strings` to specify the available options for an enum (\"dropdown\") `type`."
+				},
+				"required": {
+					"type": "boolean",
+					"markdownDescription": "#### Description\r\nSet this field to `true` if this variable MUST be input by the user before resource creation is allowed."
+				},
+				"objectVariables": {
+					"items": {
+						"$ref": "#/$defs/ObjectVariables"
+					},
+					"type": "array"
+				},
+				"array": {
+					"type": "boolean"
+				}
+			},
+			"additionalProperties": false,
+			"type": "object",
+			"required": [
+				"name",
+				"displayName",
+				"type"
+			]
+		}
+	}
+}
