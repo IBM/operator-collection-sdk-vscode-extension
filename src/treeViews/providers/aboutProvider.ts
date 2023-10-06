@@ -5,6 +5,7 @@
 
 import * as vscode from "vscode";
 import { Session } from "../../utilities/session";
+import { getBrokerIconPath } from "../../utilities/util";
 
 type TreeItem = vscode.TreeItem | undefined | void;
 
@@ -31,12 +32,15 @@ export class AboutTreeProvider
     const ocSdkVersionInstalled = this.session.ocSdkVersion();
     return Promise.all([ocSdkVersionInstalled]).then((values) => {
       if (!element) {
-        items.push(
-          new vscode.TreeItem(
-            `Operator Collection SDK v${values[0]}`,
-            vscode.TreeItemCollapsibleState.None,
-          ),
+        const ocsdkVersionItem = new vscode.TreeItem(
+          `Operator Collection SDK v${values[0]}`,
+          vscode.TreeItemCollapsibleState.None,
         );
+        ocsdkVersionItem.iconPath = {
+          light: getBrokerIconPath("light"),
+          dark: getBrokerIconPath("dark"),
+        };
+        items.push(ocsdkVersionItem);
       }
       return items;
     });
