@@ -236,6 +236,43 @@ export class OcSdkCommand {
   }
 
   /**
+   * Determinate local collection sdk version
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async runOcSdkVersion(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<string> {
+    const galaxyNamespace = getAnsibleGalaxySettings(
+      AnsibleGalaxySettings.ansibleGalaxyNamespace,
+    ) as string;
+    let versionInstalled: string;
+
+    // ansible-galaxy collection list | grep ibm.operator_collection_sdk
+    const cmd: string = "ansible-galaxy";
+    let args: Array<string> = [
+      "collection",
+      "list",
+      "|",
+      "grep",
+      `${galaxyNamespace}.operator_collection_sdk`,
+    ];
+
+    let setVersionInstalled = (outputValue: string) => {
+      versionInstalled = outputValue.split(" ")?.filter((item) => {
+        return item.length;
+      })?.[1]; // item in [1] is the version
+    };
+
+    await this.run(cmd, args, outputChannel, logPath, setVersionInstalled);
+    return new Promise<string>((resolve) => {
+      resolve(versionInstalled);
+    });
+  }
+
+  /**
    * Determinate if the installed local collection is the same as the latest collection in galaxy server
    * @param outputChannel - The VS Code output channel to display command output
    * @param logPath - Log path to store command output
@@ -251,18 +288,6 @@ export class OcSdkCommand {
     const galaxyNamespace = getAnsibleGalaxySettings(
       AnsibleGalaxySettings.ansibleGalaxyNamespace,
     ) as string;
-    let versionInstalled = "";
-    let latestVersion: string | undefined;
-
-    // ansible-galaxy collection list | grep ibm.operator_collection_sdk
-    const cmd: string = "ansible-galaxy";
-    let args: Array<string> = [
-      "collection",
-      "list",
-      "|",
-      "grep",
-      `${galaxyNamespace}.operator_collection_sdk`,
-    ];
 
     let jsonData: any;
     try {
@@ -273,13 +298,9 @@ export class OcSdkCommand {
       );
     }
 
-    latestVersion = getLatestCollectionVersion(jsonData);
+    const latestVersion = getLatestCollectionVersion(jsonData);
+    const versionInstalled = await this.runOcSdkVersion(outputChannel, logPath);
 
-    let setVersionInstalled = (outputValue: string) => {
-      versionInstalled = outputValue.split(" ")?.[1]; // item in [1] is the version
-    };
-
-    await this.run(cmd, args, outputChannel, logPath, setVersionInstalled);
     return new Promise<boolean>((resolve, reject) => {
       if (latestVersion === undefined) {
         reject("Unable to locate latest version");
