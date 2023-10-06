@@ -33,6 +33,7 @@ import { OperatorConfig } from "./linter/models";
 import { AnsibleGalaxyYmlSchema } from "./linter/galaxy";
 import { getLinterSettings, LinterSettings } from "./utilities/util";
 import * as yaml from "js-yaml";
+import { AboutTreeProvider } from "./treeViews/providers/aboutProvider";
 
 export async function activate(context: vscode.ExtensionContext) {
   // Set context as a global as some tests depend on it
@@ -82,6 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const operatorTreeProvider = new OperatorsTreeProvider(session);
   const resourceTreeProvider = new ResourcesTreeProvider(session);
   const openshiftTreeProvider = new OpenShiftTreeProvider(session);
+  const aboutProvider = new AboutTreeProvider(session);
   const linksTreeProvider = new LinksTreeProvider();
   const containerLogProvider = new ContainerLogProvider(session);
   const verboseContainerLogProvider = new VerboseContainerLogProvider(session);
@@ -103,6 +105,7 @@ export async function activate(context: vscode.ExtensionContext) {
     VSCodeViewIds.openshiftClusterInfo,
     openshiftTreeProvider,
   );
+  vscode.window.registerTreeDataProvider(VSCodeViewIds.about, aboutProvider);
   vscode.workspace.registerTextDocumentContentProvider(
     util.logScheme,
     containerLogProvider,
@@ -197,6 +200,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(VSCodeCommands.refresh, () => {
       operatorTreeProvider.refresh();
       resourceTreeProvider.refresh();
+      aboutProvider.refresh();
     }),
   );
   context.subscriptions.push(

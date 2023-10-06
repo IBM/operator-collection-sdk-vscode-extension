@@ -197,6 +197,10 @@
         {
           "id": "operator-collection-sdk.openshiftClusterInfo",
           "name": "OpenShift Cluster Info"
+        },
+        {
+          "id": "operator-collection-sdk.about",
+          "name": "About"
         }
       ]
     },
