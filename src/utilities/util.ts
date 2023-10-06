@@ -689,27 +689,44 @@ export function parseCustomResourceUri(uri: vscode.Uri): {
 }
 
 export async function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function getAnsibleGalaxySettings(property: string): any {
-  const configuration = vscode.workspace.getConfiguration("operatorCollectionSdk.ansibleGalaxy");
+  const configuration = vscode.workspace.getConfiguration(
+    "operatorCollectionSdk.ansibleGalaxy",
+  );
   const setting = configuration.get(property);
   if (setting instanceof String && setting === "") {
     switch (property) {
       case AnsibleGalaxySettings.ansibleGalaxyNamespace: {
         return AnsibleGalaxySettingsDefaults.ansibleGalaxyNamespace;
-      } 
+      }
       case AnsibleGalaxySettings.ansibleGalaxyURL: {
         return AnsibleGalaxySettingsDefaults.ansibleGalaxyURL;
-      } 
+      }
     }
   } else {
     return setting;
-  } 
+  }
 }
 
 export function getLinterSettings(property: string): any {
-  const configuration = vscode.workspace.getConfiguration("operatorCollectionSdk.linter");
+  const configuration = vscode.workspace.getConfiguration(
+    "operatorCollectionSdk.linter",
+  );
   return configuration.get(property);
+}
+
+export function getBrokerIconPath(theme: string): string {
+  const path = require("path");
+  return path.join(
+    __filename,
+    "..",
+    "..",
+    "resources",
+    "icons",
+    theme,
+    "broker.png",
+  );
 }
