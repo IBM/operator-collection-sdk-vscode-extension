@@ -88,7 +88,7 @@ describe("Extension Test Suite", async () => {
     initResources(extensionContext);
 
     let testClusterInfo: helper.TestCluster | Error | undefined;
-    let namespace: string;
+    let namespace: string = "";
     k8s = new helper.TestKubernetesObj();
     userLoggedIn = await k8s.isUserLoggedIntoOCP();
     if (!userLoggedIn) {
@@ -119,42 +119,43 @@ describe("Extension Test Suite", async () => {
       k8s = new helper.TestKubernetesObj();
       userLoggedIn = await k8s.isUserLoggedIntoOCP();
       assert.equal(userLoggedIn, true);
+
+      namespace = (testClusterInfo as helper.TestCluster).ocpNamespace;
+
+  
+      // Create Namespace if not already created
+      let namespaceObject: helper.ObjectInstance | undefined;
+      try {
+        namespaceObject = await k8s.createNamespace(namespace);
+      } catch (e) {
+        assert.fail(`Failure creating Namespace: ${e}`);
+      }
+
+      try {
+        const namespaceObj = new OpenShiftItem(
+          "OpenShift Namespace",
+          namespace,
+          new vscode.ThemeIcon("account"),
+          "openshift-namespace",
+        );
+        vscode.commands.executeCommand(
+          VSCodeCommands.updateProject,
+          namespaceObj,
+          updateProjectLogPath,
+        );
+        await util.sleep(5000);
+      } catch (e) {
+        console.log("Printing Update Project command logs");
+        helper.displayCmdOutput(updateProjectLogPath);
+        assert.fail("Failure logging in to OCP cluster");
+      }
+      k8s = new helper.TestKubernetesObj(namespace);
     }
 
-    if (testClusterInfo as helper.TestCluster) {
-      namespace = (testClusterInfo as helper.TestCluster).ocpNamespace;
-    } else {
+    if (namespace === "") {
       namespace = k8s.namespace;
     }
-
-    // Create Namespace if not already created
-    let namespaceObject: helper.ObjectInstance | undefined;
-    try {
-      namespaceObject = await k8s.createNamespace(namespace);
-    } catch (e) {
-      assert.fail(`Failure creating Namespace: ${e}`);
-    }
-
-    try {
-      const namespaceObj = new OpenShiftItem(
-        "OpenShift Namespace",
-        namespace,
-        new vscode.ThemeIcon("account"),
-        "openshift-namespace",
-      );
-      vscode.commands.executeCommand(
-        VSCodeCommands.updateProject,
-        namespaceObj,
-        updateProjectLogPath,
-      );
-      await util.sleep(5000);
-    } catch (e) {
-      console.log("Printing Update Project command logs");
-      helper.displayCmdOutput(updateProjectLogPath);
-      assert.fail("Failure logging in to OCP cluster");
-    }
-    k8s = new helper.TestKubernetesObj(namespace);
-
+    
     // Install ZosCloudBroker if not already installed
     try {
       await k8s.installZosCloudBroker();
