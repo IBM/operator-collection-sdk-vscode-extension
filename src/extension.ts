@@ -31,7 +31,7 @@ import { OcSdkCommand } from "./shellCommands/ocSdkCommands";
 import { Session } from "./utilities/session";
 import { OperatorConfig } from "./linter/models";
 import { AnsibleGalaxyYmlSchema } from "./linter/galaxy";
-import {getLinterSettings, LinterSettings} from "./utilities/util";
+import { getLinterSettings, LinterSettings } from "./utilities/util";
 import * as yaml from "js-yaml";
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -40,7 +40,9 @@ export async function activate(context: vscode.ExtensionContext) {
   initResources(context);
 
   //Setup Linter
-  const linterEnabled = getLinterSettings(LinterSettings.lintingEnabled) as string;
+  const linterEnabled = getLinterSettings(
+    LinterSettings.lintingEnabled,
+  ) as string;
   if (linterEnabled) {
     const collection = vscode.languages.createDiagnosticCollection("linter");
     if (vscode.window.activeTextEditor) {
@@ -642,6 +644,13 @@ function executeSimpleSdkCommand(
   return vscode.commands.registerCommand(
     command,
     async (operatorItemArg: OperatorItem, logPath?: string) => {
+      if (session.operationPending) {
+        vscode.window.showWarningMessage(
+          "Please wait for the current operation to finish before starting another.",
+        );
+        return;
+      }
+
       session.update().then(async (proceed) => {
         if (proceed) {
           let workspacePath: string | undefined = "";
@@ -760,71 +769,63 @@ function executeSdkCommandWithUserInput(
   return vscode.commands.registerCommand(
     command,
     async (operatorItemArg: OperatorItem, logPath?: string) => {
-      session.update().then(async (proceed) => {
-        if (proceed) {
-          let workspacePath: string | undefined = "";
-          if (operatorItemArg) {
-            workspacePath = operatorItemArg.workspacePath;
-          } else {
-            let pwd = util.getCurrentWorkspaceRootFolder();
-            if (pwd) {
-              workspacePath = await util.selectOperatorInWorkspace(pwd);
-              workspacePath = path.parse(workspacePath!).dir;
-            }
-          }
-          if (workspacePath) {
-            const k8s = new KubernetesObj();
-            const validNamespace = await k8s.validateNamespaceExists();
-            if (validNamespace) {
-              outputChannel?.show();
-              if (command === VSCodeCommands.createOperator) {
-                session.operationPending = true;
-                let playbookArgs = await util.requestOperatorInfo(workspacePath);
-                if (playbookArgs) {
-                  let ocSdkCommand = new OcSdkCommand(workspacePath);
-                  if (
-                    playbookArgs.length === 1 &&
-                    playbookArgs[0].includes("ocsdk-extra-vars")
-                  ) {
-                    vscode.window.showInformationMessage(
-                      "Create Operator request in progress using local variables file",
-                    );
-                  } else {
-                    vscode.window.showInformationMessage(
-                      "Create Operator request in progress",
-                    );
-                  }
-                  const poll = util.pollRun(40);
-                  const runCreateOperatorCommand =
-                    ocSdkCommand.runCreateOperatorCommand(
-                      playbookArgs,
-                      outputChannel,
-                      logPath,
-                    );
-                  Promise.all([poll, runCreateOperatorCommand])
-                    .then(() => {
-                      session.operationPending = false;
-                      vscode.window.showInformationMessage(
-                        "Create Operator command executed successfully",
-                      );
-                      vscode.commands.executeCommand(VSCodeCommands.refresh);
-                    })
-                    .catch((e) => {
-                      session.operationPending = false;
-                      vscode.window.showInformationMessage(
-                        `Failure executing Create Operator command: RC ${e}`,
-                      );
-                    });
-                }
+      let workspacePath: string | undefined = "";
+      if (operatorItemArg) {
+        workspacePath = operatorItemArg.workspacePath;
+      } else {
+        let pwd = util.getCurrentWorkspaceRootFolder();
+        if (pwd) {
+          workspacePath = await util.selectOperatorInWorkspace(pwd);
+          workspacePath = path.parse(workspacePath!).dir;
+        }
+      }
+      if (workspacePath) {
+        const k8s = new KubernetesObj();
+        const validNamespace = await k8s.validateNamespaceExists();
+        if (validNamespace) {
+          outputChannel?.show();
+          if (command === VSCodeCommands.createOperator) {
+            session.operationPending = true;
+            let playbookArgs = await util.requestOperatorInfo(workspacePath);
+            if (playbookArgs) {
+              let ocSdkCommand = new OcSdkCommand(workspacePath);
+              if (
+                playbookArgs.length === 1 &&
+                playbookArgs[0].includes("ocsdk-extra-vars")
+              ) {
+                vscode.window.showInformationMessage(
+                  "Create Operator request in progress using local variables file",
+                );
+              } else {
+                vscode.window.showInformationMessage(
+                  "Create Operator request in progress",
+                );
               }
+              const poll = util.pollRun(40);
+              const runCreateOperatorCommand =
+                ocSdkCommand.runCreateOperatorCommand(
+                  playbookArgs,
+                  outputChannel,
+                  logPath,
+                );
+              Promise.all([poll, runCreateOperatorCommand])
+                .then(() => {
+                  session.operationPending = false;
+                  vscode.window.showInformationMessage(
+                    "Create Operator command executed successfully",
+                  );
+                  vscode.commands.executeCommand(VSCodeCommands.refresh);
+                })
+                .catch((e) => {
+                  session.operationPending = false;
+                  vscode.window.showInformationMessage(
+                    `Failure executing Create Operator command: RC ${e}`,
+                  );
+                });
             }
           }
         }
-      }).catch((e) => {
-        vscode.window.showErrorMessage(
-          `Failure updating session: ${e}`,
-        );
-      });
+      }
     },
   );
 }
