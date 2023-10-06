@@ -30,13 +30,6 @@ export class OpenShiftTreeProvider
     OpenShiftTreeProvider.openshiftTreeProviders.push(this);
   }
 
-  static async updateSession(): Promise<void> {
-    for (const provider of OpenShiftTreeProvider.openshiftTreeProviders) {
-      await provider.session.validateOcSDKInstallation();
-      await provider.session.validateOpenShiftAccess();
-    }
-  }
-
   refresh(): void {
     this._onDidChangeTreeData.fire();
   }
@@ -48,46 +41,25 @@ export class OpenShiftTreeProvider
   async getChildren(element?: OpenShiftItem): Promise<OpenShiftItem[]> {
     const links: Array<OpenShiftItem> = [];
     const k8s = new KubernetesObj();
-    const updateOpenshiftTree = OpenShiftTreeProvider.updateSession();
-    const updateOperatorsTree = OperatorsTreeProvider.updateSession();
-    const refreshOperatorsTree = OperatorsTreeProvider.refreshAll();
-    const updateResourcesTree = ResourcesTreeProvider.updateSession();
-    const refreshResourcesTree = ResourcesTreeProvider.refreshAll();
-    const updateContainerLogsProvider = ContainerLogProvider.updateSession();
-    const updateCustomResourceDeployProvider =
-      CustomResourceDisplayProvider.updateSession();
-    const updateVerboseContainerLogProvider =
-      VerboseContainerLogProvider.updateSession();
-    return Promise.all([
-      updateOpenshiftTree,
-      updateOperatorsTree,
-      refreshOperatorsTree,
-      updateResourcesTree,
-      refreshResourcesTree,
-      updateContainerLogsProvider,
-      updateCustomResourceDeployProvider,
-      updateVerboseContainerLogProvider,
-    ]).then(() => {
-      if (this.session.loggedIntoOpenShift) {
-        links.push(
-          new OpenShiftItem(
-            "OpenShift Cluster",
-            k8s.openshiftServerURL,
-            new vscode.ThemeIcon("cloud"),
-            "openshift-cluster",
-          ),
-        );
-        links.push(
-          new OpenShiftItem(
-            "OpenShift Namespace",
-            k8s.namespace,
-            new vscode.ThemeIcon("account"),
-            "openshift-namespace",
-          ),
-        );
-      }
+    if (this.session.loggedIntoOpenShift) {
+      links.push(
+        new OpenShiftItem(
+          "OpenShift Cluster",
+          k8s.openshiftServerURL,
+          new vscode.ThemeIcon("cloud"),
+          "openshift-cluster",
+        ),
+      );
+      links.push(
+        new OpenShiftItem(
+          "OpenShift Namespace",
+          k8s.namespace,
+          new vscode.ThemeIcon("account"),
+          "openshift-namespace",
+        ),
+      );
+    }
 
-      return links;
-    });
+    return links;
   }
 }

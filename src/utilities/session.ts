@@ -7,6 +7,7 @@ import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesContext } from "../kubernetes/kubernetesContext";
 import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
+import { VSCodeCommands } from "../utilities/commandConstants";
 
 export class Session {
   public ocSdkInstalled: boolean = false;
@@ -16,6 +17,39 @@ export class Session {
   public operationPending: boolean = false;
 
   constructor(public readonly ocSdkCmd: OcSdkCommand) {}
+
+  async update(skipRefresh?: boolean): Promise<boolean> {
+    const ocSdkInstalled = await this.validateOcSDKInstallation();
+    const loggedIntoOpenShift = await this.validateOpenShiftAccess();
+
+    if (!ocSdkInstalled) {
+      return vscode.commands.executeCommand(
+        "setContext",
+        VSCodeCommands.sdkInstalled,
+        ocSdkInstalled,
+      ).then(() => {
+        if (!skipRefresh) {
+          vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+        }
+        vscode.window.showWarningMessage("Unable to detect the Operator Collection SDK. Please reinstall.");
+        return false;
+      });
+    }
+    if (!loggedIntoOpenShift) {
+      return vscode.commands.executeCommand(
+        "setContext",
+        VSCodeCommands.loggedIn,
+        loggedIntoOpenShift,
+      ).then(() => {
+        if (!skipRefresh) {
+          vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+        }
+        vscode.window.showWarningMessage("Unable to connect to an OpenShift cluster. Please log in again.");
+        return false;
+      });
+    }
+    return true;
+  }
 
   /**
    * Validates that the IBM Operator Collection SDK is installed
