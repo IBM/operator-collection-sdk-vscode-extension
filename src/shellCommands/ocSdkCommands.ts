@@ -138,6 +138,7 @@ export class OcSdkCommand {
     );
 
     if (statusCode !== 0) {
+      // pip is not installed
       pipVersion = "pip3";
       statusCode = await this.run(
         pipVersion,
@@ -147,6 +148,7 @@ export class OcSdkCommand {
       );
 
       if (statusCode !== 0) {
+        // pip3 is not installed
         pipVersion = "";
       }
     }
