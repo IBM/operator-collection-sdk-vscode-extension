@@ -31,7 +31,7 @@ import { OcSdkCommand } from "./shellCommands/ocSdkCommands";
 import { Session } from "./utilities/session";
 import { OperatorConfig } from "./linter/models";
 import { AnsibleGalaxyYmlSchema } from "./linter/galaxy";
-import {getLinterSettings, LinterSettings} from "./utilities/util";
+import { getLinterSettings, LinterSettings } from "./utilities/util";
 import * as yaml from "js-yaml";
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -40,7 +40,9 @@ export async function activate(context: vscode.ExtensionContext) {
   initResources(context);
 
   //Setup Linter
-  const linterEnabled = getLinterSettings(LinterSettings.lintingEnabled) as string;
+  const linterEnabled = getLinterSettings(
+    LinterSettings.lintingEnabled,
+  ) as string;
   if (linterEnabled) {
     const collection = vscode.languages.createDiagnosticCollection("linter");
     if (vscode.window.activeTextEditor) {
@@ -595,6 +597,13 @@ function executeSimpleSdkCommand(
   return vscode.commands.registerCommand(
     command,
     async (operatorItemArg: OperatorItem, logPath?: string) => {
+      if (session.operationPending) {
+        vscode.window.showWarningMessage(
+          "Please wait for the current operation to finish before starting another.",
+        );
+        return;
+      }
+
       let workspacePath: string | undefined = "";
       if (operatorItemArg) {
         workspacePath = operatorItemArg.workspacePath;
@@ -705,6 +714,13 @@ function executeSdkCommandWithUserInput(
   return vscode.commands.registerCommand(
     command,
     async (operatorItemArg: OperatorItem, logPath?: string) => {
+      if (session.operationPending) {
+        vscode.window.showWarningMessage(
+          "Please wait for the current operation to finish before starting another.",
+        );
+        return;
+      }
+
       let workspacePath: string | undefined = "";
       if (operatorItemArg) {
         workspacePath = operatorItemArg.workspacePath;
