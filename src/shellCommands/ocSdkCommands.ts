@@ -169,7 +169,9 @@ export class OcSdkCommand {
     ];
 
     let setVersionInstalled = (outputValue: string) => {
-      versionInstalled = outputValue.split(" ")?.[1]; // item in [1] is the version
+      versionInstalled = outputValue.split(" ")?.filter((item) => {
+        return item.length;
+      })?.[1]; // item in [1] is the version
     };
 
     await this.run(cmd, args, outputChannel, logPath, setVersionInstalled);
