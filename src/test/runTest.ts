@@ -21,7 +21,7 @@ async function go() {
       "win32-x64-archive",
     );
   } else {
-    vscodeExecutablePath = await downloadAndUnzipVSCode("1.80.0");
+    vscodeExecutablePath = await downloadAndUnzipVSCode("1.82.2");
   }
   const [cliPath, ...args] =
     resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath);

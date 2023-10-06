@@ -100,6 +100,12 @@
         "icon": "$(extensions-refresh)"
       },
       {
+        "command": "operator-collection-sdk.refreshAll",
+        "title": "Refresh",
+        "category": "OC-SDK",
+        "icon": "$(extensions-refresh)"
+      },
+      {
         "command": "operator-collection-sdk.resourceRefresh",
         "title": "Refresh",
         "category": "OC-SDK",
@@ -237,7 +243,7 @@
     "menus": {
       "view/title": [
         {
-          "command": "operator-collection-sdk.refresh",
+          "command": "operator-collection-sdk.refreshAll",
           "when": "view == operator-collection-sdk.operators",
           "group": "navigation"
         },
@@ -247,7 +253,7 @@
           "group": "navigation"
         },
         {
-          "command": "operator-collection-sdk.refreshOpenShiftInfo",
+          "command": "operator-collection-sdk.refreshAll",
           "when": "view == operator-collection-sdk.openshiftClusterInfo",
           "group": "navigation"
         }
