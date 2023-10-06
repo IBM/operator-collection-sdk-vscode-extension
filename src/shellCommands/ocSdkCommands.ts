@@ -96,22 +96,114 @@ export class OcSdkCommand {
   async runCollectionVerifyCommand(
     outputChannel?: vscode.OutputChannel,
     logPath?: string,
+    namespace?: string,
+    collection: string = "operator_collection_sdk",
   ): Promise<string> {
     const galaxyUrl = getAnsibleGalaxySettings(
       AnsibleGalaxySettings.ansibleGalaxyURL,
     ) as string;
-    const galaxyNamespace = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyNamespace,
-    ) as string;
+    const galaxyNamespace =
+      namespace ??
+      (getAnsibleGalaxySettings(
+        AnsibleGalaxySettings.ansibleGalaxyNamespace,
+      ) as string);
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
       "verify",
       "-s",
       galaxyUrl,
-      `${galaxyNamespace}.operator_collection_sdk`,
+      `${galaxyNamespace}.${collection}`,
     ];
     return this.run(cmd, args, outputChannel, logPath);
+  }
+
+  /**
+   * Determines which version of pip is intalled, if it is installed at all
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise containing a string signaling which pip is installed,
+   * or an an empty string if it is not installed
+   */
+  async runPipVersion(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<string> {
+    let pipVersion = "pip";
+    try {
+      await this.run(pipVersion, ["--version"], outputChannel, logPath);
+    } catch (e) {
+      try {
+        // pip is not installed
+        pipVersion = "pip3";
+        await this.run(pipVersion, ["--version"], outputChannel, logPath);
+      } catch (e) {
+        pipVersion = "";
+      }
+    }
+
+    return pipVersion;
+  }
+
+  /**
+   * Installs the "kubernetes.core" collection and "kubernetes" python module if
+   * the collection is not already installed
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise containing a boolean signaling the success or failure of the command
+   */
+  async installOcSDKDependencies(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<boolean> {
+    try {
+      await this.runCollectionVerifyCommand(
+        outputChannel,
+        logPath,
+        "kubernetes",
+        "core",
+      );
+
+      return true;
+    } catch (e) {
+      let moduleStatusCode = -1;
+      const pipVersion = await this.runPipVersion(outputChannel, logPath);
+      if (pipVersion) {
+        moduleStatusCode = await this.run(
+          pipVersion,
+          ["install", "kubernetes"],
+          outputChannel,
+          logPath,
+        );
+      } else {
+        vscode.window.showErrorMessage(
+          'Failed to install python module "kubernetes": pip/pip3 is not installed',
+        );
+      }
+
+      const galaxyUrl = getAnsibleGalaxySettings(
+        AnsibleGalaxySettings.ansibleGalaxyURL,
+      ) as string;
+      let cmd: string = "ansible-galaxy";
+      let args: Array<string> = [
+        "collection",
+        "install",
+        "-f",
+        "-s",
+        galaxyUrl,
+        "kubernetes.core",
+      ];
+      const collectionStatusCode = await this.run(
+        cmd,
+        args,
+        outputChannel,
+        logPath,
+      );
+
+      return (
+        collectionStatusCode === 0 && collectionStatusCode === moduleStatusCode
+      );
+    }
   }
 
   /**
