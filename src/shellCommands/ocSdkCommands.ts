@@ -119,6 +119,42 @@ export class OcSdkCommand {
   }
 
   /**
+   * Determines which version of pip is intalled, if it is installed at all
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise containing a string signaling which pip is installed,
+   * or an an empty string if it is not installed
+   */
+  async runPipVersion(
+    outputChannel?: vscode.OutputChannel,
+    logPath?: string,
+  ): Promise<string> {
+    let pipVersion = "pip";
+    let statusCode = await this.run(
+      pipVersion,
+      ["--version"],
+      outputChannel,
+      logPath,
+    );
+
+    if (statusCode !== 0) {
+      pipVersion = "pip3";
+      statusCode = await this.run(
+        pipVersion,
+        ["--version"],
+        outputChannel,
+        logPath,
+      );
+
+      if (statusCode !== 0) {
+        pipVersion = "";
+      }
+    }
+
+    return pipVersion;
+  }
+
+  /**
    * Installs the "kubernetes.core" collection and "kubernetes" python module if
    * the collection is not already installed
    * @param outputChannel - The VS Code output channel to display command output
@@ -139,12 +175,20 @@ export class OcSdkCommand {
 
       return true;
     } catch (e) {
-      const moduleStatusCode = await this.run(
-        "pip",
-        ["install", "kubernetes"],
-        outputChannel,
-        logPath,
-      );
+      let moduleStatusCode = -1;
+      const pipVersion = await this.runPipVersion(outputChannel, logPath);
+      if (pipVersion) {
+        moduleStatusCode = await this.run(
+          pipVersion,
+          ["install", "kubernetes"],
+          outputChannel,
+          logPath,
+        );
+      } else {
+        vscode.window.showErrorMessage(
+          'Failed to install python module "kubernetes": pip/pip3 is not installed',
+        );
+      }
 
       const galaxyUrl = getAnsibleGalaxySettings(
         AnsibleGalaxySettings.ansibleGalaxyURL,
@@ -395,27 +439,25 @@ async function getJsonData(
 
 async function getRequest(apiUrl: string): Promise<string | undefined> {
   const urlScheme = vscode.Uri.parse(apiUrl).scheme;
-  const httpType: HTTP | HTTPS = urlScheme === "https" ? require("https") : require("http");
+  const httpType: HTTP | HTTPS =
+    urlScheme === "https" ? require("https") : require("http");
   return new Promise<string | undefined>((resolve, reject) => {
     httpType
-      .get(
-        apiUrl,
-        (resp) => {
-          let data = "";
-          resp.on("data", (chunk) => {
-            data += chunk;
+      .get(apiUrl, (resp) => {
+        let data = "";
+        resp.on("data", (chunk) => {
+          data += chunk;
+        });
+        if (resp.statusCode === 200) {
+          resp.on("end", () => {
+            resolve(JSON.parse(data));
           });
-          if (resp.statusCode === 200) {
-            resp.on("end", () => {
-              resolve(JSON.parse(data));
-            });
-          } else {
-            resp.on("end", () => {
-              resolve(undefined);
-            });
-          }
-        },
-      )
+        } else {
+          resp.on("end", () => {
+            resolve(undefined);
+          });
+        }
+      })
       .on("error", (err) => {
         reject(err);
       });
@@ -423,5 +465,8 @@ async function getRequest(apiUrl: string): Promise<string | undefined> {
 }
 
 function getLatestCollectionVersion(jsonData: any): string | undefined {
-  return jsonData?.data?.collection?.latest_version?.version ?? jsonData?.data[0]?.version;
+  return (
+    jsonData?.data?.collection?.latest_version?.version ??
+    jsonData?.data[0]?.version
+  );
 }
