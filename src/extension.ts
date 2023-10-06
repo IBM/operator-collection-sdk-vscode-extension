@@ -31,8 +31,9 @@ import { OcSdkCommand } from "./shellCommands/ocSdkCommands";
 import { Session } from "./utilities/session";
 import { OperatorConfig } from "./linter/models";
 import { AnsibleGalaxyYmlSchema } from "./linter/galaxy";
-import {getLinterSettings, LinterSettings} from "./utilities/util";
+import { getLinterSettings, LinterSettings } from "./utilities/util";
 import * as yaml from "js-yaml";
+import { AboutTreeProvider } from "./treeViews/providers/aboutProvider";
 
 export async function activate(context: vscode.ExtensionContext) {
   // Set context as a global as some tests depend on it
@@ -40,7 +41,9 @@ export async function activate(context: vscode.ExtensionContext) {
   initResources(context);
 
   //Setup Linter
-  const linterEnabled = getLinterSettings(LinterSettings.lintingEnabled) as string;
+  const linterEnabled = getLinterSettings(
+    LinterSettings.lintingEnabled,
+  ) as string;
   if (linterEnabled) {
     const collection = vscode.languages.createDiagnosticCollection("linter");
     if (vscode.window.activeTextEditor) {
@@ -80,6 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const operatorTreeProvider = new OperatorsTreeProvider(session);
   const resourceTreeProvider = new ResourcesTreeProvider(session);
   const openshiftTreeProvider = new OpenShiftTreeProvider(session);
+  const aboutProvider = new AboutTreeProvider(session);
   const linksTreeProvider = new LinksTreeProvider();
   const containerLogProvider = new ContainerLogProvider(session);
   const verboseContainerLogProvider = new VerboseContainerLogProvider(session);
@@ -101,6 +105,7 @@ export async function activate(context: vscode.ExtensionContext) {
     VSCodeViewIds.openshiftClusterInfo,
     openshiftTreeProvider,
   );
+  vscode.window.registerTreeDataProvider(VSCodeViewIds.about, aboutProvider);
   vscode.workspace.registerTextDocumentContentProvider(
     util.logScheme,
     containerLogProvider,
@@ -195,6 +200,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(VSCodeCommands.refresh, () => {
       operatorTreeProvider.refresh();
       resourceTreeProvider.refresh();
+      aboutProvider.refresh();
     }),
   );
   context.subscriptions.push(
