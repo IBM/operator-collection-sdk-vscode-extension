@@ -601,6 +601,13 @@ function executeSimpleSdkCommand(
   return vscode.commands.registerCommand(
     command,
     async (operatorItemArg: OperatorItem, logPath?: string) => {
+      if (session.operationPending) {
+        vscode.window.showWarningMessage(
+          "Please wait for the current operation to finish before starting another.",
+        );
+        return;
+      }
+
       let workspacePath: string | undefined = "";
       if (operatorItemArg) {
         workspacePath = operatorItemArg.workspacePath;
@@ -711,6 +718,13 @@ function executeSdkCommandWithUserInput(
   return vscode.commands.registerCommand(
     command,
     async (operatorItemArg: OperatorItem, logPath?: string) => {
+      if (session.operationPending) {
+        vscode.window.showWarningMessage(
+          "Please wait for the current operation to finish before starting another.",
+        );
+        return;
+      }
+
       let workspacePath: string | undefined = "";
       if (operatorItemArg) {
         workspacePath = operatorItemArg.workspacePath;
