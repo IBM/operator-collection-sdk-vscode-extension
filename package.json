@@ -1,21 +1,40 @@
 {
   "name": "operator-collection-sdk",
   "displayName": "IBM Operator Collection SDK",
-  "publisher": "ibm",
+  "publisher": "IBM",
+  "author": {
+    "name": "IBM Corporation"
+  },
   "icon": "resources/icons/broker-logo.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "repository": {
+    "type": "git",
     "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension/issues"
   },
   "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.80.0"
   },
   "categories": [
-    "Other"
+    "Debuggers",
+    "Testing",
+    "Linters"
   ],
-  "activationEvents": [],
+  "keywords": [
+    "IBM",
+    "z/OS",
+    "Operator Collection",
+    "Ansible",
+    "Hybrid Cloud",
+    "Z"
+  ],
+  "activationEvents": [
+    "workspaceContains:{**/operator-config.yaml,**/operator-config.yml}"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
@@ -45,22 +64,28 @@
         "icon": "$(debug-restart)"
       },
       {
-        "command": "operator-collection-sdk.downloadLogs",
-        "title": "Download Logs",
+        "command": "operator-collection-sdk.viewLogs",
+        "title": "View Logs",
         "category": "OC-SDK",
         "icon": "$(file)"
       },
       {
-        "command": "operator-collection-sdk.downloadVerboseLogs",
-        "title": "Download Verbose Logs",
+        "command": "operator-collection-sdk.viewVerboseLogs",
+        "title": "View Verbose Logs",
         "category": "OC-SDK",
         "icon": "$(file-binary)"
       },
       {
-        "command": "operator-collection-sdk.openEditLink",
-        "title": "Preview/Edit",
+        "command": "operator-collection-sdk.viewResource",
+        "title": "View Resource",
         "category": "OC-SDK",
-        "icon": "$(eye)"
+        "icon": "$(preview)"
+      },
+      {
+        "command": "operator-collection-sdk.openEditLink",
+        "title": "View/Edit Resource in OpenShift",
+        "category": "OC-SDK",
+        "icon": "$(edit)"
       },
       {
         "command": "operator-collection-sdk.openAddLink",
@@ -69,20 +94,26 @@
         "icon": "$(add)"
       },
       {
-        "command": "operator-collection-sdk.openLink",
-        "title": "Open External Link",
-        "category": "OC-SDK",
-        "icon": "$(globe)"
-      },
-      {
         "command": "operator-collection-sdk.refresh",
         "title": "Refresh",
         "category": "OC-SDK",
         "icon": "$(extensions-refresh)"
       },
       {
+        "command": "operator-collection-sdk.refreshAll",
+        "title": "Refresh",
+        "category": "OC-SDK",
+        "icon": "$(extensions-refresh)"
+      },
+      {
         "command": "operator-collection-sdk.resourceRefresh",
-        "title": "OpenShift Resource Refresh",
+        "title": "Refresh",
+        "category": "OC-SDK",
+        "icon": "$(extensions-refresh)"
+      },
+      {
+        "command": "operator-collection-sdk.refreshOpenShiftInfo",
+        "title": "Refresh",
         "category": "OC-SDK",
         "icon": "$(extensions-refresh)"
       },
@@ -91,6 +122,12 @@
         "title": "Log in to new OpenShift cluster",
         "category": "OC-SDK",
         "icon": "$(log-in)"
+      },
+      {
+        "command": "operator-collection-sdk.logout",
+        "title": "Log out of your current cluster",
+        "category": "OC-SDK",
+        "icon": "$(log-out)"
       },
       {
         "command": "operator-collection-sdk.updateProject",
@@ -110,6 +147,39 @@
         "icon": "$(trash)"
       }
     ],
+    "configuration": [
+      {
+        "title": "Ansible Galaxy",
+        "properties": {
+          "operatorCollectionSdk.ansibleGalaxy.ansibleGalaxyConnectivity": {
+            "type": "boolean",
+            "description": "Specifies if you have connectivity to Ansible Galaxy. Disabling this will prevent the extension from checking Ansible Galaxy for new Operator Collection SDK updates",
+            "default": true
+          },
+          "operatorCollectionSdk.ansibleGalaxy.ansibleGalaxyURL": {
+            "type": "string",
+            "markdownDescription": "The Ansible Galaxy URL to download the IBM Operator Collection SDK. Requires `#operatorCollectionSdk.ansibleGalaxyConnectivity#` to be enabled.",
+            "format": "uri",
+            "default": "https://galaxy.ansible.com"
+          },
+          "operatorCollectionSdk.ansibleGalaxy.ansibleGalaxyNamespace": {
+            "type": "string",
+            "markdownDescription": "The Ansible Galaxy namespace to download the IBM Operator Collection SDK. Requires `#operatorCollectionSdk.ansibleGalaxyConnectivity#` to be enabled.",
+            "default": "ibm"
+          }
+        }
+      },
+      {
+        "title": "Linter",
+        "properties": {
+          "operatorCollectionSdk.linter.lintingEnabled": {
+            "type": "boolean",
+            "markdownDescription": "Enable linting. **Note:** Restart VS Code to apply this setting after modification",
+            "default": true
+          }
+        }
+      }
+    ],
     "views": {
       "operator-collection-sdk": [
         {
@@ -127,6 +197,10 @@
         {
           "id": "operator-collection-sdk.openshiftClusterInfo",
           "name": "OpenShift Cluster Info"
+        },
+        {
+          "id": "operator-collection-sdk.about",
+          "name": "About"
         }
       ]
     },
@@ -137,6 +211,11 @@
         "when": "!operator-collection-sdk.sdkInstalled"
       },
       {
+        "view": "operator-collection-sdk.operators",
+        "contents": "A new IBM Operator Collection version is available\n[Update Now](command:operator-collection-sdk.sdkUpgradeVersion)\n[Later](command:operator-collection-sdk.sdkUpgradeVersionSkip)",
+        "when": "operator-collection-sdk.sdkInstalled && operator-collection-sdk.sdkOutdatedVersion"
+      },
+      {
         "view": "operator-collection-sdk.resources",
         "contents": "Install the IBM Operator Collection SDk to use this extension",
         "when": "!operator-collection-sdk.sdkInstalled"
@@ -145,6 +224,11 @@
         "view": "operator-collection-sdk.openshiftClusterInfo",
         "contents": "Log in to an OpenShift Cluster to use this extension\n[Log in to OpenShift](command:operator-collection-sdk.login)",
         "when": "!operator-collection-sdk.loggedIn"
+      },
+      {
+        "view": "operator-collection-sdk.operators",
+        "contents": "Log in to an OpenShift Cluster to use this extension",
+        "when": "!operator-collection-sdk.loggedIn && operator-collection-sdk.sdkInstalled"
       }
     ],
     "viewsContainers": {
@@ -159,7 +243,7 @@
     "menus": {
       "view/title": [
         {
-          "command": "operator-collection-sdk.refresh",
+          "command": "operator-collection-sdk.refreshAll",
           "when": "view == operator-collection-sdk.operators",
           "group": "navigation"
         },
@@ -167,36 +251,41 @@
           "command": "operator-collection-sdk.resourceRefresh",
           "when": "view == operator-collection-sdk.resources",
           "group": "navigation"
+        },
+        {
+          "command": "operator-collection-sdk.refreshAll",
+          "when": "view == operator-collection-sdk.openshiftClusterInfo",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
         {
           "command": "operator-collection-sdk.createOperator",
           "when": "view == operator-collection-sdk.operators && viewItem == operator",
-          "group": "inline"
+          "group": "inline@0"
         },
         {
           "command": "operator-collection-sdk.deleteOperator",
           "when": "view == operator-collection-sdk.operators && viewItem == operator",
-          "group": "inline"
+          "group": "inline@1"
         },
         {
           "command": "operator-collection-sdk.redeployCollection",
           "when": "view == operator-collection-sdk.operators && viewItem == operator",
-          "group": "inline"
+          "group": "inline@3"
         },
         {
           "command": "operator-collection-sdk.redeployOperator",
           "when": "view == operator-collection-sdk.operators && viewItem == operator",
-          "group": "inline"
+          "group": "inline@2"
         },
         {
-          "command": "operator-collection-sdk.downloadLogs",
+          "command": "operator-collection-sdk.viewLogs",
           "when": "view == operator-collection-sdk.operators && (viewItem == operator-container || viewItem == operator-init-container)",
           "group": "inline"
         },
         {
-          "command": "operator-collection-sdk.downloadVerboseLogs",
+          "command": "operator-collection-sdk.viewVerboseLogs",
           "when": "view == operator-collection-sdk.operators && viewItem == operator-container",
           "group": "inline"
         },
@@ -206,13 +295,13 @@
           "group": "inline"
         },
         {
-          "command": "operator-collection-sdk.openAddLink",
-          "when": "view == operator-collection-sdk.resources && viewItem == customresources",
+          "command": "operator-collection-sdk.viewResource",
+          "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object || viewItem == customresource-object)",
           "group": "inline"
         },
         {
-          "command": "operator-collection-sdk.openLink",
-          "when": "view == operator-collection-sdk.help && viewItem == links",
+          "command": "operator-collection-sdk.openAddLink",
+          "when": "view == operator-collection-sdk.resources && viewItem == customresources",
           "group": "inline"
         },
         {
@@ -226,29 +315,49 @@
           "group": "inline"
         },
         {
+          "command": "operator-collection-sdk.logout",
+          "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-cluster",
+          "group": "inline"
+        },
+        {
           "command": "operator-collection-sdk.updateProject",
           "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-namespace",
           "group": "inline"
         }
       ]
-    }
+    },
+    "yamlValidation": [
+      {
+        "fileMatch": "operator-config.yaml",
+        "url": "./resources/schema/operator-config.schema.json"
+      },
+      {
+        "fileMatch": "operator-config.yml",
+        "url": "./resources/schema/operator-config.schema.json"
+      }
+    ]
   },
+  "extensionDependencies": [
+    "redhat.vscode-yaml"
+  ],
   "scripts": {
     "vscode:prepublish": "npm run package",
-    "webpack": "webpack --mode development",
+    "webpack": "npm run clean && npm run compile && webpack --mode development",
     "webpack-dev": "webpack --mode development --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
     "test-compile": "tsc -p ./",
     "compile": "tsc -p ./",
     "watch": "npm run clean && webpack --watch --mode development --env esbuild",
-    "pretest": "npm run compile && npm run lint",
+    "pretest": "npm run clean && npm run webpack &&  npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "clean": "rm -rf ./dist ./out",
     "test": "node ./out/test/runTest.js",
     "build": "npm run clean && vsce package",
-    "deploy": "extensionName=$(ls *.vsix) && code --install-extension ${extensionName}"
+    "deploy": "extensionName=$(ls *.vsix) && code --install-extension ${extensionName}",
+    "prepare": "husky install"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.1",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
@@ -257,8 +366,12 @@
     "@typescript-eslint/parser": "^5.59.8",
     "@vscode/test-electron": "^2.3.2",
     "eslint": "^8.41.0",
+    "fs-extra": "^11.1.1",
     "glob": "^8.1.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.1",
     "mocha": "^10.2.0",
+    "prettier": "^3.0.3",
     "ts-loader": "^9.4.4",
     "typescript": "^5.1.3",
     "webpack": "^5.88.2",
@@ -267,5 +380,12 @@
   "dependencies": {
     "@kubernetes/client-node": "^0.18.1",
     "http": "^0.0.1-security"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --cache --fix",
+      "prettier --write --ignore-unknown"
+    ],
+    "**/*": "prettier --write --ignore-unknown"
   }
 }
