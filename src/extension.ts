@@ -175,13 +175,13 @@ export async function activate(context: vscode.ExtensionContext) {
     ),
   );
   context.subscriptions.push(
-    deleteCustomResource(VSCodeCommands.deleteCustomResource),
+    deleteCustomResource(VSCodeCommands.deleteCustomResource, session),
   );
   context.subscriptions.push(
-    executeContainerViewLogCommand(VSCodeCommands.viewLogs),
+    executeContainerViewLogCommand(VSCodeCommands.viewLogs, session),
   );
   context.subscriptions.push(
-    executeContainerViewLogCommand(VSCodeCommands.viewVerboseLogs),
+    executeContainerViewLogCommand(VSCodeCommands.viewVerboseLogs, session),
   );
   context.subscriptions.push(
     executeOpenLinkCommand(VSCodeCommands.openEditLink),
@@ -190,7 +190,7 @@ export async function activate(context: vscode.ExtensionContext) {
     executeOpenLinkCommand(VSCodeCommands.openAddLink),
   );
   context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openLink));
-  context.subscriptions.push(viewResourceCommand(VSCodeCommands.viewResource));
+  context.subscriptions.push(viewResourceCommand(VSCodeCommands.viewResource, session));
   context.subscriptions.push(
     vscode.commands.registerCommand(VSCodeCommands.refresh, () => {
       operatorTreeProvider.refresh();
@@ -199,19 +199,41 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(VSCodeCommands.resourceRefresh, () => {
-      resourceTreeProvider.refresh();
+      session.update().then((proceed) => {
+        if (proceed) {
+          resourceTreeProvider.refresh();
+        }
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure updating session: ${e}`,
+        );
+      });
     }),
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(VSCodeCommands.refreshAll, () => {
-      openshiftTreeProvider.refresh();
-      operatorTreeProvider.refresh();
-      resourceTreeProvider.refresh();
+      session.update(true).then(() => {
+        openshiftTreeProvider.refresh();
+        operatorTreeProvider.refresh();
+        resourceTreeProvider.refresh();
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure updating session: ${e}`,
+        );
+      });
     }),
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(VSCodeCommands.refreshOpenShiftInfo, () => {
-      openshiftTreeProvider.refresh();
+      session.update().then((proceed) => {
+        if (proceed) {
+          openshiftTreeProvider.refresh();
+        }
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure updating session: ${e}`,
+        );
+      });
     }),
   );
   context.subscriptions.push(
@@ -331,32 +353,40 @@ function updateProject(
         return;
       }
 
-      const k8s = new KubernetesObj();
-      let namespace: string | undefined;
-      if (arg.description === k8s.namespace) {
-        // implies that the edit button was selected in the editor
-        namespace = await util.generateProjectDropDown();
-      } else {
-        // allows for tests to pass in new namespace directly
-        namespace = arg.description;
-      }
+      session.update().then(async (proceed) => {
+        if (proceed) {
+          const k8s = new KubernetesObj();
+          let namespace: string | undefined;
+          if (arg.description === k8s.namespace) {
+            // implies that the edit button was selected in the editor
+            namespace = await util.generateProjectDropDown();
+          } else {
+            // allows for tests to pass in new namespace directly
+            namespace = arg.description;
+          }
 
-      if (namespace) {
-        ocCmd
-          .runOcProjectCommand(namespace, outputChannel, logPath)
-          .then(() => {
-            vscode.window.showInformationMessage(
-              "Successfully updating Project on OpenShift cluster",
-            );
-            vscode.commands.executeCommand(VSCodeCommands.refreshAll);
-          })
-          .catch((e) => {
-            vscode.window.showErrorMessage(
-              `Failure updating Project on OpenShift cluster: ${e}`,
-            );
-          });
-      }
-    },
+          if (namespace) {
+            ocCmd
+              .runOcProjectCommand(namespace, outputChannel, logPath)
+              .then(() => {
+                vscode.window.showInformationMessage(
+                  "Successfully updating Project on OpenShift cluster",
+                );
+                vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+              })
+              .catch((e) => {
+                vscode.window.showErrorMessage(
+                  `Failure updating Project on OpenShift cluster: ${e}`,
+                );
+              });
+          }
+        }
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure updating session: ${e}`,
+        );
+      });
+    }
   );
 }
 
@@ -457,127 +487,144 @@ function executeOpenLinkCommand(command: string): vscode.Disposable {
   );
 }
 
-function viewResourceCommand(command: string): vscode.Disposable {
+function viewResourceCommand(command: string, session: Session): vscode.Disposable {
   return vscode.commands.registerCommand(
     command,
     async (args: CustomResources) => {
-      let kind: string;
-      let instanceName: string;
-      let group: string;
-      let apiVersion: string;
-      if (args instanceof ZosEndpointsItem) {
-        kind = args.zosendpointObj.kind;
-        instanceName = args.zosendpointObj.metadata.name;
-        group = args.zosendpointObj.apiVersion.split("/")[0];
-        apiVersion = args.zosendpointObj.apiVersion.split("/")[1];
-      } else if (args instanceof SubOperatorConfigsItem) {
-        kind = args.subOperatorConfigObj.kind;
-        instanceName = args.subOperatorConfigObj.metadata.name;
-        group = args.subOperatorConfigObj.apiVersion.split("/")[0];
-        apiVersion = args.subOperatorConfigObj.apiVersion.split("/")[1];
-      } else if (args instanceof OperatorCollectionsItem) {
-        kind = args.operatorCollectionObj.kind;
-        instanceName = args.operatorCollectionObj.metadata.name;
-        group = args.operatorCollectionObj.apiVersion.split("/")[0];
-        apiVersion = args.operatorCollectionObj.apiVersion.split("/")[1];
-      } else if (args instanceof CustomResourcesItem) {
-        kind = args.customResourceObj.kind;
-        instanceName = args.customResourceObj.metadata.name;
-        group = args.customResourceObj.apiVersion.split("/")[0];
-        apiVersion = args.customResourceObj.apiVersion.split("/")[1];
-      } else {
+      session.update().then(async (proceed) => {
+        if (proceed) {
+          let kind: string;
+          let instanceName: string;
+          let group: string;
+          let apiVersion: string;
+          if (args instanceof ZosEndpointsItem) {
+            kind = args.zosendpointObj.kind;
+            instanceName = args.zosendpointObj.metadata.name;
+            group = args.zosendpointObj.apiVersion.split("/")[0];
+            apiVersion = args.zosendpointObj.apiVersion.split("/")[1];
+          } else if (args instanceof SubOperatorConfigsItem) {
+            kind = args.subOperatorConfigObj.kind;
+            instanceName = args.subOperatorConfigObj.metadata.name;
+            group = args.subOperatorConfigObj.apiVersion.split("/")[0];
+            apiVersion = args.subOperatorConfigObj.apiVersion.split("/")[1];
+          } else if (args instanceof OperatorCollectionsItem) {
+            kind = args.operatorCollectionObj.kind;
+            instanceName = args.operatorCollectionObj.metadata.name;
+            group = args.operatorCollectionObj.apiVersion.split("/")[0];
+            apiVersion = args.operatorCollectionObj.apiVersion.split("/")[1];
+          } else if (args instanceof CustomResourcesItem) {
+            kind = args.customResourceObj.kind;
+            instanceName = args.customResourceObj.metadata.name;
+            group = args.customResourceObj.apiVersion.split("/")[0];
+            apiVersion = args.customResourceObj.apiVersion.split("/")[1];
+          } else {
+            vscode.window.showErrorMessage(
+              "Unable to preview resource for invalid resource type",
+            );
+            return;
+          }
+          const uri = util.buildCustomResourceUri(
+            kind!,
+            instanceName!,
+            group!,
+            apiVersion!,
+          );
+          const doc = await vscode.workspace.openTextDocument(uri);
+          await vscode.window.showTextDocument(doc, { preview: false });
+        }
+      }).catch((e) => {
         vscode.window.showErrorMessage(
-          "Unable to preview resource for invalid resource type",
+          `Failure updating session: ${e}`,
         );
-        return;
-      }
-      const uri = util.buildCustomResourceUri(
-        kind!,
-        instanceName!,
-        group!,
-        apiVersion!,
-      );
-      const doc = await vscode.workspace.openTextDocument(uri);
-      await vscode.window.showTextDocument(doc, { preview: false });
-    },
+      });
+    }
   );
 }
 
-function executeContainerViewLogCommand(command: string): vscode.Disposable {
+function executeContainerViewLogCommand(command: string, session: Session): vscode.Disposable {
   return vscode.commands.registerCommand(
     command,
     async (containerItemArgs: OperatorContainerItem, logPath?: string) => {
-      if (containerItemArgs) {
-        const k8s = new KubernetesObj();
-        const pwd = util.getCurrentWorkspaceRootFolder();
-        if (!pwd) {
-          vscode.window.showErrorMessage(
-            "Unable to execute command when workspace is empty",
-          );
-        } else {
-          let workspacePath = await util.selectOperatorInWorkspace(
-            pwd,
-            containerItemArgs.parentOperator.operatorName,
-          );
-
-          if (!workspacePath) {
-            vscode.window.showErrorMessage(
-              "Unable to locate valid operator collection in workspace",
-            );
-          } else {
-            workspacePath = path.parse(workspacePath).dir;
-            switch (command) {
-              case VSCodeCommands.viewLogs: {
-                const logUri = util.buildContainerLogUri(
-                  containerItemArgs.podObj.metadata?.name!,
-                  containerItemArgs.containerStatus.name,
+      session.update().then(async (proceed) => {
+        if (proceed) {
+          if (containerItemArgs) {
+            const k8s = new KubernetesObj();
+            const pwd = util.getCurrentWorkspaceRootFolder();
+            if (!pwd) {
+              vscode.window.showErrorMessage(
+                "Unable to execute command when workspace is empty",
+              );
+            } else {
+              let workspacePath = await util.selectOperatorInWorkspace(
+                pwd,
+                containerItemArgs.parentOperator.operatorName,
+              );
+    
+              if (!workspacePath) {
+                vscode.window.showErrorMessage(
+                  "Unable to locate valid operator collection in workspace",
                 );
-                const doc = await vscode.workspace.openTextDocument(logUri);
-                await vscode.window.showTextDocument(doc, { preview: false });
-                break;
-              }
-              case VSCodeCommands.viewVerboseLogs: {
-                const apiVersion =
-                  await util.getConvertedApiVersion(workspacePath);
-                const kind =
-                  await util.selectCustomResourceFromOperatorInWorkspace(
-                    workspacePath,
-                  );
-                let crInstance: string | undefined = "";
-                if (apiVersion) {
-                  crInstance = await util.selectCustomResourceInstance(
-                    workspacePath,
-                    k8s,
-                    apiVersion,
-                    kind!,
-                  );
-                  if (kind && crInstance) {
-                    const logUri = util.buildVerboseContainerLogUri(
+              } else {
+                workspacePath = path.parse(workspacePath).dir;
+                switch (command) {
+                  case VSCodeCommands.viewLogs: {
+                    const logUri = util.buildContainerLogUri(
                       containerItemArgs.podObj.metadata?.name!,
                       containerItemArgs.containerStatus.name,
-                      apiVersion,
-                      kind,
-                      crInstance,
                     );
                     const doc = await vscode.workspace.openTextDocument(logUri);
-                    await vscode.window.showTextDocument(doc, {
-                      preview: false,
-                    });
+                    await vscode.window.showTextDocument(doc, { preview: false });
+                    break;
                   }
-                } else {
-                  vscode.window.showErrorMessage(
-                    "Unable to download log due to undefined version in operator-config",
-                  );
+                  case VSCodeCommands.viewVerboseLogs: {
+                    const apiVersion =
+                      await util.getConvertedApiVersion(workspacePath);
+                    const kind =
+                      await util.selectCustomResourceFromOperatorInWorkspace(
+                        workspacePath,
+                      );
+                    let crInstance: string | undefined = "";
+                    if (apiVersion) {
+                      crInstance = await util.selectCustomResourceInstance(
+                        workspacePath,
+                        k8s,
+                        apiVersion,
+                        kind!,
+                      );
+                      if (kind && crInstance) {
+                        const logUri = util.buildVerboseContainerLogUri(
+                          containerItemArgs.podObj.metadata?.name!,
+                          containerItemArgs.containerStatus.name,
+                          apiVersion,
+                          kind,
+                          crInstance,
+                        );
+                        const doc = await vscode.workspace.openTextDocument(logUri);
+                        await vscode.window.showTextDocument(doc, {
+                          preview: false,
+                        });
+                      }
+                    } else {
+                      vscode.window.showErrorMessage(
+                        "Unable to download log due to undefined version in operator-config",
+                      );
+                    }
+                  }
                 }
               }
             }
+          } else {
+            vscode.window.showInformationMessage(
+              "Please wait for the operator to finish loading, then try again.",
+            );
           }
         }
-      } else {
-        vscode.window.showInformationMessage(
-          "Please wait for the operator to finish loading, then try again.",
+        
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure updating session: ${e}`,
         );
-      }
+      });
     },
   );
 }
@@ -595,99 +642,107 @@ function executeSimpleSdkCommand(
   return vscode.commands.registerCommand(
     command,
     async (operatorItemArg: OperatorItem, logPath?: string) => {
-      let workspacePath: string | undefined = "";
-      if (operatorItemArg) {
-        workspacePath = operatorItemArg.workspacePath;
-      } else {
-        let pwd = util.getCurrentWorkspaceRootFolder();
-        if (pwd) {
-          workspacePath = await util.selectOperatorInWorkspace(pwd);
-          workspacePath = path.parse(workspacePath!).dir;
-        }
-      }
-      if (workspacePath) {
-        const k8s = new KubernetesObj();
-        const validNamespace = await k8s.validateNamespaceExists();
-        if (validNamespace) {
-          session.operationPending = true;
-          let ocSdkCommand = new OcSdkCommand(workspacePath);
-          outputChannel?.show();
-          switch (command) {
-            case VSCodeCommands.deleteOperator: {
-              vscode.window.showInformationMessage(
-                "Delete Operator request in progress",
-              );
-              const poll = util.pollRun(10);
-              const runDeleteOperatorCommand =
-                ocSdkCommand.runDeleteOperatorCommand(outputChannel, logPath);
-              Promise.all([poll, runDeleteOperatorCommand])
-                .then(() => {
-                  session.operationPending = false;
-                  vscode.window.showInformationMessage(
-                    "Delete Operator command executed successfully",
-                  );
-                  vscode.commands.executeCommand(VSCodeCommands.refresh);
-                })
-                .catch((e) => {
-                  session.operationPending = false;
-                  vscode.window.showInformationMessage(
-                    `Failure executing Delete Operator command: RC ${e}`,
-                  );
-                });
-              break;
+      session.update().then(async (proceed) => {
+        if (proceed) {
+          let workspacePath: string | undefined = "";
+          if (operatorItemArg) {
+            workspacePath = operatorItemArg.workspacePath;
+          } else {
+            let pwd = util.getCurrentWorkspaceRootFolder();
+            if (pwd) {
+              workspacePath = await util.selectOperatorInWorkspace(pwd);
+              workspacePath = path.parse(workspacePath!).dir;
             }
-            case VSCodeCommands.redeployCollection: {
-              vscode.window.showInformationMessage(
-                "Redeploy Collection request in progress",
-              );
-              const poll = util.pollRun(30);
-              const runRedeployCollectionCommand =
-                ocSdkCommand.runRedeployCollectionCommand(
-                  outputChannel,
-                  logPath,
-                );
-              Promise.all([poll, runRedeployCollectionCommand])
-                .then(() => {
-                  session.operationPending = false;
+          }
+          if (workspacePath) {
+            const k8s = new KubernetesObj();
+            const validNamespace = await k8s.validateNamespaceExists();
+            if (validNamespace) {
+              session.operationPending = true;
+              let ocSdkCommand = new OcSdkCommand(workspacePath);
+              outputChannel?.show();
+              switch (command) {
+                case VSCodeCommands.deleteOperator: {
                   vscode.window.showInformationMessage(
-                    "Redeploy Collection command executed successfully",
+                    "Delete Operator request in progress",
                   );
-                  vscode.commands.executeCommand(VSCodeCommands.refresh);
-                })
-                .catch((e) => {
-                  session.operationPending = false;
+                  const poll = util.pollRun(10);
+                  const runDeleteOperatorCommand =
+                    ocSdkCommand.runDeleteOperatorCommand(outputChannel, logPath);
+                  Promise.all([poll, runDeleteOperatorCommand])
+                    .then(() => {
+                      session.operationPending = false;
+                      vscode.window.showInformationMessage(
+                        "Delete Operator command executed successfully",
+                      );
+                      vscode.commands.executeCommand(VSCodeCommands.refresh);
+                    })
+                    .catch((e) => {
+                      session.operationPending = false;
+                      vscode.window.showInformationMessage(
+                        `Failure executing Delete Operator command: RC ${e}`,
+                      );
+                    });
+                  break;
+                }
+                case VSCodeCommands.redeployCollection: {
                   vscode.window.showInformationMessage(
-                    `Failure executing Redeploy Collection command: RC ${e}`,
+                    "Redeploy Collection request in progress",
                   );
-                });
-              break;
-            }
-            case VSCodeCommands.redeployOperator: {
-              vscode.window.showInformationMessage(
-                "Redeploy Operator request in progress",
-              );
-              const poll = util.pollRun(40);
-              const runRedeployOperatorCommand =
-                ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
-              Promise.all([poll, runRedeployOperatorCommand])
-                .then(() => {
-                  session.operationPending = false;
+                  const poll = util.pollRun(30);
+                  const runRedeployCollectionCommand =
+                    ocSdkCommand.runRedeployCollectionCommand(
+                      outputChannel,
+                      logPath,
+                    );
+                  Promise.all([poll, runRedeployCollectionCommand])
+                    .then(() => {
+                      session.operationPending = false;
+                      vscode.window.showInformationMessage(
+                        "Redeploy Collection command executed successfully",
+                      );
+                      vscode.commands.executeCommand(VSCodeCommands.refresh);
+                    })
+                    .catch((e) => {
+                      session.operationPending = false;
+                      vscode.window.showInformationMessage(
+                        `Failure executing Redeploy Collection command: RC ${e}`,
+                      );
+                    });
+                  break;
+                }
+                case VSCodeCommands.redeployOperator: {
                   vscode.window.showInformationMessage(
-                    "Redeploy Operator command executed successfully",
+                    "Redeploy Operator request in progress",
                   );
-                  vscode.commands.executeCommand(VSCodeCommands.refresh);
-                })
-                .catch((e) => {
-                  session.operationPending = false;
-                  vscode.window.showInformationMessage(
-                    `Failure executing Redeploy Operator command: RC ${e}`,
-                  );
-                });
-              break;
+                  const poll = util.pollRun(40);
+                  const runRedeployOperatorCommand =
+                    ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
+                  Promise.all([poll, runRedeployOperatorCommand])
+                    .then(() => {
+                      session.operationPending = false;
+                      vscode.window.showInformationMessage(
+                        "Redeploy Operator command executed successfully",
+                      );
+                      vscode.commands.executeCommand(VSCodeCommands.refresh);
+                    })
+                    .catch((e) => {
+                      session.operationPending = false;
+                      vscode.window.showInformationMessage(
+                        `Failure executing Redeploy Operator command: RC ${e}`,
+                      );
+                    });
+                  break;
+                }
+              }
             }
           }
         }
-      }
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure updating session: ${e}`,
+        );
+      });
     },
   );
 }
@@ -705,111 +760,127 @@ function executeSdkCommandWithUserInput(
   return vscode.commands.registerCommand(
     command,
     async (operatorItemArg: OperatorItem, logPath?: string) => {
-      let workspacePath: string | undefined = "";
-      if (operatorItemArg) {
-        workspacePath = operatorItemArg.workspacePath;
-      } else {
-        let pwd = util.getCurrentWorkspaceRootFolder();
-        if (pwd) {
-          workspacePath = await util.selectOperatorInWorkspace(pwd);
-          workspacePath = path.parse(workspacePath!).dir;
-        }
-      }
-      if (workspacePath) {
-        const k8s = new KubernetesObj();
-        const validNamespace = await k8s.validateNamespaceExists();
-        if (validNamespace) {
-          outputChannel?.show();
-          if (command === VSCodeCommands.createOperator) {
-            session.operationPending = true;
-            let playbookArgs = await util.requestOperatorInfo(workspacePath);
-            if (playbookArgs) {
-              let ocSdkCommand = new OcSdkCommand(workspacePath);
-              if (
-                playbookArgs.length === 1 &&
-                playbookArgs[0].includes("ocsdk-extra-vars")
-              ) {
-                vscode.window.showInformationMessage(
-                  "Create Operator request in progress using local variables file",
-                );
-              } else {
-                vscode.window.showInformationMessage(
-                  "Create Operator request in progress",
-                );
+      session.update().then(async (proceed) => {
+        if (proceed) {
+          let workspacePath: string | undefined = "";
+          if (operatorItemArg) {
+            workspacePath = operatorItemArg.workspacePath;
+          } else {
+            let pwd = util.getCurrentWorkspaceRootFolder();
+            if (pwd) {
+              workspacePath = await util.selectOperatorInWorkspace(pwd);
+              workspacePath = path.parse(workspacePath!).dir;
+            }
+          }
+          if (workspacePath) {
+            const k8s = new KubernetesObj();
+            const validNamespace = await k8s.validateNamespaceExists();
+            if (validNamespace) {
+              outputChannel?.show();
+              if (command === VSCodeCommands.createOperator) {
+                session.operationPending = true;
+                let playbookArgs = await util.requestOperatorInfo(workspacePath);
+                if (playbookArgs) {
+                  let ocSdkCommand = new OcSdkCommand(workspacePath);
+                  if (
+                    playbookArgs.length === 1 &&
+                    playbookArgs[0].includes("ocsdk-extra-vars")
+                  ) {
+                    vscode.window.showInformationMessage(
+                      "Create Operator request in progress using local variables file",
+                    );
+                  } else {
+                    vscode.window.showInformationMessage(
+                      "Create Operator request in progress",
+                    );
+                  }
+                  const poll = util.pollRun(40);
+                  const runCreateOperatorCommand =
+                    ocSdkCommand.runCreateOperatorCommand(
+                      playbookArgs,
+                      outputChannel,
+                      logPath,
+                    );
+                  Promise.all([poll, runCreateOperatorCommand])
+                    .then(() => {
+                      session.operationPending = false;
+                      vscode.window.showInformationMessage(
+                        "Create Operator command executed successfully",
+                      );
+                      vscode.commands.executeCommand(VSCodeCommands.refresh);
+                    })
+                    .catch((e) => {
+                      session.operationPending = false;
+                      vscode.window.showInformationMessage(
+                        `Failure executing Create Operator command: RC ${e}`,
+                      );
+                    });
+                }
               }
-              const poll = util.pollRun(40);
-              const runCreateOperatorCommand =
-                ocSdkCommand.runCreateOperatorCommand(
-                  playbookArgs,
-                  outputChannel,
-                  logPath,
-                );
-              Promise.all([poll, runCreateOperatorCommand])
-                .then(() => {
-                  session.operationPending = false;
-                  vscode.window.showInformationMessage(
-                    "Create Operator command executed successfully",
-                  );
-                  vscode.commands.executeCommand(VSCodeCommands.refresh);
-                })
-                .catch((e) => {
-                  session.operationPending = false;
-                  vscode.window.showInformationMessage(
-                    `Failure executing Create Operator command: RC ${e}`,
-                  );
-                });
             }
           }
         }
-      }
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure updating session: ${e}`,
+        );
+      });
     },
   );
 }
 
-function deleteCustomResource(command: string) {
+function deleteCustomResource(command: string, session: Session) {
   return vscode.commands.registerCommand(
     command,
     async (customResourcArg: CustomResourcesItem) => {
-      if (customResourcArg) {
-        const k8s = new KubernetesObj();
-        const validNamespace = await k8s.validateNamespaceExists();
-        if (validNamespace) {
-          const name = customResourcArg.customResourceObj.metadata.name;
-          const apiVersion =
-            customResourcArg.customResourceObj.apiVersion.split("/")[1];
-          const kind = customResourcArg.customResourceObj.kind;
-          const poll = util.pollRun(15);
-          const deleteCustomResourceCmd = k8s.deleteCustomResource(
-            name,
-            apiVersion,
-            kind,
-          );
-          Promise.all([poll, deleteCustomResourceCmd])
-            .then((values) => {
-              const deleteSuccessful = values[1];
-              if (deleteSuccessful) {
-                vscode.window.showInformationMessage(
-                  `Successfully deleted ${kind} resource`,
-                );
-                vscode.commands.executeCommand(VSCodeCommands.resourceRefresh);
-              } else {
-                vscode.window.showErrorMessage(
-                  `Failed to delete ${kind} resource`,
-                );
-              }
-            })
-            .catch((e) => {
-              vscode.window.showErrorMessage(
-                `Failed to delete ${kind} resource: ${e}`,
+      session.update().then(async (proceed) => {
+        if (proceed) {
+          if (customResourcArg) {
+            const k8s = new KubernetesObj();
+            const validNamespace = await k8s.validateNamespaceExists();
+            if (validNamespace) {
+              const name = customResourcArg.customResourceObj.metadata.name;
+              const apiVersion =
+                customResourcArg.customResourceObj.apiVersion.split("/")[1];
+              const kind = customResourcArg.customResourceObj.kind;
+              const poll = util.pollRun(15);
+              const deleteCustomResourceCmd = k8s.deleteCustomResource(
+                name,
+                apiVersion,
+                kind,
               );
-            });
+              Promise.all([poll, deleteCustomResourceCmd])
+                .then((values) => {
+                  const deleteSuccessful = values[1];
+                  if (deleteSuccessful) {
+                    vscode.window.showInformationMessage(
+                      `Successfully deleted ${kind} resource`,
+                    );
+                    vscode.commands.executeCommand(VSCodeCommands.resourceRefresh);
+                  } else {
+                    vscode.window.showErrorMessage(
+                      `Failed to delete ${kind} resource`,
+                    );
+                  }
+                })
+                .catch((e) => {
+                  vscode.window.showErrorMessage(
+                    `Failed to delete ${kind} resource: ${e}`,
+                  );
+                });
+            }
+          } else {
+            vscode.window.showErrorMessage(
+              "Failed to delete custom resource. Please try again.",
+            );
+          }
         }
-      } else {
+      }).catch((e) => {
         vscode.window.showErrorMessage(
-          "Failed to delete custom resource. Please try again.",
+          `Failure updating session: ${e}`,
         );
-      }
-    },
+      });
+    }
   );
 }
 
