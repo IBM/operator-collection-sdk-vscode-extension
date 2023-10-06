@@ -130,25 +130,14 @@ export class OcSdkCommand {
     logPath?: string,
   ): Promise<string> {
     let pipVersion = "pip";
-    let statusCode = await this.run(
-      pipVersion,
-      ["--version"],
-      outputChannel,
-      logPath,
-    );
-
-    if (statusCode !== 0) {
-      // pip is not installed
-      pipVersion = "pip3";
-      statusCode = await this.run(
-        pipVersion,
-        ["--version"],
-        outputChannel,
-        logPath,
-      );
-
-      if (statusCode !== 0) {
-        // pip3 is not installed
+    try {
+      await this.run(pipVersion, ["--version"], outputChannel, logPath);
+    } catch (e) {
+      try {
+        // pip is not installed
+        pipVersion = "pip3";
+        await this.run(pipVersion, ["--version"], outputChannel, logPath);
+      } catch (e) {
         pipVersion = "";
       }
     }
