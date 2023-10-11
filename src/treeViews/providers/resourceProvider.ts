@@ -36,30 +36,6 @@ export class ResourcesTreeProvider
     // Store the instances on the static property
     ResourcesTreeProvider.resourceTreeProviders.push(this);
   }
-
-  static async updateSession(): Promise<void> {
-    let ocSdkInstalled = true;
-    let loggedIntoOpenShift = true;
-    for (const provider of ResourcesTreeProvider.resourceTreeProviders) {
-      ocSdkInstalled = await provider.session.validateOcSDKInstallation();
-      loggedIntoOpenShift = await provider.session.validateOpenShiftAccess();
-    }
-    if (!ocSdkInstalled) {
-      vscode.commands.executeCommand(
-        "setContext",
-        VSCodeCommands.sdkInstalled,
-        ocSdkInstalled,
-      );
-    }
-    if (!loggedIntoOpenShift) {
-      vscode.commands.executeCommand(
-        "setContext",
-        VSCodeCommands.loggedIn,
-        loggedIntoOpenShift,
-      );
-    }
-  }
-
   static refreshAll(): void {
     for (const provider of ResourcesTreeProvider.resourceTreeProviders) {
       provider.refresh();
@@ -67,9 +43,7 @@ export class ResourcesTreeProvider
   }
 
   refresh(): void {
-    ResourcesTreeProvider.updateSession().then(() => {
-      this._onDidChangeTreeData.fire();
-    });
+    this._onDidChangeTreeData.fire();
   }
 
   getTreeItem(element: ResourceItem): vscode.TreeItem {

@@ -19,13 +19,6 @@ export class ContainerLogProvider
     ContainerLogProvider.containerLogProviders.push(this);
   }
 
-  static async updateSession(): Promise<void> {
-    for (const provider of ContainerLogProvider.containerLogProviders) {
-      await provider.session.validateOcSDKInstallation();
-      await provider.session.validateOpenShiftAccess();
-    }
-  }
-
   async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
     if (this.session.loggedIntoOpenShift) {
       const k8s = new KubernetesObj();

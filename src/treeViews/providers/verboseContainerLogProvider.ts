@@ -7,6 +7,7 @@ import * as vscode from "vscode";
 import * as util from "../../utilities/util";
 import { Session } from "../../utilities/session";
 import { KubernetesObj } from "../../kubernetes/kubernetes";
+import { VSCodeCommands } from "../../utilities/commandConstants";
 
 export class VerboseContainerLogProvider
   implements vscode.TextDocumentContentProvider
@@ -20,14 +21,7 @@ export class VerboseContainerLogProvider
     VerboseContainerLogProvider.verboseContainerLogProviders.push(this);
   }
 
-  static async updateSession(): Promise<void> {
-    for (const provider of VerboseContainerLogProvider.verboseContainerLogProviders) {
-      await provider.session.validateOcSDKInstallation();
-      await provider.session.validateOpenShiftAccess();
-    }
-  }
-
-  async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {
+  async provideTextDocumentContent(uri: vscode.Uri): Promise<string | undefined> {
     if (this.session.loggedIntoOpenShift) {
       const k8s = new KubernetesObj();
       const uriObj = util.parseVerboseContainerLogUri(uri);
@@ -43,6 +37,5 @@ export class VerboseContainerLogProvider
       }
       return "";
     }
-    return "";
   }
 }
