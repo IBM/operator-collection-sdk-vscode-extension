@@ -31,29 +31,6 @@ export class OperatorsTreeProvider
     OperatorsTreeProvider.operatorsTreeProviders.push(this);
   }
 
-  static async updateSession(): Promise<void> {
-    let ocSdkInstalled = true;
-    let loggedIntoOpenShift = true;
-    for (const provider of OperatorsTreeProvider.operatorsTreeProviders) {
-      ocSdkInstalled = await provider.session.validateOcSDKInstallation();
-      loggedIntoOpenShift = await provider.session.validateOpenShiftAccess();
-    }
-    if (!ocSdkInstalled) {
-      vscode.commands.executeCommand(
-        "setContext",
-        VSCodeCommands.sdkInstalled,
-        ocSdkInstalled,
-      );
-    }
-    if (!loggedIntoOpenShift) {
-      vscode.commands.executeCommand(
-        "setContext",
-        VSCodeCommands.loggedIn,
-        loggedIntoOpenShift,
-      );
-    }
-  }
-
   static refreshAll(): void {
     for (const provider of OperatorsTreeProvider.operatorsTreeProviders) {
       provider.refresh();
@@ -61,9 +38,7 @@ export class OperatorsTreeProvider
   }
 
   refresh(): void {
-    OperatorsTreeProvider.updateSession().then(() => {
-      this._onDidChangeTreeData.fire();
-    });
+    this._onDidChangeTreeData.fire();
   }
 
   getTreeItem(element: OperatorTreeItem): vscode.TreeItem {

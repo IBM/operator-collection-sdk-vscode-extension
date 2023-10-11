@@ -6,7 +6,11 @@
 import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesContext } from "../kubernetes/kubernetesContext";
-import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
+import { VSCodeCommands } from "../utilities/commandConstants";
+import {
+  getAnsibleGalaxySettings,
+  AnsibleGalaxySettings,
+} from "../utilities/util";
 
 export class Session {
   public ocSdkInstalled: boolean = false;
@@ -17,12 +21,47 @@ export class Session {
 
   constructor(public readonly ocSdkCmd: OcSdkCommand) {}
 
+  async update(skipRefresh?: boolean): Promise<boolean> {
+    const ocSdkInstalled = await this.validateOcSDKInstallation();
+    const loggedIntoOpenShift = await this.validateOpenShiftAccess();
+
+    if (!ocSdkInstalled) {
+      return vscode.commands.executeCommand(
+        "setContext",
+        VSCodeCommands.sdkInstalled,
+        ocSdkInstalled,
+      ).then(() => {
+        if (!skipRefresh) {
+          vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+        }
+        vscode.window.showWarningMessage("Unable to detect the Operator Collection SDK. Please reinstall.");
+        return false;
+      });
+    }
+    if (!loggedIntoOpenShift) {
+      return vscode.commands.executeCommand(
+        "setContext",
+        VSCodeCommands.loggedIn,
+        loggedIntoOpenShift,
+      ).then(() => {
+        if (!skipRefresh) {
+          vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+        }
+        vscode.window.showWarningMessage("Unable to connect to an OpenShift cluster. Please log in again.");
+        return false;
+      });
+    }
+    return true;
+  }
+
   /**
    * Validates that the IBM Operator Collection SDK is installed
    * @returns - A promise containing a boolean, returning true if the IBM Operator Collection SDK is installed
    */
   async validateOcSDKInstallation(): Promise<boolean> {
-    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyConnectivity) as boolean;
+    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(
+      AnsibleGalaxySettings.ansibleGalaxyConnectivity,
+    ) as boolean;
     if (!ansibleGalaxyConnectivity) {
       this.ocSdkInstalled = true;
       return true;
@@ -34,10 +73,19 @@ export class Session {
     } catch (e) {
       console.log("Install the IBM Operator Collection SDK use this extension");
       // vscode.window.showWarningMessage("Install the IBM Operator Collection SDK Ansible collection to use the IBM Operator Collection SDK extension");
-      
+
       this.ocSdkInstalled = false;
       return false;
     }
+  }
+
+  /**
+   * Determinate installed IBM Operator Collection SDK version
+   * @returns - A promise containing a string, returning the installed IBM Operator Collection SDK version
+   */
+  async ocSdkVersion(): Promise<string> {
+    const version = await this.ocSdkCmd.runOcSdkVersion();
+    return version;
   }
 
   /**
@@ -45,7 +93,9 @@ export class Session {
    * @returns - A promise containing a boolean, returning true if the installed IBM Operator Collection SDK can be updated to a newer version
    */
   async determinateOcSdkIsOutdated(): Promise<boolean> {
-    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyConnectivity) as boolean;
+    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(
+      AnsibleGalaxySettings.ansibleGalaxyConnectivity,
+    ) as boolean;
     if (!ansibleGalaxyConnectivity) {
       this.ocSdkOutdated = false;
       return false;

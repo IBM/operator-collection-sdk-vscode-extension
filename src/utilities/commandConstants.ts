@@ -35,6 +35,7 @@ export enum VSCodeViewIds {
   resources = "operator-collection-sdk.resources",
   help = "operator-collection-sdk.help",
   openshiftClusterInfo = "operator-collection-sdk.openshiftClusterInfo",
+  about = "operator-collection-sdk.about",
 }
 
 export enum CustomResourcePhases {
