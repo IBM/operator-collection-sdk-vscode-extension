@@ -48,6 +48,7 @@ export const clusterServiceVersionApiVersion: string = "v1alpha1";
 export const zosEndpointApiVersion: string = "v2beta2";
 export const subOperatorConfigApiVersion: string = "v2beta2";
 export const operatorCollectionApiVersion: string = "v2beta2";
+export const zosCloudBrokerApiVersion: string = "v2beta1";
 
 export const logScheme: string = "containerLogs";
 export const verboseLogScheme: string = "verboseContainerLogs";

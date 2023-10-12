@@ -76,6 +76,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   await session.validateOcSDKInstallation();
   await session.validateOpenShiftAccess();
+  await session.validateZosCloudBrokerInstallation();
   const outputChannel = vscode.window.createOutputChannel(
     "IBM Operator Collection SDK",
   );
@@ -134,6 +135,11 @@ export async function activate(context: vscode.ExtensionContext) {
     "setContext",
     VSCodeCommands.sdkOutdatedVersion,
     await session.determinateOcSdkIsOutdated(),
+  );
+  vscode.commands.executeCommand(
+    "setContext",
+    VSCodeCommands.zosCloudBrokerInstalled,
+    await session.validateZosCloudBrokerInstallation(),
   );
   context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
   context.subscriptions.push(logOut(VSCodeCommands.logout, ocCmd, session));
@@ -222,6 +228,7 @@ export async function activate(context: vscode.ExtensionContext) {
         openshiftTreeProvider.refresh();
         operatorTreeProvider.refresh();
         resourceTreeProvider.refresh();
+        aboutProvider.refresh();
       }).catch((e) => {
         vscode.window.showErrorMessage(
           `Failure updating session: ${e}`,
@@ -362,8 +369,8 @@ function updateProject(
         return;
       }
 
-      session.update().then(async (proceed) => {
-        if (proceed) {
+      session.update(false, true).then(async () => {
+        if (session.loggedIntoOpenShift) {
           const k8s = new KubernetesObj();
           let namespace: string | undefined;
           if (arg.description === k8s.namespace) {

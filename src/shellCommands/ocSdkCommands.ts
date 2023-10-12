@@ -88,9 +88,11 @@ export class OcSdkCommand {
   }
 
   /**
-   * Executes the collection verify command to validate the collection is installed
+   * Executes the collection list command to validate the collection is installed
    * @param outputChannel - The VS Code output channel to display command output
    * @param logPath - Log path to store command output
+   * @param namespace - The Ansible Galaxy namespace
+   * @param collection - The Ansible Collection name (default: operator_collection_sdk)
    * @returns - A Promise container the return code of the command being executed
    */
   async runCollectionVerifyCommand(
@@ -99,20 +101,19 @@ export class OcSdkCommand {
     namespace?: string,
     collection: string = "operator_collection_sdk",
   ): Promise<string> {
-    const galaxyUrl = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyURL,
-    ) as string;
     const galaxyNamespace =
       namespace ??
       (getAnsibleGalaxySettings(
         AnsibleGalaxySettings.ansibleGalaxyNamespace,
       ) as string);
+
+    // ansible-galaxy collection list | grep ibm.operator_collection_sdk
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
-      "verify",
-      "-s",
-      galaxyUrl,
+      "list",
+      "|",
+      "grep",
       `${galaxyNamespace}.${collection}`,
     ];
     return this.run(cmd, args, outputChannel, logPath);

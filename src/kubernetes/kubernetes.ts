@@ -8,7 +8,7 @@ import * as k8s from "@kubernetes/client-node";
 import * as util from "../utilities/util";
 import { OcCommand } from "../shellCommands/ocCommand";
 import { KubernetesContext } from "./kubernetesContext";
-import { VSCodeCommands } from "../utilities/commandConstants";
+import { VSCodeCommands, CustomResourcePhases } from "../utilities/commandConstants";
 
 export interface ObjectList {
   apiVersion: string;
@@ -505,7 +505,11 @@ export class KubernetesObj extends KubernetesContext {
     return routeObj.spec.host;
   }
 
-  private async getZosCloudBrokerCsvName(): Promise<string | undefined> {
+  /**
+   * Retrieves the z/OS Cloud Broker CSV Object
+   * @returns - A promise containing the z/OS Cloud Broker CSV Object
+   */
+  public async getZosCloudBrokerCsv(): Promise<ObjectInstance | undefined> {
     const labelSelector = `operators.coreos.com/ibm-zoscb.${this.namespace}=`;
     return this.customObjectsApi
       ?.listNamespacedCustomObject(
@@ -520,10 +524,13 @@ export class KubernetesObj extends KubernetesContext {
         labelSelector,
       )
       .then((res) => {
+        if (res.response.statusCode !== 200) {
+          return undefined;
+        }
         let csvInstacesString = JSON.stringify(res.body);
         let csvInstanceList: ObjectList = JSON.parse(csvInstacesString);
         if (csvInstanceList.items.length > 0) {
-          return csvInstanceList.items[0].metadata.name;
+          return csvInstanceList.items[0];
         } else {
           return undefined;
         }
@@ -532,7 +539,77 @@ export class KubernetesObj extends KubernetesContext {
         const msg: any = `Failure retrieving ClusterServiceVersion. ${e}`;
         console.error(msg);
         vscode.window.showErrorMessage(msg.toString());
+        throw new Error(msg);
+      });
+  }
+
+  /**
+   * Retrieves the z/OS Cloud Broker CSV Release
+   * @returns - A promise containing the z/OS Cloud Broker CSV Release string
+   */
+  public async getZosCloudBrokerRelease(): Promise<string | undefined> {
+    return this.getZosCloudBrokerCsv().then((csv) => {
+      if (csv === undefined) {
         return undefined;
+      }
+      return csv.metadata.name.split("ibm-zoscb.")[1];
+    }).catch((e) => {
+      throw new Error(e);
+    });
+  }
+
+  /**
+   * Retrieves the z/OS Cloud Broker CSV name
+   * @returns - A promise containing the z/OS Cloud Broker CSV name string
+   */  
+  private async getZosCloudBrokerCsvName(): Promise<string | undefined> {
+    return this.getZosCloudBrokerCsv().then((csv) => {
+      if (csv === undefined) {
+        return undefined;
+      }
+      return csv.metadata.name;
+    }).catch((e) => {
+      const errorObjectString = JSON.stringify(e);
+        throw new Error(
+          `Failure retrieving ZosCloudBroker CSV name: ${errorObjectString}`,
+        );
+    });
+  }
+
+  /**
+   * Validate is a ZosCloudBroker instance is created in the current namespace
+   * @returns - A promise containing a boolean, return true if an instance exists
+   */
+  public async zosCloudBrokerInstanceCreated(): Promise<boolean | undefined> {
+    return this.customObjectsApi
+      ?.listNamespacedCustomObject(
+        util.zosCloudBrokerGroup,
+        util.zosCloudBrokerApiVersion,
+        this.namespace,
+        "zoscloudbrokers"
+      )
+      .then((res) => {
+        if (res.response.statusCode && res.response.statusCode === 200) {
+          let zosCloudBrokerInstancesListString = JSON.stringify(res.body);
+          let zosCloudBrokerInstanceList: ObjectList = JSON.parse(zosCloudBrokerInstancesListString);
+          if (zosCloudBrokerInstanceList.items.length === 0) {
+            return false;
+          }
+          const zosCloudBrokerInstance: ObjectInstance = zosCloudBrokerInstanceList.items[0];
+          if (zosCloudBrokerInstance.status?.phase !== CustomResourcePhases.successful) {
+            return false;
+          } else {
+            return true;
+          }
+        } else {
+          return false;
+        }
+      })
+      .catch((e) => {
+        const errorObjectString = JSON.stringify(e);
+        throw new Error(
+          `Failure validating ZosCloudBroker instance: ${errorObjectString}`,
+        );
       });
   }
 

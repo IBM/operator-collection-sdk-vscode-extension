@@ -5,7 +5,10 @@
 
 import * as vscode from "vscode";
 import { Session } from "../../utilities/session";
+import { AboutItem } from "../aboutItems/aboutItem";
 import { getBrokerIconPath } from "../../utilities/util";
+import { KubernetesObj } from "../../kubernetes/kubernetes";
+import { VSCodeCommands } from "../../utilities/commandConstants";
 
 type TreeItem = vscode.TreeItem | undefined | void;
 
@@ -27,22 +30,47 @@ export class AboutTreeProvider
     return element;
   }
 
-  getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
-    const items: Array<vscode.TreeItem> = [];
-    const ocSdkVersionInstalled = this.session.ocSdkVersion();
-    return Promise.all([ocSdkVersionInstalled]).then((values) => {
+  async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+    const k8s = new KubernetesObj();
+    const aboutItems: Array<AboutItem> = [];
+    const brokerIcon = {
+      light: getBrokerIconPath("light"),
+      dark: getBrokerIconPath("dark"),
+    };
+    if (this.session.loggedIntoOpenShift && this.session.zosCloudBrokerInstalled) {
+      const zosCloudBrokerRelease = await k8s.getZosCloudBrokerRelease();
       if (!element) {
-        const ocsdkVersionItem = new vscode.TreeItem(
-          `Operator Collection SDK v${values[0]}`,
-          vscode.TreeItemCollapsibleState.None,
-        );
-        ocsdkVersionItem.iconPath = {
-          light: getBrokerIconPath("light"),
-          dark: getBrokerIconPath("dark"),
-        };
-        items.push(ocsdkVersionItem);
+        if (zosCloudBrokerRelease !== undefined) {
+          aboutItems.push(
+            new AboutItem(
+              "IBM z/OS Cloud Broker",
+              zosCloudBrokerRelease,
+              brokerIcon
+            ),
+          );
+        } else {
+          aboutItems.push(
+            new AboutItem(
+              "IBM z/OS Cloud Broker",
+              "operator unavailable - version unknown",
+              brokerIcon
+            ),
+          );
+        }
       }
-      return items;
-    });
+    }
+    if (this.session.ocSdkInstalled) {
+      if (!element) {
+        const ocSdkVersion = await this.session.ocSdkVersion();
+        aboutItems.push(
+          new AboutItem(
+            "IBM Operator Collection SDK",
+            ocSdkVersion,
+            brokerIcon
+          )
+        );
+      }
+    }
+    return aboutItems;
   }
 }

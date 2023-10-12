@@ -53,7 +53,9 @@ export class ResourcesTreeProvider
   async getChildren(element?: ResourceTreeItem): Promise<ResourceTreeItem[]> {
     let resourceItems: Array<ResourceTreeItem> = [];
     const k8s = new KubernetesObj();
-    if (this.session.loggedIntoOpenShift && this.session.ocSdkInstalled) {
+    if (this.session.loggedIntoOpenShift && 
+      this.session.ocSdkInstalled && 
+      this.session.zosCloudBrokerInstalled) {
       if (element) {
         // Get operator children items
         if (element instanceof OperatorItem) {
