@@ -1332,7 +1332,7 @@ export class TestKubernetesObj extends KubernetesContext {
 
   private async csvInstalledSuccessfully(): Promise<boolean> {
     const csv = await this.getBrokerCSV();
-    if (csv?.status?.phase && csv?.status?.phase === "Succeeded") {
+    if (csv?.status?.phase && csv?.status?.phase === CustomResourcePhases.succeeded) {
       return true;
     }
     return false;

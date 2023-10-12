@@ -216,6 +216,11 @@
         "when": "operator-collection-sdk.sdkInstalled && operator-collection-sdk.sdkOutdatedVersion"
       },
       {
+        "view": "operator-collection-sdk.operators",
+        "contents": "Install the z/OS Cloud Broker Operator in the current project in OpenShift",
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
+      },
+      {
         "view": "operator-collection-sdk.resources",
         "contents": "Install the IBM Operator Collection SDk to use this extension",
         "when": "!operator-collection-sdk.sdkInstalled"
@@ -255,6 +260,11 @@
         {
           "command": "operator-collection-sdk.refreshAll",
           "when": "view == operator-collection-sdk.openshiftClusterInfo",
+          "group": "navigation"
+        },
+        {
+          "command": "operator-collection-sdk.refreshAll",
+          "when": "view == operator-collection-sdk.about",
           "group": "navigation"
         }
       ],
