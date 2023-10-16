@@ -98,6 +98,13 @@ describe("Extension Test Suite", async () => {
       }
 
       // Login to Openshift
+      const openShiftItem = new OpenShiftItem(
+        "OpenShift Cluster",
+        k8s.openshiftServerURL,
+        new vscode.ThemeIcon("cloud"),
+        "openshift-cluster",
+      );
+
       let args: Array<string> = [
         `--server="${testClusterInfo.ocpServerUrl}"`,
         `--token="${testClusterInfo.ocpToken}"`,
@@ -105,6 +112,7 @@ describe("Extension Test Suite", async () => {
       try {
         vscode.commands.executeCommand(
           VSCodeCommands.login,
+          openShiftItem,
           args,
           ocLoginLogPath,
         );
