@@ -414,7 +414,7 @@ function logIn(
 ): vscode.Disposable {
   return vscode.commands.registerCommand(
     command,
-    async (params?: string[], logPath?: string) => {
+    async (openshiftItem: OpenShiftItem, params: string[], logPath?: string) => {
       let args: string[] | undefined = [];
       if (params === undefined || params?.length === 0) {
         args = await util.requestLogInInfo();
@@ -703,7 +703,7 @@ function executeSimpleSdkCommand(
                     })
                     .catch((e) => {
                       session.operationPending = false;
-                      vscode.window.showInformationMessage(
+                      vscode.window.showErrorMessage(
                         `Failure executing Delete Operator command: RC ${e}`,
                       );
                     });
@@ -729,7 +729,7 @@ function executeSimpleSdkCommand(
                     })
                     .catch((e) => {
                       session.operationPending = false;
-                      vscode.window.showInformationMessage(
+                      vscode.window.showErrorMessage(
                         `Failure executing Redeploy Collection command: RC ${e}`,
                       );
                     });
@@ -752,7 +752,7 @@ function executeSimpleSdkCommand(
                     })
                     .catch((e) => {
                       session.operationPending = false;
-                      vscode.window.showInformationMessage(
+                      vscode.window.showErrorMessage(
                         `Failure executing Redeploy Operator command: RC ${e}`,
                       );
                     });
