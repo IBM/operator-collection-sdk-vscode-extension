@@ -6,6 +6,7 @@
 import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesContext } from "../kubernetes/kubernetesContext";
+import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
 import {
   getAnsibleGalaxySettings,
@@ -18,40 +19,34 @@ export class Session {
   public ocSdkOutdated: boolean = false;
   public skipSdkUpdated: boolean = false;
   public operationPending: boolean = false;
+  public zosCloudBrokerInstalled: boolean = false;
 
   constructor(public readonly ocSdkCmd: OcSdkCommand) {}
 
-  async update(skipRefresh?: boolean): Promise<boolean> {
-    const ocSdkInstalled = await this.validateOcSDKInstallation();
-    const loggedIntoOpenShift = await this.validateOpenShiftAccess();
-
-    if (!ocSdkInstalled) {
-      return vscode.commands.executeCommand(
-        "setContext",
-        VSCodeCommands.sdkInstalled,
-        ocSdkInstalled,
-      ).then(() => {
-        if (!skipRefresh) {
-          vscode.commands.executeCommand(VSCodeCommands.refreshAll);
-        }
-        vscode.window.showWarningMessage("Unable to detect the Operator Collection SDK. Please reinstall.");
-        return false;
+  async update(skipRefresh?: boolean, skipOcSdkValidation?: boolean): Promise<boolean> {
+    if (skipOcSdkValidation !== undefined && skipOcSdkValidation) {
+      return Promise.all([
+        this.validateOpenShiftAccess(), 
+        this.validateZosCloudBrokerInstallation(),
+      ]).then((values) => {
+        const loggedIntoOpenShift = values[0];
+        const zosCloudBrokerInstalled = values[1];
+        return setContext(loggedIntoOpenShift, zosCloudBrokerInstalled, undefined, undefined,  skipRefresh);
+      });
+    } else {
+      return Promise.all([
+        this.validateOcSDKInstallation(),
+        this.validateOpenShiftAccess(), 
+        this.validateZosCloudBrokerInstallation(),
+        this.determinateOcSdkIsOutdated()
+      ]).then((values) => {
+        const ocSdkInstalled = values[0];
+        const loggedIntoOpenShift = values[1];
+        const zosCloudBrokerInstalled = values[2];
+        const ocsdkOutdated = values[3];
+        return setContext(loggedIntoOpenShift, zosCloudBrokerInstalled, ocSdkInstalled, ocsdkOutdated, skipRefresh);
       });
     }
-    if (!loggedIntoOpenShift) {
-      return vscode.commands.executeCommand(
-        "setContext",
-        VSCodeCommands.loggedIn,
-        loggedIntoOpenShift,
-      ).then(() => {
-        if (!skipRefresh) {
-          vscode.commands.executeCommand(VSCodeCommands.refreshAll);
-        }
-        vscode.window.showWarningMessage("Unable to connect to an OpenShift cluster. Please log in again.");
-        return false;
-      });
-    }
-    return true;
   }
 
   /**
@@ -66,26 +61,25 @@ export class Session {
       this.ocSdkInstalled = true;
       return true;
     }
-    try {
-      await this.ocSdkCmd.runCollectionVerifyCommand();
+    return this.ocSdkCmd.runCollectionVerifyCommand().then(() => {
       this.ocSdkInstalled = true;
       return true;
-    } catch (e) {
+    }).catch(() => {
       console.log("Install the IBM Operator Collection SDK use this extension");
       // vscode.window.showWarningMessage("Install the IBM Operator Collection SDK Ansible collection to use the IBM Operator Collection SDK extension");
 
       this.ocSdkInstalled = false;
       return false;
-    }
+    });
   }
 
   /**
    * Determinate installed IBM Operator Collection SDK version
    * @returns - A promise containing a string, returning the installed IBM Operator Collection SDK version
    */
-  async ocSdkVersion(): Promise<string> {
+  async ocSdkVersion(): Promise<string | undefined> {
     const version = await this.ocSdkCmd.runOcSdkVersion();
-    return version;
+    return version?.trim();
   }
 
   /**
@@ -104,6 +98,7 @@ export class Session {
       this.ocSdkOutdated = await this.ocSdkCmd.runDeterminateOcSdkIsOutdated();
       return this.ocSdkOutdated;
     } else {
+      this.ocSdkOutdated = false;
       return false;
     }
   }
@@ -125,7 +120,7 @@ export class Session {
     const k8s = new KubernetesContext();
     if (k8s?.coreV1Api) {
       return k8s.coreV1Api
-        .listNamespacedPod(k8s.namespace)
+        .readNamespace(k8s.namespace)
         .then(() => {
           this.loggedIntoOpenShift = true;
           return true;
@@ -143,4 +138,83 @@ export class Session {
       return false;
     }
   }
+
+  /**
+   * Validates that the ZosCloudBroker instance is installed and running
+   * @returns - A promise containing a boolean, returning true if the instance has been created
+   */
+  async validateZosCloudBrokerInstallation(): Promise<boolean> {
+    const k8s = new KubernetesObj();
+    return k8s.zosCloudBrokerInstanceCreated().then((createdSuccessfully) => {
+      if (createdSuccessfully !== undefined) {
+        this.zosCloudBrokerInstalled = createdSuccessfully;
+        return createdSuccessfully;
+      } else {
+        return false;
+      }
+    }).catch((e) => {
+      console.log(
+        "Failure validating ZosCloudBroker install status: " +
+          JSON.stringify(e),
+      );
+      return false;
+    });
+  }
+}
+
+async function setContext(loggedIntoOpenShift: boolean, zosCloudBrokerInstalled: boolean, ocSdkInstalled?: boolean, ocSdkOutdated?: boolean, skipRefresh?: boolean): Promise<boolean> {
+  if (ocSdkInstalled !== undefined && !ocSdkInstalled) {
+    return vscode.commands.executeCommand(
+      "setContext",
+      VSCodeCommands.sdkInstalled,
+      ocSdkInstalled,
+    ).then(() => {
+      if (!skipRefresh) {
+        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+      }
+      vscode.window.showWarningMessage("Unable to detect the Operator Collection SDK. Please reinstall.");
+      return false;
+    });
+  }
+  if (!loggedIntoOpenShift) {
+    return vscode.commands.executeCommand(
+      "setContext",
+      VSCodeCommands.loggedIn,
+      loggedIntoOpenShift,
+    ).then(() => {
+      if (skipRefresh !== undefined && !skipRefresh) {
+        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+      }
+      vscode.window.showWarningMessage("Unable to connect to an OpenShift cluster. Please log in again.");
+      return false;
+    });
+  }
+
+  if (!zosCloudBrokerInstalled) {
+    return vscode.commands.executeCommand(
+      "setContext",
+      VSCodeCommands.zosCloudBrokerInstalled,
+      zosCloudBrokerInstalled,
+    ).then(() => {
+      if (skipRefresh !== undefined && !skipRefresh) {
+        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+      }
+      return false;
+    });
+  }
+
+  if (ocSdkOutdated !== undefined) {
+    return vscode.commands.executeCommand(
+      "setContext",
+      VSCodeCommands.sdkOutdatedVersion,
+      ocSdkOutdated,
+    ).then(() => {
+      if (!skipRefresh) {
+        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+      }
+      return !ocSdkOutdated;
+    });
+  }
+  
+  return true;
 }

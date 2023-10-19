@@ -12,7 +12,6 @@ import {
 import { getOperatorContainerItems } from "../operatorItems/operatorContainerItem";
 import { OperatorTreeItem } from "../operatorItems/operatorTreeItems";
 import { Session } from "../../utilities/session";
-import { VSCodeCommands } from "../../utilities/commandConstants";
 
 type TreeItem = OperatorTreeItem | undefined | void;
 
@@ -48,7 +47,10 @@ export class OperatorsTreeProvider
   async getChildren(element?: OperatorTreeItem): Promise<OperatorTreeItem[]> {
     const operatorTreeItems: Array<OperatorTreeItem> = [];
 
-    if (this.session.loggedIntoOpenShift && this.session.ocSdkInstalled) {
+    if (this.session.loggedIntoOpenShift && 
+      this.session.ocSdkInstalled &&
+      this.session.zosCloudBrokerInstalled &&
+      !this.session.ocSdkOutdated) {
       if (element) {
         // Get operator children items
         if (element instanceof OperatorItem) {

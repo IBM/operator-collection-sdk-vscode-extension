@@ -184,23 +184,30 @@
       "operator-collection-sdk": [
         {
           "id": "operator-collection-sdk.operators",
-          "name": "Operators"
+          "name": "Operators",
+          "initialSize": 3
         },
         {
           "id": "operator-collection-sdk.resources",
-          "name": "OpenShift Resources"
-        },
-        {
-          "id": "operator-collection-sdk.help",
-          "name": "Help And Additional Resources"
+          "name": "OpenShift Resources",
+          "initialSize": 3
         },
         {
           "id": "operator-collection-sdk.openshiftClusterInfo",
-          "name": "OpenShift Cluster Info"
+          "name": "OpenShift Cluster Info",
+          "initialSize": 1
         },
         {
           "id": "operator-collection-sdk.about",
-          "name": "About"
+          "name": "About",
+          "visibility": "collapsed",
+          "initialSize": 1
+        },
+        {
+          "id": "operator-collection-sdk.help",
+          "name": "Help And Additional Resources",
+          "visibility": "collapsed",
+          "initialSize": 1
         }
       ]
     },
@@ -216,9 +223,19 @@
         "when": "operator-collection-sdk.sdkInstalled && operator-collection-sdk.sdkOutdatedVersion"
       },
       {
+        "view": "operator-collection-sdk.operators",
+        "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift to use this extension",
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
+      },
+      {
         "view": "operator-collection-sdk.resources",
         "contents": "Install the IBM Operator Collection SDk to use this extension",
         "when": "!operator-collection-sdk.sdkInstalled"
+      },
+      {
+        "view": "operator-collection-sdk.resources",
+        "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift to use this extension",
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
       },
       {
         "view": "operator-collection-sdk.openshiftClusterInfo",
@@ -229,6 +246,11 @@
         "view": "operator-collection-sdk.operators",
         "contents": "Log in to an OpenShift Cluster to use this extension",
         "when": "!operator-collection-sdk.loggedIn && operator-collection-sdk.sdkInstalled"
+      },
+      {
+        "view": "operator-collection-sdk.about",
+        "contents": "IBM Operator Collection SDK and IBM z/OS Cloud Broker Operator not installed",
+        "when": "!operator-collection-sdk.sdkInstalled && operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
       }
     ],
     "viewsContainers": {
@@ -255,6 +277,11 @@
         {
           "command": "operator-collection-sdk.refreshAll",
           "when": "view == operator-collection-sdk.openshiftClusterInfo",
+          "group": "navigation"
+        },
+        {
+          "command": "operator-collection-sdk.refreshAll",
+          "when": "view == operator-collection-sdk.about",
           "group": "navigation"
         }
       ],
