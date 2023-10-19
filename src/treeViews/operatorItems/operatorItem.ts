@@ -30,10 +30,10 @@ export class OperatorItem extends OperatorTreeItem {
  * @returns — A promise containing the WorkSpaceOperators object
  */
 export async function getOperatorItems(): Promise<OperatorItem[]> {
-  let operatorItems: Array<OperatorItem> = [];
-  for (const file of await vscode.workspace.findFiles(
-    "**/operator-config.*ml",
-  )) {
+  const operatorItems: Array<OperatorItem> = [];
+  const files = await vscode.workspace.findFiles("**/operator-config.*ml");
+  files.sort();
+  for (const file of files) {
     const operatorConigFilePath = file.fsPath;
     const workspacePath = path.parse(operatorConigFilePath).dir;
     let data = await vscode.workspace.openTextDocument(file);
