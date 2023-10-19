@@ -27,22 +27,24 @@ export class Session {
     if (skipOcSdkValidation !== undefined && skipOcSdkValidation) {
       return Promise.all([
         this.validateOpenShiftAccess(), 
-        this.validateZosCloudBrokerInstallation()
+        this.validateZosCloudBrokerInstallation(),
       ]).then((values) => {
         const loggedIntoOpenShift = values[0];
         const zosCloudBrokerInstalled = values[1];
-        return setContext(loggedIntoOpenShift, zosCloudBrokerInstalled, undefined, skipRefresh);
+        return setContext(loggedIntoOpenShift, zosCloudBrokerInstalled, undefined, undefined,  skipRefresh);
       });
     } else {
       return Promise.all([
-        this.validateOcSDKInstallation(), 
+        this.validateOcSDKInstallation(),
         this.validateOpenShiftAccess(), 
-        this.validateZosCloudBrokerInstallation()
+        this.validateZosCloudBrokerInstallation(),
+        this.determinateOcSdkIsOutdated()
       ]).then((values) => {
         const ocSdkInstalled = values[0];
         const loggedIntoOpenShift = values[1];
         const zosCloudBrokerInstalled = values[2];
-        return setContext(loggedIntoOpenShift, zosCloudBrokerInstalled, ocSdkInstalled, skipRefresh);
+        const ocsdkOutdated = values[3];
+        return setContext(loggedIntoOpenShift, zosCloudBrokerInstalled, ocSdkInstalled, ocsdkOutdated, skipRefresh);
       });
     }
   }
@@ -75,9 +77,9 @@ export class Session {
    * Determinate installed IBM Operator Collection SDK version
    * @returns - A promise containing a string, returning the installed IBM Operator Collection SDK version
    */
-  async ocSdkVersion(): Promise<string> {
+  async ocSdkVersion(): Promise<string | undefined> {
     const version = await this.ocSdkCmd.runOcSdkVersion();
-    return version.trim();
+    return version?.trim();
   }
 
   /**
@@ -96,6 +98,7 @@ export class Session {
       this.ocSdkOutdated = await this.ocSdkCmd.runDeterminateOcSdkIsOutdated();
       return this.ocSdkOutdated;
     } else {
+      this.ocSdkOutdated = false;
       return false;
     }
   }
@@ -159,7 +162,7 @@ export class Session {
   }
 }
 
-async function setContext(loggedIntoOpenShift: boolean, zosCloudBrokerInstalled: boolean, ocSdkInstalled?: boolean, skipRefresh?: boolean): Promise<boolean> {
+async function setContext(loggedIntoOpenShift: boolean, zosCloudBrokerInstalled: boolean, ocSdkInstalled?: boolean, ocSdkOutdated?: boolean, skipRefresh?: boolean): Promise<boolean> {
   if (ocSdkInstalled !== undefined && !ocSdkInstalled) {
     return vscode.commands.executeCommand(
       "setContext",
@@ -199,5 +202,19 @@ async function setContext(loggedIntoOpenShift: boolean, zosCloudBrokerInstalled:
       return false;
     });
   }
+
+  if (ocSdkOutdated !== undefined) {
+    return vscode.commands.executeCommand(
+      "setContext",
+      VSCodeCommands.sdkOutdatedVersion,
+      ocSdkOutdated,
+    ).then(() => {
+      if (!skipRefresh) {
+        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+      }
+      return !ocSdkOutdated;
+    });
+  }
+  
   return true;
 }

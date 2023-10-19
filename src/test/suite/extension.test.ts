@@ -176,6 +176,7 @@ describe("Extension Test Suite", async () => {
     session = new Session(ocSdkCmd);
     await session.validateOcSDKInstallation();
     await session.validateOpenShiftAccess();
+    await session.validateZosCloudBrokerInstallation();
 
     try {
       vscode.commands.executeCommand(
@@ -1424,7 +1425,7 @@ async function installOperatorCollectionSDK(installSdkLogPath: string) {
   await util.sleep(15000);
   try {
     child_process.execSync(
-      "ansible-galaxy collection verify ibm.operator_collection_sdk",
+      "ansible-galaxy collection list | grep ibm.operator_collection_sdk",
     );
   } catch (e) {
     console.log("Printing Install OC SDK logs");

@@ -200,6 +200,7 @@
         {
           "id": "operator-collection-sdk.about",
           "name": "About",
+          "visibility": "collapsed",
           "initialSize": 1
         },
         {

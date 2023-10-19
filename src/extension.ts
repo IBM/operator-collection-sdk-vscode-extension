@@ -77,6 +77,7 @@ export async function activate(context: vscode.ExtensionContext) {
   await session.validateOcSDKInstallation();
   await session.validateOpenShiftAccess();
   await session.validateZosCloudBrokerInstallation();
+  await session.determinateOcSdkIsOutdated();
   const outputChannel = vscode.window.createOutputChannel(
     "IBM Operator Collection SDK",
   );
@@ -292,11 +293,10 @@ function installOcSdk(
         "Installing the IBM Operator Collection SDK",
       );
 
-      await ocSdkCmd.installOcSDKDependencies(outputChannel, logPath);
-
-      ocSdkCmd
-        .installOcSDKCommand(outputChannel, logPath)
-        .then(() => {
+      Promise.all([
+        ocSdkCmd.installOcSDKDependencies(outputChannel, logPath),
+        ocSdkCmd.installOcSDKCommand(outputChannel, logPath)
+      ]).then(() => {
           session.ocSdkInstalled = true;
           vscode.window.showInformationMessage(
             "Successfully installed the IBM Operator Collection SDK",
@@ -328,16 +328,19 @@ function updateOcSdkVersion(
       vscode.window.showInformationMessage(
         "Upgrading the IBM Operator Collection SDK to the latest version available in galaxy server",
       );
-      ocSdkCmd.upgradeOCSDKtoLatestVersion().then(() => {
+      outputChannel?.show();
+      vscode.window.showInformationMessage(
+        "Installing the IBM Operator Collection SDK",
+      );
+      ocSdkCmd.upgradeOCSDKtoLatestVersion(outputChannel).then(async () => {
         vscode.window.showInformationMessage(
           "Successfully upgraded to the latest IBM Operator Collection SDK available in galaxy server",
         );
-        vscode.commands.executeCommand(
-          "setContext",
-          VSCodeCommands.sdkOutdatedVersion,
-          false,
+        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure upgrading to the latest IBM Operator Collection SDK: ${e}`,
         );
-        vscode.commands.executeCommand(VSCodeCommands.refresh);
       });
     } catch (e) {
       vscode.window.showErrorMessage(
@@ -346,7 +349,7 @@ function updateOcSdkVersion(
       vscode.commands.executeCommand(
         "setContext",
         VSCodeCommands.sdkOutdatedVersion,
-        true,
+        await session.determinateOcSdkIsOutdated(),
       );
       vscode.commands.executeCommand(VSCodeCommands.refresh);
     }
@@ -822,7 +825,9 @@ function executeSdkCommandWithUserInput(
                   playbookArgs,
                   outputChannel,
                   logPath,
-                );
+                ).then(() => {
+                  session.operationPending = false;
+                });
               Promise.all([poll, runCreateOperatorCommand])
                 .then(() => {
                   session.operationPending = false;

@@ -65,7 +65,7 @@ export class AboutTreeProvider
         aboutItems.push(
           new AboutItem(
             "IBM Operator Collection SDK",
-            ocSdkVersion,
+            ocSdkVersion!,
             brokerIcon
           )
         );
