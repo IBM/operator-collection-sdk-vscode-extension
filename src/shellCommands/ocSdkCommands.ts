@@ -229,6 +229,7 @@ export class OcSdkCommand {
       "collection",
       "install",
       "-f",
+      "--pre",
       "-s",
       galaxyUrl,
       `${galaxyNamespace}.operator_collection_sdk`,
@@ -245,7 +246,7 @@ export class OcSdkCommand {
   async runOcSdkVersion(
     outputChannel?: vscode.OutputChannel,
     logPath?: string,
-  ): Promise<string> {
+  ): Promise<string | undefined> {
     const galaxyNamespace = getAnsibleGalaxySettings(
       AnsibleGalaxySettings.ansibleGalaxyNamespace,
     ) as string;
@@ -267,9 +268,10 @@ export class OcSdkCommand {
       })?.[1]; // item in [1] is the version
     };
 
-    await this.run(cmd, args, outputChannel, logPath, setVersionInstalled);
-    return new Promise<string>((resolve) => {
-      resolve(versionInstalled);
+    return this.run(cmd, args, outputChannel, logPath, setVersionInstalled).then(() => {
+      return versionInstalled;
+    }).catch((e) => {
+      return undefined;
     });
   }
 
@@ -305,8 +307,10 @@ export class OcSdkCommand {
     return new Promise<boolean>((resolve, reject) => {
       if (latestVersion === undefined) {
         reject("Unable to locate latest version");
+      } else if (versionInstalled === undefined) {
+        resolve(false); // return false if OC SDK isn't installed
       } else {
-        resolve(!(versionInstalled === latestVersion));
+        resolve(!(versionInstalled.trim() === latestVersion.trim()));
       }
     });
   }
@@ -332,10 +336,12 @@ export class OcSdkCommand {
     let args: Array<string> = [
       "collection",
       "install",
+      "--pre",
+      "--upgrade",
+      "-f",
       "-s",
       galaxyUrl,
       `${galaxyNamespace}.operator_collection_sdk`,
-      "--upgrade",
     ];
     return this.run(cmd, args, outputChannel, logPath);
   }
