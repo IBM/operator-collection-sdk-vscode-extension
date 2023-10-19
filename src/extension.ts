@@ -721,7 +721,9 @@ function executeSimpleSdkCommand(
                     ocSdkCommand.runRedeployCollectionCommand(
                       outputChannel,
                       logPath,
-                    );
+                    ).then(() => {
+                      session.operationPending = false;
+                    });
                   Promise.all([poll, runRedeployCollectionCommand])
                     .then(() => {
                       session.operationPending = false;
@@ -744,7 +746,9 @@ function executeSimpleSdkCommand(
                   );
                   const poll = util.pollRun(40);
                   const runRedeployOperatorCommand =
-                    ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
+                    ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath).then(() => {
+                      session.operationPending = false;
+                    });
                   Promise.all([poll, runRedeployOperatorCommand])
                     .then(() => {
                       session.operationPending = false;
