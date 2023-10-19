@@ -98,6 +98,13 @@ describe("Extension Test Suite", async () => {
       }
 
       // Login to Openshift
+      const openShiftItem = new OpenShiftItem(
+        "OpenShift Cluster",
+        k8s.openshiftServerURL,
+        new vscode.ThemeIcon("cloud"),
+        "openshift-cluster",
+      );
+
       let args: Array<string> = [
         `--server="${testClusterInfo.ocpServerUrl}"`,
         `--token="${testClusterInfo.ocpToken}"`,
@@ -105,6 +112,7 @@ describe("Extension Test Suite", async () => {
       try {
         vscode.commands.executeCommand(
           VSCodeCommands.login,
+          openShiftItem,
           args,
           ocLoginLogPath,
         );
@@ -168,6 +176,7 @@ describe("Extension Test Suite", async () => {
     session = new Session(ocSdkCmd);
     await session.validateOcSDKInstallation();
     await session.validateOpenShiftAccess();
+    await session.validateZosCloudBrokerInstallation();
 
     try {
       vscode.commands.executeCommand(
@@ -1416,7 +1425,7 @@ async function installOperatorCollectionSDK(installSdkLogPath: string) {
   await util.sleep(15000);
   try {
     child_process.execSync(
-      "ansible-galaxy collection verify ibm.operator_collection_sdk",
+      "ansible-galaxy collection list | grep ibm.operator_collection_sdk",
     );
   } catch (e) {
     console.log("Printing Install OC SDK logs");
