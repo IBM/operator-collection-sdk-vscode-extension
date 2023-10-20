@@ -631,31 +631,33 @@ function executeContainerViewLogCommand(command: string, session: Session): vsco
                         workspacePath,
                       );
                     let crInstance: string | undefined = "";
-                    if (apiVersion) {
-                      crInstance = await util.selectCustomResourceInstance(
-                        workspacePath,
-                        k8s,
-                        apiVersion,
-                        kind!,
-                      );
-                      if (kind && crInstance) {
-                        const logUri = util.buildVerboseContainerLogUri(
-                          containerItemArgs.podObj.metadata?.name!,
-                          containerItemArgs.containerStatus.name,
+                    if (kind !== undefined) {
+                      if (apiVersion) {
+                        crInstance = await util.selectCustomResourceInstance(
+                          workspacePath,
+                          k8s,
                           apiVersion,
-                          kind,
-                          crInstance,
+                          kind!,
                         );
-                        const doc = await vscode.workspace.openTextDocument(logUri);
-                        await vscode.window.showTextDocument(doc, {
-                          preview: false,
-                        });
-                        vscode.commands.executeCommand(VSCodeCommands.refreshVerboseContainerLog, logUri);
+                        if (kind && crInstance) {
+                          const logUri = util.buildVerboseContainerLogUri(
+                            containerItemArgs.podObj.metadata?.name!,
+                            containerItemArgs.containerStatus.name,
+                            apiVersion,
+                            kind,
+                            crInstance,
+                          );
+                          const doc = await vscode.workspace.openTextDocument(logUri);
+                          await vscode.window.showTextDocument(doc, {
+                            preview: false,
+                          });
+                          vscode.commands.executeCommand(VSCodeCommands.refreshVerboseContainerLog, logUri);
+                        }
+                      } else {
+                        vscode.window.showErrorMessage(
+                          "Unable to download log due to undefined version in operator-config",
+                        );
                       }
-                    } else {
-                      vscode.window.showErrorMessage(
-                        "Unable to download log due to undefined version in operator-config",
-                      );
                     }
                   }
                 }

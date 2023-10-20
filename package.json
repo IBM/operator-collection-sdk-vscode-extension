@@ -351,6 +351,60 @@
           "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-namespace",
           "group": "inline"
         }
+      ],
+      "commandPalette": [
+        {
+          "command": "operator-collection-sdk.viewLogs",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.viewVerboseLogs",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.openEditLink",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.viewResource",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.openAddLink",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.deleteCustomResource",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.login",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.logout",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.updateProject",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.refresh",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.resourceRefresh",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.refreshAll",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.refreshOpenShiftInfo",
+          "when": "false"
+        }
       ]
     },
     "yamlValidation": [
