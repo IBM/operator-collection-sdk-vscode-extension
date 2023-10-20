@@ -8,7 +8,6 @@ import { Session } from "../../utilities/session";
 import { AboutItem } from "../aboutItems/aboutItem";
 import { getBrokerIconPath } from "../../utilities/util";
 import { KubernetesObj } from "../../kubernetes/kubernetes";
-import { VSCodeCommands } from "../../utilities/commandConstants";
 
 type TreeItem = vscode.TreeItem | undefined | void;
 
