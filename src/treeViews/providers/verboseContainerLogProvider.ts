@@ -12,13 +12,14 @@ import { VSCodeCommands } from "../../utilities/commandConstants";
 export class VerboseContainerLogProvider
   implements vscode.TextDocumentContentProvider
 {
-  // Static property to store the instances
-  private static verboseContainerLogProviders: VerboseContainerLogProvider[] =
-    [];
 
-  constructor(private readonly session: Session) {
-    // Store the instances on the static property
-    VerboseContainerLogProvider.verboseContainerLogProviders.push(this);
+  constructor(private readonly session: Session) {}
+
+  onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+  onDidChange = this.onDidChangeEmitter.event;
+
+  refresh(uri: vscode.Uri): void {
+    this.onDidChangeEmitter.fire(uri);
   }
 
   async provideTextDocumentContent(uri: vscode.Uri): Promise<string | undefined> {
