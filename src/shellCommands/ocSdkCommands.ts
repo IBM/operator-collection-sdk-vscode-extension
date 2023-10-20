@@ -88,9 +88,11 @@ export class OcSdkCommand {
   }
 
   /**
-   * Executes the collection verify command to validate the collection is installed
+   * Executes the collection list command to validate the collection is installed
    * @param outputChannel - The VS Code output channel to display command output
    * @param logPath - Log path to store command output
+   * @param namespace - The Ansible Galaxy namespace
+   * @param collection - The Ansible Collection name (default: operator_collection_sdk)
    * @returns - A Promise container the return code of the command being executed
    */
   async runCollectionVerifyCommand(
@@ -99,20 +101,19 @@ export class OcSdkCommand {
     namespace?: string,
     collection: string = "operator_collection_sdk",
   ): Promise<string> {
-    const galaxyUrl = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyURL,
-    ) as string;
     const galaxyNamespace =
       namespace ??
       (getAnsibleGalaxySettings(
         AnsibleGalaxySettings.ansibleGalaxyNamespace,
       ) as string);
+
+    // ansible-galaxy collection list | grep ibm.operator_collection_sdk
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = [
       "collection",
-      "verify",
-      "-s",
-      galaxyUrl,
+      "list",
+      "|",
+      "grep",
       `${galaxyNamespace}.${collection}`,
     ];
     return this.run(cmd, args, outputChannel, logPath);
@@ -228,6 +229,7 @@ export class OcSdkCommand {
       "collection",
       "install",
       "-f",
+      "--pre",
       "-s",
       galaxyUrl,
       `${galaxyNamespace}.operator_collection_sdk`,
@@ -244,7 +246,7 @@ export class OcSdkCommand {
   async runOcSdkVersion(
     outputChannel?: vscode.OutputChannel,
     logPath?: string,
-  ): Promise<string> {
+  ): Promise<string | undefined> {
     const galaxyNamespace = getAnsibleGalaxySettings(
       AnsibleGalaxySettings.ansibleGalaxyNamespace,
     ) as string;
@@ -266,9 +268,10 @@ export class OcSdkCommand {
       })?.[1]; // item in [1] is the version
     };
 
-    await this.run(cmd, args, outputChannel, logPath, setVersionInstalled);
-    return new Promise<string>((resolve) => {
-      resolve(versionInstalled);
+    return this.run(cmd, args, outputChannel, logPath, setVersionInstalled).then(() => {
+      return versionInstalled;
+    }).catch((e) => {
+      return undefined;
     });
   }
 
@@ -304,8 +307,10 @@ export class OcSdkCommand {
     return new Promise<boolean>((resolve, reject) => {
       if (latestVersion === undefined) {
         reject("Unable to locate latest version");
+      } else if (versionInstalled === undefined) {
+        resolve(false); // return false if OC SDK isn't installed
       } else {
-        resolve(!(versionInstalled === latestVersion));
+        resolve(!(versionInstalled.trim() === latestVersion.trim()));
       }
     });
   }
@@ -331,10 +336,12 @@ export class OcSdkCommand {
     let args: Array<string> = [
       "collection",
       "install",
+      "--pre",
+      "--upgrade",
+      "-f",
       "-s",
       galaxyUrl,
       `${galaxyNamespace}.operator_collection_sdk`,
-      "--upgrade",
     ];
     return this.run(cmd, args, outputChannel, logPath);
   }

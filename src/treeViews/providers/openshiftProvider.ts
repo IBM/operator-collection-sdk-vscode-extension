@@ -7,11 +7,6 @@ import * as vscode from "vscode";
 import { OpenShiftItem } from "../openshiftItems/openshiftItem";
 import { KubernetesObj } from "../../kubernetes/kubernetes";
 import { Session } from "../../utilities/session";
-import { ResourcesTreeProvider } from "../../treeViews/providers/resourceProvider";
-import { OperatorsTreeProvider } from "../../treeViews/providers/operatorProvider";
-import { ContainerLogProvider } from "../../treeViews/providers/containerLogProvider";
-import { CustomResourceDisplayProvider } from "../../treeViews/providers/customResourceDisplayProviders";
-import { VerboseContainerLogProvider } from "../../treeViews/providers/verboseContainerLogProvider";
 
 type TreeItem = OpenShiftItem | undefined | void;
 

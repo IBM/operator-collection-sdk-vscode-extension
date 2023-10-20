@@ -76,6 +76,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
   await session.validateOcSDKInstallation();
   await session.validateOpenShiftAccess();
+  await session.validateZosCloudBrokerInstallation();
+  await session.determinateOcSdkIsOutdated();
   const outputChannel = vscode.window.createOutputChannel(
     "IBM Operator Collection SDK",
   );
@@ -134,6 +136,11 @@ export async function activate(context: vscode.ExtensionContext) {
     "setContext",
     VSCodeCommands.sdkOutdatedVersion,
     await session.determinateOcSdkIsOutdated(),
+  );
+  vscode.commands.executeCommand(
+    "setContext",
+    VSCodeCommands.zosCloudBrokerInstalled,
+    await session.validateZosCloudBrokerInstallation(),
   );
   context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
   context.subscriptions.push(logOut(VSCodeCommands.logout, ocCmd, session));
@@ -222,6 +229,7 @@ export async function activate(context: vscode.ExtensionContext) {
         openshiftTreeProvider.refresh();
         operatorTreeProvider.refresh();
         resourceTreeProvider.refresh();
+        aboutProvider.refresh();
       }).catch((e) => {
         vscode.window.showErrorMessage(
           `Failure updating session: ${e}`,
@@ -285,11 +293,10 @@ function installOcSdk(
         "Installing the IBM Operator Collection SDK",
       );
 
-      await ocSdkCmd.installOcSDKDependencies(outputChannel, logPath);
-
-      ocSdkCmd
-        .installOcSDKCommand(outputChannel, logPath)
-        .then(() => {
+      Promise.all([
+        ocSdkCmd.installOcSDKDependencies(outputChannel, logPath),
+        ocSdkCmd.installOcSDKCommand(outputChannel, logPath)
+      ]).then(() => {
           session.ocSdkInstalled = true;
           vscode.window.showInformationMessage(
             "Successfully installed the IBM Operator Collection SDK",
@@ -321,16 +328,19 @@ function updateOcSdkVersion(
       vscode.window.showInformationMessage(
         "Upgrading the IBM Operator Collection SDK to the latest version available in galaxy server",
       );
-      ocSdkCmd.upgradeOCSDKtoLatestVersion().then(() => {
+      outputChannel?.show();
+      vscode.window.showInformationMessage(
+        "Installing the IBM Operator Collection SDK",
+      );
+      ocSdkCmd.upgradeOCSDKtoLatestVersion(outputChannel).then(async () => {
         vscode.window.showInformationMessage(
           "Successfully upgraded to the latest IBM Operator Collection SDK available in galaxy server",
         );
-        vscode.commands.executeCommand(
-          "setContext",
-          VSCodeCommands.sdkOutdatedVersion,
-          false,
+        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure upgrading to the latest IBM Operator Collection SDK: ${e}`,
         );
-        vscode.commands.executeCommand(VSCodeCommands.refresh);
       });
     } catch (e) {
       vscode.window.showErrorMessage(
@@ -339,7 +349,7 @@ function updateOcSdkVersion(
       vscode.commands.executeCommand(
         "setContext",
         VSCodeCommands.sdkOutdatedVersion,
-        true,
+        await session.determinateOcSdkIsOutdated(),
       );
       vscode.commands.executeCommand(VSCodeCommands.refresh);
     }
@@ -362,8 +372,8 @@ function updateProject(
         return;
       }
 
-      session.update().then(async (proceed) => {
-        if (proceed) {
+      session.update(false, true).then(async () => {
+        if (session.loggedIntoOpenShift) {
           const k8s = new KubernetesObj();
           let namespace: string | undefined;
           if (arg.description === k8s.namespace) {
@@ -407,7 +417,7 @@ function logIn(
 ): vscode.Disposable {
   return vscode.commands.registerCommand(
     command,
-    async (params?: string[], logPath?: string) => {
+    async (openshiftItem: OpenShiftItem, params: string[], logPath?: string) => {
       let args: string[] | undefined = [];
       if (params === undefined || params?.length === 0) {
         args = await util.requestLogInInfo();
@@ -696,7 +706,7 @@ function executeSimpleSdkCommand(
                     })
                     .catch((e) => {
                       session.operationPending = false;
-                      vscode.window.showInformationMessage(
+                      vscode.window.showErrorMessage(
                         `Failure executing Delete Operator command: RC ${e}`,
                       );
                     });
@@ -711,7 +721,9 @@ function executeSimpleSdkCommand(
                     ocSdkCommand.runRedeployCollectionCommand(
                       outputChannel,
                       logPath,
-                    );
+                    ).then(() => {
+                      session.operationPending = false;
+                    });
                   Promise.all([poll, runRedeployCollectionCommand])
                     .then(() => {
                       session.operationPending = false;
@@ -722,7 +734,7 @@ function executeSimpleSdkCommand(
                     })
                     .catch((e) => {
                       session.operationPending = false;
-                      vscode.window.showInformationMessage(
+                      vscode.window.showErrorMessage(
                         `Failure executing Redeploy Collection command: RC ${e}`,
                       );
                     });
@@ -734,7 +746,9 @@ function executeSimpleSdkCommand(
                   );
                   const poll = util.pollRun(40);
                   const runRedeployOperatorCommand =
-                    ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
+                    ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath).then(() => {
+                      session.operationPending = false;
+                    });
                   Promise.all([poll, runRedeployOperatorCommand])
                     .then(() => {
                       session.operationPending = false;
@@ -745,7 +759,7 @@ function executeSimpleSdkCommand(
                     })
                     .catch((e) => {
                       session.operationPending = false;
-                      vscode.window.showInformationMessage(
+                      vscode.window.showErrorMessage(
                         `Failure executing Redeploy Operator command: RC ${e}`,
                       );
                     });
@@ -815,7 +829,9 @@ function executeSdkCommandWithUserInput(
                   playbookArgs,
                   outputChannel,
                   logPath,
-                );
+                ).then(() => {
+                  session.operationPending = false;
+                });
               Promise.all([poll, runCreateOperatorCommand])
                 .then(() => {
                   session.operationPending = false;
