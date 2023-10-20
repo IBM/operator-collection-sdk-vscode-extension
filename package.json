@@ -224,7 +224,7 @@
       },
       {
         "view": "operator-collection-sdk.operators",
-        "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift to use this extension",
+        "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift, and create a ZosCloudBroker instance to use this extension",
         "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
       },
       {
@@ -234,7 +234,7 @@
       },
       {
         "view": "operator-collection-sdk.resources",
-        "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift to use this extension",
+        "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift, and create a ZosCloudBroker instance to use this extension",
         "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
       },
       {
