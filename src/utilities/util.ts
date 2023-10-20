@@ -718,16 +718,3 @@ export function getLinterSettings(property: string): any {
   );
   return configuration.get(property);
 }
-
-export function getBrokerIconPath(theme: string): string {
-  const path = require("path");
-  return path.join(
-    __filename,
-    "..",
-    "..",
-    "resources",
-    "icons",
-    theme,
-    "broker.png",
-  );
-}
