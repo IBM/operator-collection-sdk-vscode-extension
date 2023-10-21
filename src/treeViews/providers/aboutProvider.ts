@@ -6,7 +6,7 @@
 import * as vscode from "vscode";
 import { Session } from "../../utilities/session";
 import { AboutItem } from "../aboutItems/aboutItem";
-import { getBrokerIconPath } from "../../utilities/util";
+import { getBrokerIcons, getOperatorCollectionSdkIcons } from "../../treeViews/icons";
 import { KubernetesObj } from "../../kubernetes/kubernetes";
 
 type TreeItem = vscode.TreeItem | undefined | void;
@@ -32,10 +32,8 @@ export class AboutTreeProvider
   async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
     const k8s = new KubernetesObj();
     const aboutItems: Array<AboutItem> = [];
-    const brokerIcon = {
-      light: getBrokerIconPath("light"),
-      dark: getBrokerIconPath("dark"),
-    };
+    const brokerIcons = getBrokerIcons() as vscode.ThemeIcon;
+    const ocSdkIcons = getOperatorCollectionSdkIcons() as vscode.ThemeIcon;
     if (this.session.loggedIntoOpenShift && this.session.zosCloudBrokerInstalled) {
       const zosCloudBrokerRelease = await k8s.getZosCloudBrokerRelease();
       if (!element) {
@@ -44,7 +42,7 @@ export class AboutTreeProvider
             new AboutItem(
               "IBM z/OS Cloud Broker",
               zosCloudBrokerRelease,
-              brokerIcon
+              brokerIcons
             ),
           );
         } else {
@@ -52,7 +50,7 @@ export class AboutTreeProvider
             new AboutItem(
               "IBM z/OS Cloud Broker",
               "operator unavailable - version unknown",
-              brokerIcon
+              ocSdkIcons
             ),
           );
         }
@@ -65,7 +63,7 @@ export class AboutTreeProvider
           new AboutItem(
             "IBM Operator Collection SDK",
             ocSdkVersion!,
-            brokerIcon
+            ocSdkIcons
           )
         );
       }
