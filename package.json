@@ -7,7 +7,7 @@
   },
   "icon": "resources/icons/broker-logo.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension"
@@ -224,7 +224,7 @@
       },
       {
         "view": "operator-collection-sdk.operators",
-        "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift to use this extension",
+        "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift, and create a ZosCloudBroker instance to use this extension",
         "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
       },
       {
@@ -234,7 +234,7 @@
       },
       {
         "view": "operator-collection-sdk.resources",
-        "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift to use this extension",
+        "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift, and create a ZosCloudBroker instance to use this extension",
         "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
       },
       {
@@ -350,6 +350,60 @@
           "command": "operator-collection-sdk.updateProject",
           "when": "view == operator-collection-sdk.openshiftClusterInfo && viewItem == openshift-namespace",
           "group": "inline"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "operator-collection-sdk.viewLogs",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.viewVerboseLogs",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.openEditLink",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.viewResource",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.openAddLink",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.deleteCustomResource",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.login",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.logout",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.updateProject",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.refresh",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.resourceRefresh",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.refreshAll",
+          "when": "false"
+        },
+        {
+          "command": "operator-collection-sdk.refreshOpenShiftInfo",
+          "when": "false"
         }
       ]
     },

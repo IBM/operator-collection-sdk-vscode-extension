@@ -29,6 +29,8 @@ export enum VSCodeCommands {
   resourceRefresh = "operator-collection-sdk.resourceRefresh",
   refreshAll = "operator-collection-sdk.refreshAll",
   refreshOpenShiftInfo = "operator-collection-sdk.refreshOpenShiftInfo",
+  refreshContainerLog = "operator-collection-sdk.refreshContainerLog",
+  refreshVerboseContainerLog = "operator-collection-sdk.refreshVerboseContainerLog",
 }
 
 export enum VSCodeViewIds {
