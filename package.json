@@ -5,7 +5,7 @@
   "author": {
     "name": "IBM Corporation"
   },
-  "icon": "resources/icons/broker-logo.png",
+  "icon": "resources/icons/operator-collection-sdk.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
   "version": "0.4.0",
   "repository": {
@@ -258,7 +258,7 @@
         {
           "id": "operator-collection-sdk",
           "title": "IBM Operator Collection SDK",
-          "icon": "resources/icons/broker-logo.png"
+          "icon": "resources/icons/light/operator-collection-sdk.svg"
         }
       ]
     },

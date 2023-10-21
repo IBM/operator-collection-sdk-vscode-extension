@@ -20,7 +20,7 @@ export class OperatorItem extends OperatorTreeItem {
       vscode.TreeItemCollapsibleState.Expanded,
     );
     this.contextValue = "operator";
-    this.iconPath = icons.getRocketIcons();
+    this.iconPath = icons.getOperatorCollectionSdkIcons();
   }
   contextValue = "operator";
 }

@@ -145,6 +145,42 @@ export function getPendingIcons(): ThemeIcons {
   return new vscode.ThemeIcon("loading~spin");
 }
 
-export function getRocketIcons(): ThemeIcons {
-  return new vscode.ThemeIcon("rocket");
+export function getOperatorCollectionSdkIcons(): ThemeIcons {
+  let icons: Icons = {
+    dark: vscode.Uri.joinPath(
+      _context.extensionUri,
+      "resources",
+      "icons",
+      "dark",
+      "operator-collection-sdk.svg",
+    ),
+    light: vscode.Uri.joinPath(
+      _context.extensionUri,
+      "resources",
+      "icons",
+      "light",
+      "operator-collection-sdk.svg",
+    ),
+  };
+  return icons;
+}
+
+export function getBrokerIcons(): ThemeIcons {
+  let icons: Icons = {
+    dark: vscode.Uri.joinPath(
+      _context.extensionUri,
+      "resources",
+      "icons",
+      "dark",
+      "broker.svg",
+    ),
+    light: vscode.Uri.joinPath(
+      _context.extensionUri,
+      "resources",
+      "icons",
+      "light",
+      "broker.svg",
+    ),
+  };
+  return icons;
 }
