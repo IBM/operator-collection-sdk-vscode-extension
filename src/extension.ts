@@ -251,6 +251,32 @@ export async function activate(context: vscode.ExtensionContext) {
     }),
   );
   context.subscriptions.push(
+    vscode.commands.registerCommand(VSCodeCommands.refreshContainerLog, (uri: vscode.Uri) => {
+      session.update().then((proceed) => {
+        if (proceed) {
+          containerLogProvider.refresh(uri);
+        }
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure updating session: ${e}`,
+        );
+      });
+    }),
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand(VSCodeCommands.refreshVerboseContainerLog, (uri: vscode.Uri) => {
+      session.update().then((proceed) => {
+        if (proceed) {
+          verboseContainerLogProvider.refresh(uri);
+        }
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure updating session: ${e}`,
+        );
+      });
+    }),
+  );
+  context.subscriptions.push(
     vscode.commands.registerCommand(
       VSCodeCommands.sdkUpgradeVersionSkip,
       () => {
@@ -594,6 +620,7 @@ function executeContainerViewLogCommand(command: string, session: Session): vsco
                     );
                     const doc = await vscode.workspace.openTextDocument(logUri);
                     await vscode.window.showTextDocument(doc, { preview: false });
+                    vscode.commands.executeCommand(VSCodeCommands.refreshContainerLog, logUri);
                     break;
                   }
                   case VSCodeCommands.viewVerboseLogs: {
@@ -604,14 +631,14 @@ function executeContainerViewLogCommand(command: string, session: Session): vsco
                         workspacePath,
                       );
                     let crInstance: string | undefined = "";
-                    if (apiVersion) {
+                    if (kind !== undefined && apiVersion !== undefined) {
                       crInstance = await util.selectCustomResourceInstance(
                         workspacePath,
                         k8s,
                         apiVersion,
-                        kind!,
+                        kind,
                       );
-                      if (kind && crInstance) {
+                      if (crInstance !== undefined) {
                         const logUri = util.buildVerboseContainerLogUri(
                           containerItemArgs.podObj.metadata?.name!,
                           containerItemArgs.containerStatus.name,
@@ -623,11 +650,8 @@ function executeContainerViewLogCommand(command: string, session: Session): vsco
                         await vscode.window.showTextDocument(doc, {
                           preview: false,
                         });
+                        vscode.commands.executeCommand(VSCodeCommands.refreshVerboseContainerLog, logUri);
                       }
-                    } else {
-                      vscode.window.showErrorMessage(
-                        "Unable to download log due to undefined version in operator-config",
-                      );
                     }
                   }
                 }
