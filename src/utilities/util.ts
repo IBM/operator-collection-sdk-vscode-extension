@@ -548,12 +548,14 @@ export async function generateProjectDropDown(
 export async function requestLogInInfo(): Promise<string[] | undefined> {
   let args: Array<string> = [];
 
-  const ocLoginArgs = await vscode.window.showInputBox({
+  const inputArgs = await vscode.window.showInputBox({
     prompt: `Enter your oc login command: oc login --server=SERVER_URL --token=AUTH_TOKEN`,
     ignoreFocusOut: true,
   });
 
-  if (ocLoginArgs) {
+  if (inputArgs) {
+    const ocLoginArgs = inputArgs.trimStart();
+
     // validate arguments
     const validRegex: { [key: string]: RegExp } = {
       "OC Command": /^(oc login)/gm,
