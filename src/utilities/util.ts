@@ -575,6 +575,7 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
 
   if (inputArgs) {
     args = inputArgs
+      .trimStart()
       .split(" ")
       ?.filter((item) => {
         return item.length;
