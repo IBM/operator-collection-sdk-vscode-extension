@@ -547,34 +547,45 @@ export async function generateProjectDropDown(
 export async function requestLogInInfo(): Promise<string[] | undefined> {
   let args: Array<string> = [];
 
-  const serverURL = await vscode.window.showInputBox({
-    prompt: "Enter your OpenShift Server URL",
+  const ocLoginArgs = await vscode.window.showInputBox({
+    prompt: `Enter your oc login command: oc login --server=SERVER_URL --token=AUTH_TOKEN`,
     ignoreFocusOut: true,
   });
 
-  if (serverURL === undefined) {
-    return undefined;
-  } else if (serverURL === "") {
+  if (ocLoginArgs) {
+    // validate arguments
+    const validRegex: { [key: string]: RegExp } = {
+      "OC Command": /^(oc login)?/gm,
+      "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/gm,
+      "Server URL":
+        /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
+    };
+
+    for (const rx in validRegex) {
+      const failedRegex = !validRegex[rx].test(ocLoginArgs);
+      if (failedRegex) {
+        vscode.window.showErrorMessage(
+          `OpenShift ${rx} is required to log in. 
+          Please adhere to the specified format. Regex used to test: ${validRegex[rx]}`,
+        );
+        return undefined;
+      }
+    }
+
+    // split the command / remove the "oc", "login" arguments (callers obligation)
+    args = ocLoginArgs
+      ?.split(" ")
+      ?.filter((item) => {
+        return item.length;
+      })
+      ?.slice(2);
+  } else {
     vscode.window.showErrorMessage(
-      "OpenShift server URL is required to log in",
+      "Failed to log in because no arguments were supplied.",
     );
     return undefined;
   }
 
-  args.push(`--server="${serverURL}"`);
-  const token = await vscode.window.showInputBox({
-    prompt: "Enter your OpenShift token",
-    password: true,
-    ignoreFocusOut: true,
-  });
-
-  if (token === undefined) {
-    return undefined;
-  } else if (token === "") {
-    vscode.window.showErrorMessage("OpenShift token is required to log in");
-    return undefined;
-  }
-  args.push(`--token="${token}"`);
   return args;
 }
 
