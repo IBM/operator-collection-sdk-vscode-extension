@@ -8,7 +8,10 @@ import * as k8s from "@kubernetes/client-node";
 import * as util from "../utilities/util";
 import { OcCommand } from "../shellCommands/ocCommand";
 import { KubernetesContext } from "./kubernetesContext";
-import { VSCodeCommands, CustomResourcePhases } from "../utilities/commandConstants";
+import {
+  VSCodeCommands,
+  CustomResourcePhases,
+} from "../utilities/commandConstants";
 
 export interface ObjectList {
   apiVersion: string;
@@ -184,9 +187,11 @@ export class KubernetesObj extends KubernetesContext {
       .catch((e) => {
         const errorMessage = e.body?.message as String;
         if (errorMessage.includes("PodInitializing")) {
-          vscode.window.showErrorMessage("Unable to retrieve logs for this container while the Pod is initializing. Please try again after Pod initialization completes.");
+          vscode.window.showErrorMessage(
+            "Unable to retrieve logs for this container while the Pod is initializing. Please try again after Pod initialization completes.",
+          );
           return undefined;
-        } 
+        }
         const msg = `Failure retrieving Pod logs. ${JSON.stringify(e)}`;
         console.error(msg);
         vscode.window.showErrorMessage(msg);
@@ -230,7 +235,7 @@ export class KubernetesObj extends KubernetesContext {
         return data;
       })
       .catch((e) => {
-        const msg = `Failure running the "oc exec" command. ${e.response.statusMessage}`;
+        const msg = `Failure running the "oc exec" command. ${e}`;
         console.error(msg);
         vscode.window.showErrorMessage(msg);
         return undefined;
@@ -553,32 +558,36 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing the z/OS Cloud Broker CSV Release string
    */
   public async getZosCloudBrokerRelease(): Promise<string | undefined> {
-    return this.getZosCloudBrokerCsv().then((csv) => {
-      if (csv === undefined) {
-        return undefined;
-      }
-      return csv.metadata.name.split("ibm-zoscb.")[1];
-    }).catch((e) => {
-      throw new Error(e);
-    });
+    return this.getZosCloudBrokerCsv()
+      .then((csv) => {
+        if (csv === undefined) {
+          return undefined;
+        }
+        return csv.metadata.name.split("ibm-zoscb.")[1];
+      })
+      .catch((e) => {
+        throw new Error(e);
+      });
   }
 
   /**
    * Retrieves the z/OS Cloud Broker CSV name
    * @returns - A promise containing the z/OS Cloud Broker CSV name string
-   */  
+   */
   private async getZosCloudBrokerCsvName(): Promise<string | undefined> {
-    return this.getZosCloudBrokerCsv().then((csv) => {
-      if (csv === undefined) {
-        return undefined;
-      }
-      return csv.metadata.name;
-    }).catch((e) => {
-      const errorObjectString = JSON.stringify(e);
+    return this.getZosCloudBrokerCsv()
+      .then((csv) => {
+        if (csv === undefined) {
+          return undefined;
+        }
+        return csv.metadata.name;
+      })
+      .catch((e) => {
+        const errorObjectString = JSON.stringify(e);
         throw new Error(
           `Failure retrieving ZosCloudBroker CSV name: ${errorObjectString}`,
         );
-    });
+      });
   }
 
   /**
@@ -591,17 +600,23 @@ export class KubernetesObj extends KubernetesContext {
         util.zosCloudBrokerGroup,
         util.zosCloudBrokerApiVersion,
         this.namespace,
-        "zoscloudbrokers"
+        "zoscloudbrokers",
       )
       .then((res) => {
         if (res.response.statusCode && res.response.statusCode === 200) {
           let zosCloudBrokerInstancesListString = JSON.stringify(res.body);
-          let zosCloudBrokerInstanceList: ObjectList = JSON.parse(zosCloudBrokerInstancesListString);
+          let zosCloudBrokerInstanceList: ObjectList = JSON.parse(
+            zosCloudBrokerInstancesListString,
+          );
           if (zosCloudBrokerInstanceList.items.length === 0) {
             return false;
           }
-          const zosCloudBrokerInstance: ObjectInstance = zosCloudBrokerInstanceList.items[0];
-          if (zosCloudBrokerInstance.status?.phase !== CustomResourcePhases.successful) {
+          const zosCloudBrokerInstance: ObjectInstance =
+            zosCloudBrokerInstanceList.items[0];
+          if (
+            zosCloudBrokerInstance.status?.phase !==
+            CustomResourcePhases.successful
+          ) {
             return false;
           } else {
             return true;
