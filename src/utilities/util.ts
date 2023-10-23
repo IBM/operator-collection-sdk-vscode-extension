@@ -551,32 +551,30 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
   const inputArgs = await vscode.window.showInputBox({
     prompt: `Enter your oc login command: oc login --server=SERVER_URL --token=AUTH_TOKEN`,
     ignoreFocusOut: true,
+    validateInput: (text) => {
+      const ocLoginArgs = text.trimStart();
+
+      // validate arguments
+      const validRegex: { [key: string]: RegExp } = {
+        "OC Command": /^(oc login)/gm,
+        "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/gm,
+        "Server URL":
+          /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
+      };
+
+      for (const rx in validRegex) {
+        const failedRegex = !validRegex[rx].test(ocLoginArgs);
+        if (failedRegex) {
+          return "Format: oc login --server=SERVER_URL --token=AUTH_TOKEN (optionally --insecure-skip-tls-verify)";
+        }
+      }
+
+      return null;
+    },
   });
 
   if (inputArgs) {
-    const ocLoginArgs = inputArgs.trimStart();
-
-    // validate arguments
-    const validRegex: { [key: string]: RegExp } = {
-      "OC Command": /^(oc login)/gm,
-      "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/gm,
-      "Server URL":
-        /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
-    };
-
-    for (const rx in validRegex) {
-      const failedRegex = !validRegex[rx].test(ocLoginArgs);
-      if (failedRegex) {
-        vscode.window.showErrorMessage(
-          `OpenShift ${rx} is required to log in. 
-          Please adhere to the specified format. Regex used to test: ${validRegex[rx]}`,
-        );
-        return undefined;
-      }
-    }
-
-    // split the command / remove the "oc", "login" arguments (callers obligation)
-    args = ocLoginArgs
+    args = inputArgs
       .split(" ")
       ?.filter((item) => {
         return item.length;
