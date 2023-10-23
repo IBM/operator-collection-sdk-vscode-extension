@@ -258,7 +258,7 @@
         {
           "id": "operator-collection-sdk",
           "title": "IBM Operator Collection SDK",
-          "icon": "resources/icons/light/operator-collection-sdk.svg"
+          "icon": "resources/icons/dark/operator-collection-sdk.png"
         }
       ]
     },
