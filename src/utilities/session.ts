@@ -185,7 +185,6 @@ async function setContext(loggedIntoOpenShift: boolean, zosCloudBrokerInstalled:
       if (skipRefresh !== undefined && !skipRefresh) {
         vscode.commands.executeCommand(VSCodeCommands.refreshAll);
       }
-      vscode.window.showWarningMessage("Unable to connect to an OpenShift cluster. Please log in again.");
       return false;
     });
   }
