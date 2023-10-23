@@ -205,9 +205,15 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(viewResourceCommand(VSCodeCommands.viewResource, session));
   context.subscriptions.push(
     vscode.commands.registerCommand(VSCodeCommands.refresh, () => {
-      operatorTreeProvider.refresh();
-      resourceTreeProvider.refresh();
-      aboutProvider.refresh();
+      session.update(true).then(() => {
+        operatorTreeProvider.refresh();
+        resourceTreeProvider.refresh();
+        aboutProvider.refresh();
+      }).catch((e) => {
+        vscode.window.showErrorMessage(
+          `Failure updating session: ${e}`,
+        );
+      });
     }),
   );
   context.subscriptions.push(
@@ -866,7 +872,7 @@ function executeSdkCommandWithUserInput(
                 })
                 .catch((e) => {
                   session.operationPending = false;
-                  vscode.window.showInformationMessage(
+                  vscode.window.showErrorMessage(
                     `Failure executing Create Operator command: RC ${e}`,
                   );
                 });
