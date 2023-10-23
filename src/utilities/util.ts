@@ -10,6 +10,7 @@ import * as fs from "fs";
 import * as yaml from "js-yaml";
 import { setInterval } from "timers";
 import { KubernetesObj } from "../kubernetes/kubernetes";
+import { VSCodeCommands } from "../utilities/commandConstants";
 
 type WorkSpaceOperators = { [key: string]: string };
 
@@ -597,7 +598,7 @@ export function validateOperatorConfig(document: vscode.TextDocument): boolean {
 export async function pollRun(attempts: number): Promise<void> {
   let i = 0;
   const interval = setInterval((): void => {
-    vscode.commands.executeCommand("operator-collection-sdk.refresh");
+    vscode.commands.executeCommand(VSCodeCommands.refreshAll);
     if (++i === attempts) {
       clearInterval(interval);
     }
