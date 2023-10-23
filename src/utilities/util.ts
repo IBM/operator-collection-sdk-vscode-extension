@@ -575,19 +575,19 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
 
     // split the command / remove the "oc", "login" arguments (callers obligation)
     args = ocLoginArgs
-      ?.split(" ")
+      .split(" ")
       ?.filter((item) => {
         return item.length;
       })
       ?.slice(2);
+
+    return args;
   } else {
     vscode.window.showErrorMessage(
       "Failed to log in because no arguments were supplied.",
     );
     return undefined;
   }
-
-  return args;
 }
 
 export function validateOperatorConfig(document: vscode.TextDocument): boolean {
