@@ -556,7 +556,7 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
   if (ocLoginArgs) {
     // validate arguments
     const validRegex: { [key: string]: RegExp } = {
-      "OC Command": /^(oc login)?/gm,
+      "OC Command": /^(oc login)/gm,
       "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/gm,
       "Server URL":
         /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
