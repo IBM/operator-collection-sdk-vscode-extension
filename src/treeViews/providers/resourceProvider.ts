@@ -86,6 +86,7 @@ export class ResourcesTreeProvider
                 new CustomResourceItem(
                   kind,
                   apiVersion,
+                  element.operatorName,
                   operatorCsvName,
                   createCustomResourceUrl,
                 ),
@@ -105,6 +106,7 @@ export class ResourcesTreeProvider
           return getCustomResourcesItem(
             element.apiVersion,
             element.kind,
+            element.operatorName,
             element.operatorCsvName,
           );
         }

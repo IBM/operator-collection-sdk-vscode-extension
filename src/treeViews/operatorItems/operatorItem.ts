@@ -8,8 +8,13 @@ import * as icons from "../icons";
 import * as util from "../../utilities/util";
 import * as path from "path";
 import { OperatorTreeItem } from "./operatorTreeItems";
+import { OperatorPodItem } from "./operatorPodItem";
 
 export class OperatorItem extends OperatorTreeItem {
+  // Static property to store the instances
+  private static operatorItems: OperatorItem[] = [];
+  public podItem: OperatorPodItem;
+
   constructor(
     public readonly operatorDisplayName: string,
     public readonly operatorName: string,
@@ -21,8 +26,24 @@ export class OperatorItem extends OperatorTreeItem {
     );
     this.contextValue = "operator";
     this.iconPath = icons.getOperatorCollectionSdkIcons();
+
+    // Store the instances on the static property
+    OperatorItem.operatorItems.push(this);
   }
   contextValue = "operator";
+
+  updatePodItem(podItem: OperatorPodItem) {
+    this.podItem = podItem;
+  }
+
+  static getOperatorItemByName(operatorName: string): OperatorItem | undefined {
+    for (const item of this.operatorItems) {
+      if (item.operatorName === operatorName) {
+        return item;
+      }
+    }
+    return undefined;
+  }
 }
 
 /**
