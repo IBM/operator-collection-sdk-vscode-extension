@@ -240,7 +240,17 @@
 					"markdownDescription": "#### Description\r\nSpecify this field if the `playbook` requires information from other Kubernetes resources managed by the z/OS Cloud Broker.\r\nThis will enable a dynamically populated dropdown in the OCP UIs containing all previously created instances of the specified `kind`. Use this for running actions against previously created instances."
 				},
 				"default": {
-					"type": "string",
+					"oneOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "number"
+						},
+						{
+							"type": "boolean"
+						}
+					],
 					"markdownDescription": "#### Description\r\nA default value that should be set in the OCP UIs for this variable."
 				},
 				"options": {
