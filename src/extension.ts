@@ -207,15 +207,16 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(
     vscode.commands.registerCommand(VSCodeCommands.refresh, () => {
-      session.update(true).then(() => {
-        operatorTreeProvider.refresh();
-        resourceTreeProvider.refresh();
-        aboutProvider.refresh();
-      }).catch((e) => {
-        vscode.window.showErrorMessage(
-          `Failure updating session: ${e}`,
-        );
-      });
+      session
+        .update(true)
+        .then(() => {
+          operatorTreeProvider.refresh();
+          resourceTreeProvider.refresh();
+          aboutProvider.refresh();
+        })
+        .catch((e) => {
+          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        });
     }),
   );
   context.subscriptions.push(
@@ -870,6 +871,13 @@ function executeSdkCommandWithUserInput(
   return vscode.commands.registerCommand(
     command,
     async (operatorItemArg: OperatorItem, logPath?: string) => {
+      if (session.operationPending) {
+        vscode.window.showWarningMessage(
+          "Please wait for the current operation to finish before switching projects.",
+        );
+        return;
+      }
+
       let workspacePath: string | undefined = "";
       if (operatorItemArg) {
         workspacePath = operatorItemArg.workspacePath;
@@ -886,7 +894,6 @@ function executeSdkCommandWithUserInput(
         if (validNamespace) {
           outputChannel?.show();
           if (command === VSCodeCommands.createOperator) {
-            session.operationPending = true;
             let playbookArgs = await util.requestOperatorInfo(workspacePath);
             if (playbookArgs) {
               let ocSdkCommand = new OcSdkCommand(workspacePath);
@@ -902,6 +909,7 @@ function executeSdkCommandWithUserInput(
                   "Create Operator request in progress",
                 );
               }
+              session.operationPending = true;
               const poll = util.pollRun(40);
               const runCreateOperatorCommand = ocSdkCommand
                 .runCreateOperatorCommand(playbookArgs, outputChannel, logPath)
