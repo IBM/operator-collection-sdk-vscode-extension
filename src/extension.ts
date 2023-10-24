@@ -644,6 +644,7 @@ function executeContainerViewLogCommand(
               await vscode.window.showTextDocument(doc, {
                 preview: false,
               });
+              vscode.commands.executeCommand("iliazeus.vscode-ansi.showPretty");
               vscode.commands.executeCommand(
                 VSCodeCommands.refreshContainerLog,
                 logUri,
@@ -706,6 +707,7 @@ function executeCustomResourceViewLogCommand(
                 await vscode.window.showTextDocument(doc, {
                   preview: false,
                 });
+                vscode.commands.executeCommand("iliazeus.vscode-ansi.showPretty");
                 vscode.commands.executeCommand(
                   VSCodeCommands.refreshVerboseContainerLog,
                   logUri,
