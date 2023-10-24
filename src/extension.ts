@@ -134,6 +134,11 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   vscode.commands.executeCommand(
     "setContext",
+    VSCodeCommands.validNamespace,
+    await session.validateNamespaceExist(),
+  );
+  vscode.commands.executeCommand(
+    "setContext",
     VSCodeCommands.sdkOutdatedVersion,
     await session.determinateOcSdkIsOutdated(),
   );
@@ -222,7 +227,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(VSCodeCommands.resourceRefresh, () => {
       session
-        .update()
+        .update(false)
         .then((proceed) => {
           if (proceed) {
             resourceTreeProvider.refresh();
@@ -251,7 +256,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(VSCodeCommands.refreshOpenShiftInfo, () => {
       session
-        .update()
+        .update(false)
         .then((proceed) => {
           if (proceed) {
             openshiftTreeProvider.refresh();
