@@ -13,6 +13,7 @@ export class CustomResourcesItem extends ResourceTreeItem {
   constructor(
     public readonly customResourceObj: ObjectInstance,
     public readonly link: string,
+    public readonly operatorName: string,
   ) {
     super(
       customResourceObj.metadata.name,
@@ -26,6 +27,7 @@ export class CustomResourcesItem extends ResourceTreeItem {
 export async function getCustomResourcesItem(
   apiVersion: string,
   kind: string,
+  operatorName: string,
   operatorCsvName: string,
 ): Promise<CustomResourcesItem[]> {
   const customResourceItems: Array<CustomResourcesItem> = [];
@@ -41,7 +43,7 @@ export async function getCustomResourcesItem(
         operatorCsvName,
       );
       customResourceItems.push(
-        new CustomResourcesItem(customResource, customResourceUrl),
+        new CustomResourcesItem(customResource, customResourceUrl, operatorName),
       );
     }
   }
