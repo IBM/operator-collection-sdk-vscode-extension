@@ -548,35 +548,47 @@ export async function generateProjectDropDown(
 export async function requestLogInInfo(): Promise<string[] | undefined> {
   let args: Array<string> = [];
 
-  const serverURL = await vscode.window.showInputBox({
-    prompt: "Enter your OpenShift Server URL",
+  const inputArgs = await vscode.window.showInputBox({
+    prompt: `Enter your oc login command: oc login --server=SERVER_URL --token=AUTH_TOKEN`,
     ignoreFocusOut: true,
+    validateInput: (text) => {
+      const ocLoginArgs = text.trimStart();
+
+      // validate arguments
+      const validRegex: { [key: string]: RegExp } = {
+        "OC Command": /^(oc login)/gm,
+        "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/gm,
+        "Server URL":
+          /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
+      };
+
+      for (const rx in validRegex) {
+        const failedRegex = !validRegex[rx].test(ocLoginArgs);
+        if (failedRegex) {
+          return "Format: oc login --server=SERVER_URL --token=AUTH_TOKEN (optionally --insecure-skip-tls-verify)";
+        }
+      }
+
+      return null;
+    },
   });
 
-  if (serverURL === undefined) {
-    return undefined;
-  } else if (serverURL === "") {
+  if (inputArgs) {
+    args = inputArgs
+      .trimStart()
+      .split(" ")
+      ?.filter((item) => {
+        return item.length;
+      })
+      ?.slice(2);
+
+    return args;
+  } else {
     vscode.window.showErrorMessage(
-      "OpenShift server URL is required to log in",
+      "Failed to log in because no arguments were supplied.",
     );
     return undefined;
   }
-
-  args.push(`--server="${serverURL}"`);
-  const token = await vscode.window.showInputBox({
-    prompt: "Enter your OpenShift token",
-    password: true,
-    ignoreFocusOut: true,
-  });
-
-  if (token === undefined) {
-    return undefined;
-  } else if (token === "") {
-    vscode.window.showErrorMessage("OpenShift token is required to log in");
-    return undefined;
-  }
-  args.push(`--token="${token}"`);
-  return args;
 }
 
 export function validateOperatorConfig(document: vscode.TextDocument): boolean {
