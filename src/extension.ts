@@ -614,8 +614,12 @@ function viewResourceCommand(
               group!,
               apiVersion!,
             );
-            const doc = await vscode.workspace.openTextDocument(uri);
-            await vscode.window.showTextDocument(doc, { preview: false });
+            try {
+              const doc = await vscode.workspace.openTextDocument(uri);
+              await vscode.window.showTextDocument(doc, { preview: false });
+            } catch (e) {
+              return;
+            }
           }
         })
         .catch((e) => {
@@ -695,15 +699,20 @@ function executeContainerViewLogCommand(
                             kind,
                             crInstance,
                           );
-                          const doc =
+                          try {
+                            const doc =
                             await vscode.workspace.openTextDocument(logUri);
-                          await vscode.window.showTextDocument(doc, {
-                            preview: false,
-                          });
-                          vscode.commands.executeCommand(
-                            VSCodeCommands.refreshVerboseContainerLog,
-                            logUri,
-                          );
+                            await vscode.window.showTextDocument(doc, {
+                              preview: false,
+                            });
+                            vscode.commands.executeCommand(
+                              VSCodeCommands.refreshVerboseContainerLog,
+                              logUri,
+                            );
+                          } catch (e) {
+                            return;
+                          }
+                          
                         }
                       }
                     }
