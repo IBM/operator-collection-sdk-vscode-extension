@@ -10,6 +10,7 @@ export class CustomResourceItem extends ResourceTreeItem {
   constructor(
     public readonly kind: string,
     public readonly apiVersion: string,
+    public readonly operatorName: string,
     public readonly operatorCsvName: string,
     public readonly link: string,
   ) {

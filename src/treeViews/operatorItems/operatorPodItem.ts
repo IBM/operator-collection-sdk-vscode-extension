@@ -22,6 +22,7 @@ export class OperatorPodItem extends OperatorTreeItem {
     );
     this.contextValue = "operaror-pod";
     this.iconPath = icons.getPodStatusIcon(containerStatus);
+    parentOperator.updatePodItem(this);
   }
 
   contextValue = "operator-pod";
