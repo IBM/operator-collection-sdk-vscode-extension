@@ -697,12 +697,16 @@ export class KubernetesObj extends KubernetesContext {
     return this.coreV1Api
       ?.listNamespace()
       .then((res) => {
-        let namespacesString = JSON.stringify(res.body);
-        let namespacesbjectList: ObjectList = JSON.parse(namespacesString);
-        for (const namespaces of namespacesbjectList.items) {
-          namespaceList.push(namespaces.metadata.name);
+        if (res.response.statusCode === 200) {
+          let namespacesString = JSON.stringify(res.body);
+          let namespacesbjectList: ObjectList = JSON.parse(namespacesString);
+          for (const namespaces of namespacesbjectList.items) {
+            namespaceList.push(namespaces.metadata.name);
+          }
+          return namespaceList;
+        } else {
+          return undefined;
         }
-        return namespaceList;
       })
       .catch((e) => {
         const msg = `Failure retrieving Namespace list: ${JSON.stringify(e)}`;
@@ -713,13 +717,33 @@ export class KubernetesObj extends KubernetesContext {
   }
 
   /**
-   * Validates if the namespace exists on the cluster
+   * Validates if the namespace exists on the cluster list
+   * @returns - A promise containing a list of namespaces if the namespace exist in the list
+   */
+  public async namespaceExists(): Promise<string[] | undefined> {
+    try {
+      const namespaceList = await this.getNamespaceList();
+      if (namespaceList?.includes(this.namespace)) {
+        return namespaceList;
+      }
+      return undefined;
+    } catch (error) {
+      const errorObjectString = JSON.stringify(error);
+      console.error(
+        `Failure validating namespace exists: ${errorObjectString}`,
+      );
+      return undefined;
+    }
+  }
+
+  /**
+   * Validates if the namespace exists on the cluster and generate a dropdown with valid namespaces
    * @returns - A promise containing a boolean
    */
   public async validateNamespaceExists(): Promise<boolean | undefined> {
     try {
-      const namespaceList = await this.getNamespaceList();
-      if (namespaceList?.includes(this.namespace)) {
+      const namespaceList = await this.namespaceExists();
+      if (namespaceList !== undefined) {
         return true;
       } else {
         vscode.window.showWarningMessage(
