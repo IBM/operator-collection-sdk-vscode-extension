@@ -419,7 +419,8 @@
     ]
   },
   "extensionDependencies": [
-    "redhat.vscode-yaml"
+    "redhat.vscode-yaml",
+    "iliazeus.vscode-ansi"
   ],
   "scripts": {
     "vscode:prepublish": "npm run package",
