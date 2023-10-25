@@ -727,19 +727,15 @@ export class KubernetesObj extends KubernetesContext {
    * Validates if the namespace exists on the cluster list
    * @returns - A promise containing a list of namespaces if the namespace exist in the list
    */
-  public async validateNamespaceExists(): Promise<string[] | undefined> {
-    try {
-      const namespaceList = await this.getNamespaceList();
-      if (namespaceList?.includes(this.namespace)) {
-        return namespaceList;
-      }
-      return undefined;
-    } catch (error) {
-      const errorObjectString = JSON.stringify(error);
-      console.error(
-        `Failure validating namespace exists: ${errorObjectString}`,
-      );
-      return undefined;
-    }
+  public async validateNamespaceExists(): Promise<boolean | undefined> {
+    return this.coreV1Api
+      ?.readNamespace(this.namespace)
+      ?.then(() => {
+        return true;
+      })
+      .catch(() => {
+        console.log("Failure retrieving Namespace " + this.namespace);
+        return false;
+      });
   }
 }

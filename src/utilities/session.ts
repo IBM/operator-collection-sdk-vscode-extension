@@ -165,7 +165,7 @@ export class Session {
     return k8s
       .validateNamespaceExists()
       .then((exists) => {
-        if (exists !== undefined) {
+        if (exists !== undefined && exists) {
           this.validNamespace = true;
           return true;
         }
