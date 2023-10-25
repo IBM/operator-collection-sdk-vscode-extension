@@ -612,6 +612,7 @@ function viewResourceCommand(
             try {
               const doc = await vscode.workspace.openTextDocument(uri);
               await vscode.window.showTextDocument(doc, { preview: false });
+              await vscode.languages.setTextDocumentLanguage(doc, "yaml");
             } catch (e) {
               return;
             }
@@ -674,49 +675,69 @@ function executeCustomResourceViewLogCommand(
       session
         .update()
         .then(async (proceed) => {
-          if (proceed) {
+          if (proceed && customResourcesItemArgs !== undefined) {
+            console.log("OperatorName: " + customResourcesItemArgs );
             const operatorItem = OperatorItem.getOperatorItemByName(customResourcesItemArgs.operatorName);
             let podName: string = "";
             let containerName: string = "";
-            if (operatorItem?.podItem.podObj.metadata?.name !== undefined) {
-              podName = operatorItem?.podItem.podObj.metadata?.name;
+            if (operatorItem?.podItems.length === 0) {
+              vscode.window.showErrorMessage("Failure retrieving logs because operator pod doesn't exist");
+              return;
             }
-            if (operatorItem?.podItem.podObj.status?.containerStatuses !== undefined) {
-              for (const container of operatorItem?.podItem.podObj.status?.containerStatuses) {
-                if (!container.name.startsWith("init")) {
-                  containerName = container.name;
+            const podItem = operatorItem?.podItems
+            .find((item) => {
+              if (item.podObj.status?.containerStatuses) {
+                for (const containerStatus of item.podObj.status?.containerStatuses) {
+                  if (!containerStatus.name.startsWith("init") && containerStatus.state !== containerStatus.state?.terminated) {
+                    return item;
+                  }
                 }
               }
-            }
-            if (podName === "") {
-              vscode.window.showErrorMessage("Unabled to determine Pod name for corresponding instance");
-              return;
-            } else if (containerName === "") {
-              vscode.window.showErrorMessage("Unabled to determine container name for corresponding instance");
-              return;
-            } else {
-              const logUri = util.buildVerboseContainerLogUri(
-                podName,
-                containerName,
-                customResourcesItemArgs.customResourceObj.apiVersion.split("/")[1],
-                customResourcesItemArgs.customResourceObj.kind,
-                customResourcesItemArgs.customResourceObj.metadata.name,
-              );
-              try {
-                const doc =
-                await vscode.workspace.openTextDocument(logUri);
-                await vscode.window.showTextDocument(doc, {
-                  preview: false,
-                });
-                vscode.commands.executeCommand("iliazeus.vscode-ansi.showPretty");
-                vscode.commands.executeCommand(
-                  VSCodeCommands.refreshVerboseContainerLog,
-                  logUri,
-                );
-              } catch (e) {
+            });
+           
+            if (podItem !== undefined) {
+              if (podItem.podObj.metadata?.name !== undefined) {
+                podName = podItem.podObj.metadata?.name;
+              }
+              if (podItem.podObj.status?.containerStatuses !== undefined) {
+                for (const container of podItem.podObj.status?.containerStatuses) {
+                  if (!container.name.startsWith("init")) {
+                    containerName = container.name;
+                  }
+                }
+              }
+              if (podName === "") {
+                vscode.window.showErrorMessage("Unabled to determine Pod name for corresponding instance");
                 return;
+              } else if (containerName === "") {
+                vscode.window.showErrorMessage("Unabled to determine container name for corresponding instance");
+                return;
+              } else {
+                const logUri = util.buildVerboseContainerLogUri(
+                  podName,
+                  containerName,
+                  customResourcesItemArgs.customResourceObj.apiVersion.split("/")[1],
+                  customResourcesItemArgs.customResourceObj.kind,
+                  customResourcesItemArgs.customResourceObj.metadata.name,
+                );
+                try {
+                  const doc =
+                  await vscode.workspace.openTextDocument(logUri);
+                  await vscode.window.showTextDocument(doc, {
+                    preview: false,
+                  });
+                  vscode.commands.executeCommand("iliazeus.vscode-ansi.showPretty");
+                  vscode.commands.executeCommand(
+                    VSCodeCommands.refreshVerboseContainerLog,
+                    logUri,
+                  );
+                } catch (e) {
+                  return;
+                } 
               } 
-            }             
+            } else {
+              vscode.window.showWarningMessage("Unable to retrieve logs while operator pod is initializing");
+            }            
           }
         })
         .catch((e) => {

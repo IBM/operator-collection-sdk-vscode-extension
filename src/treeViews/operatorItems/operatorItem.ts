@@ -8,12 +8,12 @@ import * as icons from "../icons";
 import * as util from "../../utilities/util";
 import * as path from "path";
 import { OperatorTreeItem } from "./operatorTreeItems";
-import { OperatorPodItem } from "./operatorPodItem";
+import { OperatorPodItem, getOperatorPodItems } from "./operatorPodItem";
 
 export class OperatorItem extends OperatorTreeItem {
   // Static property to store the instances
   private static operatorItems: OperatorItem[] = [];
-  public podItem: OperatorPodItem;
+  public podItems: OperatorPodItem[] = [];
 
   constructor(
     public readonly operatorDisplayName: string,
@@ -28,12 +28,46 @@ export class OperatorItem extends OperatorTreeItem {
     this.iconPath = icons.getOperatorCollectionSdkIcons();
 
     // Store the instances on the static property
-    OperatorItem.operatorItems.push(this);
+    this.updateExistingOperatorItemOrAppendNewItem(this);
   }
   contextValue = "operator";
 
-  updatePodItem(podItem: OperatorPodItem) {
-    this.podItem = podItem;
+  private async updateExistingOperatorItemOrAppendNewItem(operatorItem: OperatorItem) {
+    operatorItem.podItems = await getOperatorPodItems(operatorItem);
+    if (OperatorItem.operatorItems.length > 0) {
+      const operatorItemIndex = (OperatorItem.operatorItems as any[]).findIndex((item) => (item as OperatorItem).operatorName === operatorItem.operatorName);
+      if (operatorItemIndex > -1) {
+        OperatorItem.operatorItems[operatorItemIndex] = operatorItem;
+      } else {
+        OperatorItem.operatorItems.push(operatorItem);
+      }
+    } else {
+      OperatorItem.operatorItems.push(operatorItem);
+    }
+  }
+
+  updatePodItems(podItem: OperatorPodItem) {
+    if (this.podItems.length > 0) {
+      const podItemIndex = (this.podItems as any[]).findIndex((item) => (item as OperatorPodItem).podObj.metadata?.name === podItem.podObj.metadata?.name);
+      if (podItemIndex > -1) {
+        this.podItems[podItemIndex] = podItem;
+      } else {
+        this.podItems.push(podItem);
+      }
+    } else {
+      this.podItems.push(podItem);
+    }
+  }
+
+  syncPodItems(operatorName: string, podItems: OperatorPodItem[]) {
+    this.podItems = podItems;
+
+    // Update instances in static property
+   const operatorItem = OperatorItem.getOperatorItemByName(operatorName);
+   if (operatorItem !== undefined) {
+    operatorItem.podItems = podItems;
+    this.updateExistingOperatorItemOrAppendNewItem(operatorItem);
+   }
   }
 
   static getOperatorItemByName(operatorName: string): OperatorItem | undefined {
