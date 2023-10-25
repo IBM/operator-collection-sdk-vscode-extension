@@ -157,7 +157,7 @@ export class Session {
   }
 
   /**
-   * Validates the namespace exist
+   * Validates the namespace exists
    * @returns - A promise containing a boolean, returning true if the namespace exist
    */
   async validateNamespaceExist(): Promise<boolean> {
