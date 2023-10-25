@@ -14,35 +14,38 @@ export class OperatorPodItem extends OperatorTreeItem {
   constructor(
     public readonly podObj: k8s.V1Pod,
     public readonly containerStatus: Array<k8s.V1ContainerStatus>,
-    public readonly parentOperator: OperatorItem,
+    public readonly parentOperator: OperatorItem
   ) {
-    super(
-      `Pod: ${podObj.metadata?.name!}`,
-      vscode.TreeItemCollapsibleState.Expanded,
-    );
+    super(`Pod: ${podObj.metadata?.name!}`, vscode.TreeItemCollapsibleState.Expanded);
     this.contextValue = "operaror-pod";
     this.iconPath = icons.getPodStatusIcon(containerStatus);
+    parentOperator.updatePodItems(this);
   }
 
   contextValue = "operator-pod";
 }
 
-export async function getOperatorPodItems(
-  parentOperator: OperatorItem,
-): Promise<OperatorPodItem[]> {
+export async function getOperatorPodItems(parentOperator: OperatorItem): Promise<OperatorPodItem[]> {
   const operatorPodItems: Array<OperatorPodItem> = [];
   const k8s = new KubernetesObj();
-  const pods = await k8s.getOperatorPods(parentOperator.operatorName);
-  if (pods) {
-    for (const pod of pods) {
-      const containerStatus = await k8s.getOperatorContainerStatuses(
-        parentOperator.operatorName,
-        pod,
-      );
-      operatorPodItems.push(
-        new OperatorPodItem(pod, containerStatus, parentOperator),
-      );
-    }
-  }
-  return operatorPodItems;
+  return k8s
+    .getOperatorPods(parentOperator.operatorName)
+    .then(pods => {
+      if (pods) {
+        for (const pod of pods) {
+          k8s
+            .getOperatorContainerStatuses(parentOperator.operatorName, pod)
+            .then(containerStatus => {
+              operatorPodItems.push(new OperatorPodItem(pod, containerStatus, parentOperator));
+            })
+            .catch(e => {
+              throw new Error(e);
+            });
+        }
+      }
+      return operatorPodItems;
+    })
+    .catch(e => {
+      throw new Error(e);
+    });
 }

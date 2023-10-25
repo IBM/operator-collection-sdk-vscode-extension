@@ -5,17 +5,15 @@
 
 import * as vscode from "vscode";
 import { Session } from "../../utilities/session";
-import { getBrokerIconPath } from "../../utilities/util";
+import { AboutItem } from "../aboutItems/aboutItem";
+import { getBrokerIcons, getOperatorCollectionSdkIcons } from "../../treeViews/icons";
+import { KubernetesObj } from "../../kubernetes/kubernetes";
 
 type TreeItem = vscode.TreeItem | undefined | void;
 
-export class AboutTreeProvider
-  implements vscode.TreeDataProvider<vscode.TreeItem>
-{
-  private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> =
-    new vscode.EventEmitter<TreeItem>();
-  readonly onDidChangeTreeData: vscode.Event<TreeItem> =
-    this._onDidChangeTreeData.event;
+export class AboutTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+  private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> = new vscode.EventEmitter<TreeItem>();
+  readonly onDidChangeTreeData: vscode.Event<TreeItem> = this._onDidChangeTreeData.event;
 
   constructor(private readonly session: Session) {}
 
@@ -27,22 +25,27 @@ export class AboutTreeProvider
     return element;
   }
 
-  getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
-    const items: Array<vscode.TreeItem> = [];
-    const ocSdkVersionInstalled = this.session.ocSdkVersion();
-    return Promise.all([ocSdkVersionInstalled]).then((values) => {
+  async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
+    const k8s = new KubernetesObj();
+    const aboutItems: Array<AboutItem> = [];
+    const brokerIcons = getBrokerIcons() as vscode.ThemeIcon;
+    const ocSdkIcons = getOperatorCollectionSdkIcons() as vscode.ThemeIcon;
+    if (this.session.loggedIntoOpenShift && this.session.zosCloudBrokerInstalled) {
+      const zosCloudBrokerRelease = await k8s.getZosCloudBrokerRelease();
       if (!element) {
-        const ocsdkVersionItem = new vscode.TreeItem(
-          `Operator Collection SDK v${values[0]}`,
-          vscode.TreeItemCollapsibleState.None,
-        );
-        ocsdkVersionItem.iconPath = {
-          light: getBrokerIconPath("light"),
-          dark: getBrokerIconPath("dark"),
-        };
-        items.push(ocsdkVersionItem);
+        if (zosCloudBrokerRelease !== undefined) {
+          aboutItems.push(new AboutItem("IBM z/OS Cloud Broker", zosCloudBrokerRelease, brokerIcons));
+        } else {
+          aboutItems.push(new AboutItem("IBM z/OS Cloud Broker", "operator unavailable - version unknown", ocSdkIcons));
+        }
       }
-      return items;
-    });
+    }
+    if (this.session.ocSdkInstalled) {
+      if (!element) {
+        const ocSdkVersion = await this.session.ocSdkVersion();
+        aboutItems.push(new AboutItem("IBM Operator Collection SDK", ocSdkVersion!, ocSdkIcons));
+      }
+    }
+    return aboutItems;
   }
 }
