@@ -238,7 +238,9 @@ export class KubernetesObj extends KubernetesContext {
         const msg = `Failure running the "oc exec" command. ${e}`;
         if ((e as string).includes("No such file or directory")) {
           console.error(msg);
-          vscode.window.showWarningMessage("Ansible-Runner task logs not yet generated for Custom Resource instance");
+          vscode.window.showWarningMessage(
+            "Ansible-Runner task logs not yet generated for Custom Resource instance",
+          );
           return undefined;
         } else {
           vscode.window.showErrorMessage(msg);
@@ -725,54 +727,13 @@ export class KubernetesObj extends KubernetesContext {
    * Validates if the namespace exists on the cluster list
    * @returns - A promise containing a list of namespaces if the namespace exist in the list
    */
-  public async namespaceExists(): Promise<string[] | undefined> {
+  public async validateNamespaceExists(): Promise<string[] | undefined> {
     try {
       const namespaceList = await this.getNamespaceList();
       if (namespaceList?.includes(this.namespace)) {
         return namespaceList;
       }
       return undefined;
-    } catch (error) {
-      const errorObjectString = JSON.stringify(error);
-      console.error(
-        `Failure validating namespace exists: ${errorObjectString}`,
-      );
-      return undefined;
-    }
-  }
-
-  /**
-   * Validates if the namespace exists on the cluster and generate a dropdown with valid namespaces
-   * @returns - A promise containing a boolean
-   */
-  public async validateNamespaceExists(): Promise<boolean | undefined> {
-    try {
-      const namespaceList = await this.namespaceExists();
-      if (namespaceList !== undefined) {
-        return true;
-      } else {
-        vscode.window.showWarningMessage(
-          `Project "${this.namespace}" does not exist on your current cluster. Please update your project`,
-        );
-
-        const projectSelection =
-          await util.generateProjectDropDown(namespaceList);
-        if (projectSelection) {
-          try {
-            const ocCmd = new OcCommand();
-            const _ = await ocCmd.runOcProjectCommand(projectSelection);
-            vscode.window.showInformationMessage(
-              "Successfully updated Project on OpenShift cluster",
-            );
-            vscode.commands.executeCommand(VSCodeCommands.refreshAll);
-          } catch (error) {
-            vscode.window.showErrorMessage(
-              `Failure updating Project on OpenShift cluster: ${error}`,
-            );
-          }
-          return false;
-        }
-      }
     } catch (error) {
       const errorObjectString = JSON.stringify(error);
       console.error(
