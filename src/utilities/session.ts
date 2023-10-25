@@ -5,7 +5,6 @@
 
 import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
-import { KubernetesContext } from "../kubernetes/kubernetesContext";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
 import {
@@ -164,7 +163,7 @@ export class Session {
   async validateNamespaceExist(): Promise<boolean> {
     const k8s = new KubernetesObj();
     return k8s
-      .namespaceExists()
+      .validateNamespaceExists()
       .then((exists) => {
         if (exists !== undefined) {
           this.validNamespace = true;

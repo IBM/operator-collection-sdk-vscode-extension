@@ -198,7 +198,10 @@ export async function activate(context: vscode.ExtensionContext) {
     executeContainerViewLogCommand(VSCodeCommands.viewLogs, session),
   );
   context.subscriptions.push(
-    executeCustomResourceViewLogCommand(VSCodeCommands.viewVerboseLogs, session),
+    executeCustomResourceViewLogCommand(
+      VSCodeCommands.viewVerboseLogs,
+      session,
+    ),
   );
   context.subscriptions.push(
     executeOpenLinkCommand(VSCodeCommands.openEditLink),
@@ -646,8 +649,7 @@ function executeContainerViewLogCommand(
                 containerItemArgs.podObj.metadata?.name!,
                 containerItemArgs.containerStatus.name,
               );
-              const doc =
-                await vscode.workspace.openTextDocument(logUri);
+              const doc = await vscode.workspace.openTextDocument(logUri);
               await vscode.window.showTextDocument(doc, {
                 preview: false,
               });
@@ -681,68 +683,85 @@ function executeCustomResourceViewLogCommand(
         .update()
         .then(async (proceed) => {
           if (proceed && customResourcesItemArgs !== undefined) {
-            console.log("OperatorName: " + customResourcesItemArgs );
-            const operatorItem = OperatorItem.getOperatorItemByName(customResourcesItemArgs.operatorName);
+            console.log("OperatorName: " + customResourcesItemArgs);
+            const operatorItem = OperatorItem.getOperatorItemByName(
+              customResourcesItemArgs.operatorName,
+            );
             let podName: string = "";
             let containerName: string = "";
             if (operatorItem?.podItems.length === 0) {
-              vscode.window.showErrorMessage("Failure retrieving logs because operator pod doesn't exist");
+              vscode.window.showErrorMessage(
+                "Failure retrieving logs because operator pod doesn't exist",
+              );
               return;
             }
-            const podItem = operatorItem?.podItems
-            .find((item) => {
+            const podItem = operatorItem?.podItems.find((item) => {
               if (item.podObj.status?.containerStatuses) {
-                for (const containerStatus of item.podObj.status?.containerStatuses) {
-                  if (!containerStatus.name.startsWith("init") && containerStatus.state !== containerStatus.state?.terminated) {
+                for (const containerStatus of item.podObj.status
+                  ?.containerStatuses) {
+                  if (
+                    !containerStatus.name.startsWith("init") &&
+                    containerStatus.state !== containerStatus.state?.terminated
+                  ) {
                     return item;
                   }
                 }
               }
             });
-           
+
             if (podItem !== undefined) {
               if (podItem.podObj.metadata?.name !== undefined) {
                 podName = podItem.podObj.metadata?.name;
               }
               if (podItem.podObj.status?.containerStatuses !== undefined) {
-                for (const container of podItem.podObj.status?.containerStatuses) {
+                for (const container of podItem.podObj.status
+                  ?.containerStatuses) {
                   if (!container.name.startsWith("init")) {
                     containerName = container.name;
                   }
                 }
               }
               if (podName === "") {
-                vscode.window.showErrorMessage("Unabled to determine Pod name for corresponding instance");
+                vscode.window.showErrorMessage(
+                  "Unabled to determine Pod name for corresponding instance",
+                );
                 return;
               } else if (containerName === "") {
-                vscode.window.showErrorMessage("Unabled to determine container name for corresponding instance");
+                vscode.window.showErrorMessage(
+                  "Unabled to determine container name for corresponding instance",
+                );
                 return;
               } else {
                 const logUri = util.buildVerboseContainerLogUri(
                   podName,
                   containerName,
-                  customResourcesItemArgs.customResourceObj.apiVersion.split("/")[1],
+                  customResourcesItemArgs.customResourceObj.apiVersion.split(
+                    "/",
+                  )[1],
                   customResourcesItemArgs.customResourceObj.kind,
                   customResourcesItemArgs.customResourceObj.metadata.name,
                 );
                 try {
-                  const doc =
-                  await vscode.workspace.openTextDocument(logUri);
+                  const doc = await vscode.workspace.openTextDocument(logUri);
                   await vscode.window.showTextDocument(doc, {
                     preview: false,
                   });
-                  vscode.commands.executeCommand("iliazeus.vscode-ansi.showPretty");
+                  vscode.commands.executeCommand(
+                    "iliazeus.vscode-ansi.showPretty",
+                  );
                   vscode.commands.executeCommand(
                     VSCodeCommands.refreshVerboseContainerLog,
                     logUri,
                   );
                 } catch (e) {
                   return;
-                } 
-              } 
+                }
+              }
             } else {
-              vscode.window.showWarningMessage("Unable to retrieve logs while operator pod is initializing");
-            }            
+              vscode.window.showWarningMessage(
+                "Unable to retrieve logs while operator pod is initializing",
+              );
+            }
           }
         })
         .catch((e) => {
@@ -787,8 +806,7 @@ function executeSimpleSdkCommand(
               }
             }
             if (workspacePath) {
-              const k8s = new KubernetesObj();
-              const validNamespace = await k8s.validateNamespaceExists();
+              const validNamespace = session.validNamespace;
               if (validNamespace) {
                 session.operationPending = true;
                 let ocSdkCommand = new OcSdkCommand(workspacePath);
@@ -903,63 +921,70 @@ function executeSdkCommandWithUserInput(
         );
         return;
       }
-
-      let workspacePath: string | undefined = "";
-      if (operatorItemArg) {
-        workspacePath = operatorItemArg.workspacePath;
-      } else {
-        let pwd = util.getCurrentWorkspaceRootFolder();
-        if (pwd) {
-          workspacePath = await util.selectOperatorInWorkspace(pwd);
-          workspacePath = path.parse(workspacePath!).dir;
-        }
-      }
-      if (workspacePath) {
-        const k8s = new KubernetesObj();
-        const validNamespace = await k8s.validateNamespaceExists();
-        if (validNamespace) {
-          outputChannel?.show();
-          if (command === VSCodeCommands.createOperator) {
-            let playbookArgs = await util.requestOperatorInfo(workspacePath);
-            if (playbookArgs) {
-              let ocSdkCommand = new OcSdkCommand(workspacePath);
-              if (
-                playbookArgs.length === 1 &&
-                playbookArgs[0].includes("ocsdk-extra-vars")
-              ) {
-                vscode.window.showInformationMessage(
-                  "Create Operator request in progress using local variables file",
-                );
-              } else {
-                vscode.window.showInformationMessage(
-                  "Create Operator request in progress",
-                );
+      session.update().then(async (proceed) => {
+        if (proceed) {
+          let workspacePath: string | undefined = "";
+          if (operatorItemArg) {
+            workspacePath = operatorItemArg.workspacePath;
+          } else {
+            let pwd = util.getCurrentWorkspaceRootFolder();
+            if (pwd) {
+              workspacePath = await util.selectOperatorInWorkspace(pwd);
+              workspacePath = path.parse(workspacePath!).dir;
+            }
+          }
+          if (workspacePath) {
+            const validNamespace = session.validNamespace;
+            if (validNamespace) {
+              outputChannel?.show();
+              if (command === VSCodeCommands.createOperator) {
+                let playbookArgs =
+                  await util.requestOperatorInfo(workspacePath);
+                if (playbookArgs) {
+                  let ocSdkCommand = new OcSdkCommand(workspacePath);
+                  if (
+                    playbookArgs.length === 1 &&
+                    playbookArgs[0].includes("ocsdk-extra-vars")
+                  ) {
+                    vscode.window.showInformationMessage(
+                      "Create Operator request in progress using local variables file",
+                    );
+                  } else {
+                    vscode.window.showInformationMessage(
+                      "Create Operator request in progress",
+                    );
+                  }
+                  session.operationPending = true;
+                  const poll = util.pollRun(40);
+                  const runCreateOperatorCommand = ocSdkCommand
+                    .runCreateOperatorCommand(
+                      playbookArgs,
+                      outputChannel,
+                      logPath,
+                    )
+                    .then(() => {
+                      session.operationPending = false;
+                    });
+                  Promise.all([poll, runCreateOperatorCommand])
+                    .then(() => {
+                      session.operationPending = false;
+                      vscode.window.showInformationMessage(
+                        "Create Operator command executed successfully",
+                      );
+                      vscode.commands.executeCommand(VSCodeCommands.refresh);
+                    })
+                    .catch((e) => {
+                      session.operationPending = false;
+                      vscode.window.showErrorMessage(
+                        `Failure executing Create Operator command: RC ${e}`,
+                      );
+                    });
+                }
               }
-              session.operationPending = true;
-              const poll = util.pollRun(40);
-              const runCreateOperatorCommand = ocSdkCommand
-                .runCreateOperatorCommand(playbookArgs, outputChannel, logPath)
-                .then(() => {
-                  session.operationPending = false;
-                });
-              Promise.all([poll, runCreateOperatorCommand])
-                .then(() => {
-                  session.operationPending = false;
-                  vscode.window.showInformationMessage(
-                    "Create Operator command executed successfully",
-                  );
-                  vscode.commands.executeCommand(VSCodeCommands.refresh);
-                })
-                .catch((e) => {
-                  session.operationPending = false;
-                  vscode.window.showErrorMessage(
-                    `Failure executing Create Operator command: RC ${e}`,
-                  );
-                });
             }
           }
         }
-      }
+      });
     },
   );
 }
@@ -974,7 +999,7 @@ function deleteCustomResource(command: string, session: Session) {
           if (proceed) {
             if (customResourcArg) {
               const k8s = new KubernetesObj();
-              const validNamespace = await k8s.validateNamespaceExists();
+              const validNamespace = session.validNamespace;
               if (validNamespace) {
                 const name = customResourcArg.customResourceObj.metadata.name;
                 const apiVersion =
