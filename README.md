@@ -44,6 +44,23 @@ Configure your OpenShift server URL, and select your OpenShift Project directly 
      1. Search for `Extensions` in the command palette, and click on the `Extensions: Install from VSIX` command
      1. Locate the `.vsix` file on your filesystem and click `Install`
 
+## Trouble Shooting
+
+If you experience the `urlopen error [SSL: CERTIFICATE_VERIFY_FAILED]` issue, you may need to install and use SSL Certificates before running this extension.
+
+To install SSL Certificates in Python, navigate to your python folder and run the `Certificates` command from your terminal:
+
+```cmd
+cd <PATH_TO_PYTHON>
+./Install\ Certificates.command
+```
+
+Alternatively, you can install the [`certifi`](https://pypi.org/project/certifi/) package via `pip`:
+
+```cmd
+pip install certifi
+```
+
 ## How to contribute
 
 Check out the [contributor documentation](CONTRIBUTING.md).
