@@ -435,6 +435,7 @@
     "clean": "rm -rf ./dist ./out",
     "test": "node ./out/test/runTest.js",
     "build": "npm run clean && vsce package",
+    "build-prerelease": "npm run clean && vsce package --pre-release",
     "deploy": "extensionName=$(ls *.vsix) && code --install-extension ${extensionName}",
     "prepare": "husky install"
   },
