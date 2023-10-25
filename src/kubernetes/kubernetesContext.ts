@@ -15,11 +15,7 @@ export class KubernetesContext {
     if (namespace === undefined) {
       if (fs.existsSync("/var/run/secrets/kubernetes.io/serviceaccount")) {
         kc.loadFromCluster();
-        this.namespace = fs
-          .readFileSync(
-            "/var/run/secrets/kubernetes.io/serviceaccount/namespace",
-          )
-          .toString();
+        this.namespace = fs.readFileSync("/var/run/secrets/kubernetes.io/serviceaccount/namespace").toString();
       } else {
         kc.loadFromDefault();
         if (kc.currentContext) {
@@ -37,28 +33,18 @@ export class KubernetesContext {
     // if the KubeConfig file doesn't exist, kc.loadFromDefault()
     // will provide a dummy context that must be caught
     const homeDirPath = k8s.findHomeDir();
-    const kcPath = homeDirPath
-      ? path.join(homeDirPath, ".kube", "config")
-      : path.join(".kube", "config");
-    if (
-      !fs.existsSync(kcPath) ||
-      !kc.currentContext ||
-      kc.currentContext === "loaded-context"
-    ) {
+    const kcPath = homeDirPath ? path.join(homeDirPath, ".kube", "config") : path.join(".kube", "config");
+    if (!fs.existsSync(kcPath) || !kc.currentContext || kc.currentContext === "loaded-context") {
       // If kc is still empty, the Kube Config file is likely invalid
-      vscode.window.showWarningMessage(
-        "Your KubeConfig file has not been properly configured.",
-      );
+      vscode.window.showWarningMessage("Your KubeConfig file has not been properly configured.");
 
       // Prompt OC login
       const ocCmd = new OcCommand();
-      this.attemptOCLogin(ocCmd).then((loggedIn) => {
+      this.attemptOCLogin(ocCmd).then(loggedIn => {
         if (loggedIn) {
           // oc login successful, kube config configured
           kc.loadFromDefault();
-          vscode.window.showInformationMessage(
-            "KubeConfig context has been configured.",
-          );
+          vscode.window.showInformationMessage("KubeConfig context has been configured.");
         }
       });
     } else {
@@ -68,12 +54,8 @@ export class KubernetesContext {
         this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
         this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
       } catch (error) {
-        vscode.window.showErrorMessage(
-          `Failed to validate KubeConfig file. ${error}`,
-        );
-        vscode.window.showInformationMessage(
-          "Please log into the OpenShift cluster again.",
-        );
+        vscode.window.showErrorMessage(`Failed to validate KubeConfig file. ${error}`);
+        vscode.window.showInformationMessage("Please log into the OpenShift cluster again.");
       }
     }
   }
@@ -90,15 +72,11 @@ export class KubernetesContext {
         try {
           const response = await ocCmd.runOcLoginCommand(args);
           vscode.window.showInformationMessage(response);
-          vscode.window.showInformationMessage(
-            "Successfully logged in to OpenShift cluster.",
-          );
+          vscode.window.showInformationMessage("Successfully logged in to OpenShift cluster.");
           vscode.commands.executeCommand(VSCodeCommands.refreshAll);
           resolve(true);
         } catch (error) {
-          vscode.window.showErrorMessage(
-            "Failure logging in to OpenShift cluster",
-          );
+          vscode.window.showErrorMessage("Failure logging in to OpenShift cluster");
           reject(false);
         }
       } else {
@@ -122,9 +100,7 @@ export class KubernetesContext {
     if (serverURL === undefined) {
       return undefined;
     } else if (serverURL === "") {
-      vscode.window.showErrorMessage(
-        "OpenShift server URL is required to log in",
-      );
+      vscode.window.showErrorMessage("OpenShift server URL is required to log in");
       return undefined;
     }
 

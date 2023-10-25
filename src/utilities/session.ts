@@ -7,10 +7,7 @@ import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
-import {
-  getAnsibleGalaxySettings,
-  AnsibleGalaxySettings,
-} from "../utilities/util";
+import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
 
 export class Session {
   public ocSdkInstalled: boolean = false;
@@ -23,41 +20,14 @@ export class Session {
 
   constructor(public readonly ocSdkCmd: OcSdkCommand) {}
 
-  async update(
-    skipRefresh?: boolean,
-    skipOcSdkValidation?: boolean,
-  ): Promise<boolean> {
+  async update(skipRefresh?: boolean, skipOcSdkValidation?: boolean): Promise<boolean> {
     if (skipOcSdkValidation !== undefined && skipOcSdkValidation) {
-      return Promise.all([
-        this.validateOpenShiftAccess(),
-        this.validateZosCloudBrokerInstallation(),
-        this.validateNamespaceExist(),
-      ]).then(() => {
-        return setContext(
-          this.loggedIntoOpenShift,
-          this.zosCloudBrokerInstalled,
-          undefined,
-          undefined,
-          skipRefresh,
-          this.validNamespace,
-        );
+      return Promise.all([this.validateOpenShiftAccess(), this.validateZosCloudBrokerInstallation(), this.validateNamespaceExist()]).then(() => {
+        return setContext(this.loggedIntoOpenShift, this.zosCloudBrokerInstalled, undefined, undefined, skipRefresh, this.validNamespace);
       });
     } else {
-      return Promise.all([
-        this.validateOcSDKInstallation(),
-        this.validateOpenShiftAccess(),
-        this.validateZosCloudBrokerInstallation(),
-        this.determinateOcSdkIsOutdated(),
-        this.validateNamespaceExist(),
-      ]).then(() => {
-        return setContext(
-          this.loggedIntoOpenShift,
-          this.zosCloudBrokerInstalled,
-          this.ocSdkInstalled,
-          this.ocSdkOutdated,
-          skipRefresh,
-          this.validNamespace,
-        );
+      return Promise.all([this.validateOcSDKInstallation(), this.validateOpenShiftAccess(), this.validateZosCloudBrokerInstallation(), this.determinateOcSdkIsOutdated(), this.validateNamespaceExist()]).then(() => {
+        return setContext(this.loggedIntoOpenShift, this.zosCloudBrokerInstalled, this.ocSdkInstalled, this.ocSdkOutdated, skipRefresh, this.validNamespace);
       });
     }
   }
@@ -67,9 +37,7 @@ export class Session {
    * @returns - A promise containing a boolean, returning true if the IBM Operator Collection SDK is installed
    */
   async validateOcSDKInstallation(): Promise<boolean> {
-    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyConnectivity,
-    ) as boolean;
+    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyConnectivity) as boolean;
     if (!ansibleGalaxyConnectivity) {
       this.ocSdkInstalled = true;
       return true;
@@ -81,9 +49,7 @@ export class Session {
         return true;
       })
       .catch(() => {
-        console.log(
-          "Install the IBM Operator Collection SDK use this extension",
-        );
+        console.log("Install the IBM Operator Collection SDK use this extension");
         // vscode.window.showWarningMessage("Install the IBM Operator Collection SDK Ansible collection to use the IBM Operator Collection SDK extension");
 
         this.ocSdkInstalled = false;
@@ -105,9 +71,7 @@ export class Session {
    * @returns - A promise containing a boolean, returning true if the installed IBM Operator Collection SDK can be updated to a newer version
    */
   async determinateOcSdkIsOutdated(): Promise<boolean> {
-    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyConnectivity,
-    ) as boolean;
+    const ansibleGalaxyConnectivity = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyConnectivity) as boolean;
     if (!ansibleGalaxyConnectivity) {
       this.ocSdkOutdated = false;
       return false;
@@ -138,7 +102,7 @@ export class Session {
     const k8s = new KubernetesObj();
     return k8s
       .getNamespaceList()
-      .then((list) => {
+      .then(list => {
         if (list !== undefined) {
           this.loggedIntoOpenShift = true;
           return true;
@@ -146,11 +110,8 @@ export class Session {
         this.loggedIntoOpenShift = false;
         return false;
       })
-      .catch((e) => {
-        console.log(
-          "Log in to an OpenShift Cluster to use this extension: " +
-            JSON.stringify(e),
-        );
+      .catch(e => {
+        console.log("Log in to an OpenShift Cluster to use this extension: " + JSON.stringify(e));
         this.loggedIntoOpenShift = false;
         return false;
       });
@@ -164,7 +125,7 @@ export class Session {
     const k8s = new KubernetesObj();
     return k8s
       .validateNamespaceExists()
-      .then((exists) => {
+      .then(exists => {
         if (exists !== undefined && exists) {
           this.validNamespace = true;
           return true;
@@ -172,10 +133,8 @@ export class Session {
         this.validNamespace = false;
         return false;
       })
-      .catch((e) => {
-        console.log(
-          "Namespace " + k8s.namespace + " Does not exist." + JSON.stringify(e),
-        );
+      .catch(e => {
+        console.log("Namespace " + k8s.namespace + " Does not exist." + JSON.stringify(e));
         this.validNamespace = false;
         return false;
       });
@@ -189,7 +148,7 @@ export class Session {
     const k8s = new KubernetesObj();
     return k8s
       .zosCloudBrokerInstanceCreated()
-      .then((createdSuccessfully) => {
+      .then(createdSuccessfully => {
         if (createdSuccessfully !== undefined) {
           this.zosCloudBrokerInstalled = createdSuccessfully;
           return createdSuccessfully;
@@ -197,70 +156,34 @@ export class Session {
           return false;
         }
       })
-      .catch((e) => {
-        console.log(
-          "Failure validating ZosCloudBroker install status: " +
-            JSON.stringify(e),
-        );
+      .catch(e => {
+        console.log("Failure validating ZosCloudBroker install status: " + JSON.stringify(e));
         return false;
       });
   }
 }
 
-async function setContext(
-  loggedIntoOpenShift: boolean,
-  zosCloudBrokerInstalled: boolean,
-  ocSdkInstalled?: boolean,
-  ocSdkOutdated?: boolean,
-  skipRefresh?: boolean,
-  validNamespace?: boolean,
-): Promise<boolean> {
+async function setContext(loggedIntoOpenShift: boolean, zosCloudBrokerInstalled: boolean, ocSdkInstalled?: boolean, ocSdkOutdated?: boolean, skipRefresh?: boolean, validNamespace?: boolean): Promise<boolean> {
   if (ocSdkInstalled !== undefined && !ocSdkInstalled) {
-    return vscode.commands
-      .executeCommand("setContext", VSCodeCommands.sdkInstalled, ocSdkInstalled)
-      .then(() => {
-        if (!skipRefresh) {
-          vscode.commands.executeCommand(VSCodeCommands.refreshAll);
-        }
-        vscode.window.showWarningMessage(
-          "Unable to detect the Operator Collection SDK. Please reinstall.",
-        );
-        return false;
-      });
+    return vscode.commands.executeCommand("setContext", VSCodeCommands.sdkInstalled, ocSdkInstalled).then(() => {
+      if (!skipRefresh) {
+        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+      }
+      vscode.window.showWarningMessage("Unable to detect the Operator Collection SDK. Please reinstall.");
+      return false;
+    });
   }
   if (!loggedIntoOpenShift) {
-    return vscode.commands
-      .executeCommand(
-        "setContext",
-        VSCodeCommands.loggedIn,
-        loggedIntoOpenShift,
-      )
-      .then(() => {
-        if (skipRefresh !== undefined && !skipRefresh) {
-          vscode.commands.executeCommand(VSCodeCommands.refreshAll);
-        }
-        return false;
-      });
+    return vscode.commands.executeCommand("setContext", VSCodeCommands.loggedIn, loggedIntoOpenShift).then(() => {
+      if (skipRefresh !== undefined && !skipRefresh) {
+        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+      }
+      return false;
+    });
   }
 
   if (!zosCloudBrokerInstalled || !validNamespace) {
-    return Promise.all([
-      vscode.commands.executeCommand(
-        "setContext",
-        VSCodeCommands.loggedIn,
-        loggedIntoOpenShift,
-      ),
-      vscode.commands.executeCommand(
-        "setContext",
-        VSCodeCommands.zosCloudBrokerInstalled,
-        zosCloudBrokerInstalled,
-      ),
-      vscode.commands.executeCommand(
-        "setContext",
-        VSCodeCommands.validNamespace,
-        validNamespace,
-      ),
-    ]).then(() => {
+    return Promise.all([vscode.commands.executeCommand("setContext", VSCodeCommands.loggedIn, loggedIntoOpenShift), vscode.commands.executeCommand("setContext", VSCodeCommands.zosCloudBrokerInstalled, zosCloudBrokerInstalled), vscode.commands.executeCommand("setContext", VSCodeCommands.validNamespace, validNamespace)]).then(() => {
       if (skipRefresh !== undefined && !skipRefresh) {
         vscode.commands.executeCommand(VSCodeCommands.refreshAll);
       }
@@ -269,18 +192,12 @@ async function setContext(
   }
 
   if (ocSdkOutdated !== undefined) {
-    return vscode.commands
-      .executeCommand(
-        "setContext",
-        VSCodeCommands.sdkOutdatedVersion,
-        ocSdkOutdated,
-      )
-      .then(() => {
-        if (!skipRefresh) {
-          vscode.commands.executeCommand(VSCodeCommands.refreshAll);
-        }
-        return !ocSdkOutdated;
-      });
+    return vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, ocSdkOutdated).then(() => {
+      if (!skipRefresh) {
+        vscode.commands.executeCommand(VSCodeCommands.refreshAll);
+      }
+      return !ocSdkOutdated;
+    });
   }
 
   return true;

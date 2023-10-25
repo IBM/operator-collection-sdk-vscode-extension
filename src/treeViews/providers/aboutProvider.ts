@@ -11,13 +11,9 @@ import { KubernetesObj } from "../../kubernetes/kubernetes";
 
 type TreeItem = vscode.TreeItem | undefined | void;
 
-export class AboutTreeProvider
-  implements vscode.TreeDataProvider<vscode.TreeItem>
-{
-  private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> =
-    new vscode.EventEmitter<TreeItem>();
-  readonly onDidChangeTreeData: vscode.Event<TreeItem> =
-    this._onDidChangeTreeData.event;
+export class AboutTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+  private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> = new vscode.EventEmitter<TreeItem>();
+  readonly onDidChangeTreeData: vscode.Event<TreeItem> = this._onDidChangeTreeData.event;
 
   constructor(private readonly session: Session) {}
 
@@ -38,34 +34,16 @@ export class AboutTreeProvider
       const zosCloudBrokerRelease = await k8s.getZosCloudBrokerRelease();
       if (!element) {
         if (zosCloudBrokerRelease !== undefined) {
-          aboutItems.push(
-            new AboutItem(
-              "IBM z/OS Cloud Broker",
-              zosCloudBrokerRelease,
-              brokerIcons
-            ),
-          );
+          aboutItems.push(new AboutItem("IBM z/OS Cloud Broker", zosCloudBrokerRelease, brokerIcons));
         } else {
-          aboutItems.push(
-            new AboutItem(
-              "IBM z/OS Cloud Broker",
-              "operator unavailable - version unknown",
-              ocSdkIcons
-            ),
-          );
+          aboutItems.push(new AboutItem("IBM z/OS Cloud Broker", "operator unavailable - version unknown", ocSdkIcons));
         }
       }
     }
     if (this.session.ocSdkInstalled) {
       if (!element) {
         const ocSdkVersion = await this.session.ocSdkVersion();
-        aboutItems.push(
-          new AboutItem(
-            "IBM Operator Collection SDK",
-            ocSdkVersion!,
-            ocSdkIcons
-          )
-        );
+        aboutItems.push(new AboutItem("IBM Operator Collection SDK", ocSdkVersion!, ocSdkIcons));
       }
     }
     return aboutItems;
