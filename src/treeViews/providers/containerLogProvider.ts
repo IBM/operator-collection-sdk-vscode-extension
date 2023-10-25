@@ -8,11 +8,7 @@ import * as util from "../../utilities/util";
 import { Session } from "../../utilities/session";
 import { KubernetesObj } from "../../kubernetes/kubernetes";
 
-export class ContainerLogProvider
-  implements vscode.TextDocumentContentProvider
-{
-
-
+export class ContainerLogProvider implements vscode.TextDocumentContentProvider {
   constructor(private readonly session: Session) {}
 
   onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
