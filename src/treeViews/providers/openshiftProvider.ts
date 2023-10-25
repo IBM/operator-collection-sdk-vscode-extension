@@ -7,23 +7,14 @@ import * as vscode from "vscode";
 import { OpenShiftItem } from "../openshiftItems/openshiftItem";
 import { KubernetesObj } from "../../kubernetes/kubernetes";
 import { Session } from "../../utilities/session";
-import { ResourcesTreeProvider } from "../../treeViews/providers/resourceProvider";
-import { OperatorsTreeProvider } from "../../treeViews/providers/operatorProvider";
-import { ContainerLogProvider } from "../../treeViews/providers/containerLogProvider";
-import { CustomResourceDisplayProvider } from "../../treeViews/providers/customResourceDisplayProviders";
-import { VerboseContainerLogProvider } from "../../treeViews/providers/verboseContainerLogProvider";
 
 type TreeItem = OpenShiftItem | undefined | void;
 
-export class OpenShiftTreeProvider
-  implements vscode.TreeDataProvider<vscode.TreeItem>
-{
+export class OpenShiftTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
   // Static property to store the instances
   private static openshiftTreeProviders: OpenShiftTreeProvider[] = [];
-  private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> =
-    new vscode.EventEmitter<TreeItem>();
-  readonly onDidChangeTreeData: vscode.Event<TreeItem> =
-    this._onDidChangeTreeData.event;
+  private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> = new vscode.EventEmitter<TreeItem>();
+  readonly onDidChangeTreeData: vscode.Event<TreeItem> = this._onDidChangeTreeData.event;
 
   constructor(private readonly session: Session) {
     // Store the instances on the static property
@@ -42,22 +33,8 @@ export class OpenShiftTreeProvider
     const links: Array<OpenShiftItem> = [];
     const k8s = new KubernetesObj();
     if (this.session.loggedIntoOpenShift) {
-      links.push(
-        new OpenShiftItem(
-          "OpenShift Cluster",
-          k8s.openshiftServerURL,
-          new vscode.ThemeIcon("cloud"),
-          "openshift-cluster",
-        ),
-      );
-      links.push(
-        new OpenShiftItem(
-          "OpenShift Namespace",
-          k8s.namespace,
-          new vscode.ThemeIcon("account"),
-          "openshift-namespace",
-        ),
-      );
+      links.push(new OpenShiftItem("OpenShift Cluster", k8s.openshiftServerURL, new vscode.ThemeIcon("cloud"), "openshift-cluster"));
+      links.push(new OpenShiftItem("OpenShift Namespace", k8s.namespace, new vscode.ThemeIcon("account"), "openshift-namespace"));
     }
 
     return links;

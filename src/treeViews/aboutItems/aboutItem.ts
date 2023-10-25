@@ -5,18 +5,20 @@
 
 import * as vscode from "vscode";
 
-export class LinkItem extends vscode.TreeItem {
+export class AboutItem extends vscode.TreeItem {
   constructor(
     public readonly name: string,
     public readonly description: string,
-    public readonly icon: vscode.ThemeIcon,
-    public readonly link: string,
-    public readonly command: vscode.Command
+    public readonly icon:
+      | vscode.ThemeIcon
+      | {
+          light: string | vscode.Uri;
+          dark: string | vscode.Uri;
+        }
   ) {
     super(name, vscode.TreeItemCollapsibleState.None);
-    this.contextValue = "links";
+    this.contextValue = "about";
     this.description = description;
     this.iconPath = icon;
-    this.command = command;
   }
 }

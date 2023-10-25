@@ -8,10 +8,7 @@ import * as child_process from "child_process";
 import * as fs from "fs-extra";
 import * as https from "https";
 import * as http from "http";
-import {
-  getAnsibleGalaxySettings,
-  AnsibleGalaxySettings,
-} from "../utilities/util";
+import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
 
 type HTTP = typeof http;
 type HTTPS = typeof https;
@@ -27,13 +24,7 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise containing the the return code of the executed command
    */
-  private async run(
-    cmd: string,
-    args?: Array<string>,
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-    callbackFunction?: (outputValue: string) => void,
-  ): Promise<any> {
+  private async run(cmd: string, args?: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string, callbackFunction?: (outputValue: string) => void): Promise<any> {
     process.env.PWD = this.pwd;
     let outputValue = "";
 
@@ -58,12 +49,12 @@ export class OcSdkCommand {
       childProcess.stderr?.pipe(logStream);
     }
 
-    childProcess.stdout?.on("data", (data) => {
+    childProcess.stdout?.on("data", data => {
       outputChannel?.appendLine(data);
       outputValue += data.toString();
     });
 
-    childProcess.stderr?.on("data", (data) => {
+    childProcess.stderr?.on("data", data => {
       outputChannel?.appendLine(data);
     });
 
@@ -88,33 +79,19 @@ export class OcSdkCommand {
   }
 
   /**
-   * Executes the collection verify command to validate the collection is installed
+   * Executes the collection list command to validate the collection is installed
    * @param outputChannel - The VS Code output channel to display command output
    * @param logPath - Log path to store command output
+   * @param namespace - The Ansible Galaxy namespace
+   * @param collection - The Ansible Collection name (default: operator_collection_sdk)
    * @returns - A Promise container the return code of the command being executed
    */
-  async runCollectionVerifyCommand(
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-    namespace?: string,
-    collection: string = "operator_collection_sdk",
-  ): Promise<string> {
-    const galaxyUrl = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyURL,
-    ) as string;
-    const galaxyNamespace =
-      namespace ??
-      (getAnsibleGalaxySettings(
-        AnsibleGalaxySettings.ansibleGalaxyNamespace,
-      ) as string);
+  async runCollectionVerifyCommand(outputChannel?: vscode.OutputChannel, logPath?: string, namespace?: string, collection: string = "operator_collection_sdk"): Promise<string> {
+    const galaxyNamespace = namespace ?? (getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string);
+
+    // ansible-galaxy collection list | grep ibm.operator_collection_sdk
     const cmd: string = "ansible-galaxy";
-    let args: Array<string> = [
-      "collection",
-      "verify",
-      "-s",
-      galaxyUrl,
-      `${galaxyNamespace}.${collection}`,
-    ];
+    let args: Array<string> = ["collection", "list", "|", "grep", `${galaxyNamespace}.${collection}`];
     return this.run(cmd, args, outputChannel, logPath);
   }
 
@@ -125,10 +102,7 @@ export class OcSdkCommand {
    * @returns - A Promise containing a string signaling which pip is installed,
    * or an an empty string if it is not installed
    */
-  async runPipVersion(
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<string> {
+  async runPipVersion(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string> {
     let pipVersion = "pip";
     try {
       await this.run(pipVersion, ["--version"], outputChannel, logPath);
@@ -152,57 +126,26 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise containing a boolean signaling the success or failure of the command
    */
-  async installOcSDKDependencies(
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<boolean> {
+  async installOcSDKDependencies(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<boolean> {
     try {
-      await this.runCollectionVerifyCommand(
-        outputChannel,
-        logPath,
-        "kubernetes",
-        "core",
-      );
+      await this.runCollectionVerifyCommand(outputChannel, logPath, "kubernetes", "core");
 
       return true;
     } catch (e) {
       let moduleStatusCode = -1;
       const pipVersion = await this.runPipVersion(outputChannel, logPath);
       if (pipVersion) {
-        moduleStatusCode = await this.run(
-          pipVersion,
-          ["install", "kubernetes"],
-          outputChannel,
-          logPath,
-        );
+        moduleStatusCode = await this.run(pipVersion, ["install", "kubernetes"], outputChannel, logPath);
       } else {
-        vscode.window.showErrorMessage(
-          'Failed to install python module "kubernetes": pip/pip3 is not installed',
-        );
+        vscode.window.showErrorMessage('Failed to install python module "kubernetes": pip/pip3 is not installed');
       }
 
-      const galaxyUrl = getAnsibleGalaxySettings(
-        AnsibleGalaxySettings.ansibleGalaxyURL,
-      ) as string;
+      const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
       let cmd: string = "ansible-galaxy";
-      let args: Array<string> = [
-        "collection",
-        "install",
-        "-f",
-        "-s",
-        galaxyUrl,
-        "kubernetes.core",
-      ];
-      const collectionStatusCode = await this.run(
-        cmd,
-        args,
-        outputChannel,
-        logPath,
-      );
+      let args: Array<string> = ["collection", "install", "-f", "-s", galaxyUrl, "kubernetes.core"];
+      const collectionStatusCode = await this.run(cmd, args, outputChannel, logPath);
 
-      return (
-        collectionStatusCode === 0 && collectionStatusCode === moduleStatusCode
-      );
+      return collectionStatusCode === 0 && collectionStatusCode === moduleStatusCode;
     }
   }
 
@@ -212,26 +155,12 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  async installOcSDKCommand(
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<string> {
+  async installOcSDKCommand(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string> {
     // ansible-galaxy collection install ibm.operator_collection_sdk
-    const galaxyUrl = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyURL,
-    ) as string;
-    const galaxyNamespace = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyNamespace,
-    ) as string;
+    const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
+    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
     const cmd: string = "ansible-galaxy";
-    let args: Array<string> = [
-      "collection",
-      "install",
-      "-f",
-      "-s",
-      galaxyUrl,
-      `${galaxyNamespace}.operator_collection_sdk`,
-    ];
+    let args: Array<string> = ["collection", "install", "-f", "--pre", "-s", galaxyUrl, `${galaxyNamespace}.operator_collection_sdk`];
     return this.run(cmd, args, outputChannel, logPath);
   }
 
@@ -241,35 +170,27 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  async runOcSdkVersion(
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<string> {
-    const galaxyNamespace = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyNamespace,
-    ) as string;
+  async runOcSdkVersion(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string | undefined> {
+    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
     let versionInstalled: string;
 
     // ansible-galaxy collection list | grep ibm.operator_collection_sdk
     const cmd: string = "ansible-galaxy";
-    let args: Array<string> = [
-      "collection",
-      "list",
-      "|",
-      "grep",
-      `${galaxyNamespace}.operator_collection_sdk`,
-    ];
+    let args: Array<string> = ["collection", "list", "|", "grep", `${galaxyNamespace}.operator_collection_sdk`];
 
     let setVersionInstalled = (outputValue: string) => {
-      versionInstalled = outputValue.split(" ")?.filter((item) => {
+      versionInstalled = outputValue.split(" ")?.filter(item => {
         return item.length;
       })?.[1]; // item in [1] is the version
     };
 
-    await this.run(cmd, args, outputChannel, logPath, setVersionInstalled);
-    return new Promise<string>((resolve) => {
-      resolve(versionInstalled);
-    });
+    return this.run(cmd, args, outputChannel, logPath, setVersionInstalled)
+      .then(() => {
+        return versionInstalled;
+      })
+      .catch(e => {
+        return undefined;
+      });
   }
 
   /**
@@ -278,24 +199,15 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  async runDeterminateOcSdkIsOutdated(
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<boolean> {
-    const galaxyUrl = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyURL,
-    ) as string;
-    const galaxyNamespace = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyNamespace,
-    ) as string;
+  async runDeterminateOcSdkIsOutdated(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<boolean> {
+    const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
+    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
 
     let jsonData: any;
     try {
       jsonData = await getJsonData(galaxyUrl, galaxyNamespace);
     } catch (e) {
-      vscode.window.showErrorMessage(
-        `Failure retrieving data from Ansible Galaxy: ${e}`,
-      );
+      vscode.window.showErrorMessage(`Failure retrieving data from Ansible Galaxy: ${e}`);
     }
 
     const latestVersion = getLatestCollectionVersion(jsonData);
@@ -304,8 +216,10 @@ export class OcSdkCommand {
     return new Promise<boolean>((resolve, reject) => {
       if (latestVersion === undefined) {
         reject("Unable to locate latest version");
+      } else if (versionInstalled === undefined) {
+        resolve(false); // return false if OC SDK isn't installed
       } else {
-        resolve(!(versionInstalled === latestVersion));
+        resolve(!(versionInstalled.trim() === latestVersion.trim()));
       }
     });
   }
@@ -316,26 +230,12 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  async upgradeOCSDKtoLatestVersion(
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<boolean> {
+  async upgradeOCSDKtoLatestVersion(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<boolean> {
     // ansible-galaxy collection install ibm.operator_collection_sdk --upgrade
-    const galaxyUrl = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyURL,
-    ) as string;
-    const galaxyNamespace = getAnsibleGalaxySettings(
-      AnsibleGalaxySettings.ansibleGalaxyNamespace,
-    ) as string;
+    const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
+    const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
     const cmd: string = "ansible-galaxy";
-    let args: Array<string> = [
-      "collection",
-      "install",
-      "-s",
-      galaxyUrl,
-      `${galaxyNamespace}.operator_collection_sdk`,
-      "--upgrade",
-    ];
+    let args: Array<string> = ["collection", "install", "--pre", "--upgrade", "-f", "-s", galaxyUrl, `${galaxyNamespace}.operator_collection_sdk`];
     return this.run(cmd, args, outputChannel, logPath);
   }
 
@@ -346,11 +246,7 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  async runCreateOperatorCommand(
-    args: Array<string>,
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<any> {
+  async runCreateOperatorCommand(args: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     process.env.ANSIBLE_JINJA2_NATIVE = "true";
     const cmd: string = "ansible-playbook";
     args = args.concat("ibm.operator_collection_sdk.create_operator");
@@ -363,15 +259,8 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  async runDeleteOperatorCommand(
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<string> {
-    return this.executeSimpleCommand(
-      "ibm.operator_collection_sdk.delete_operator",
-      outputChannel,
-      logPath,
-    );
+  async runDeleteOperatorCommand(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string> {
+    return this.executeSimpleCommand("ibm.operator_collection_sdk.delete_operator", outputChannel, logPath);
   }
 
   /**
@@ -380,15 +269,8 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  async runRedeployCollectionCommand(
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<string> {
-    return this.executeSimpleCommand(
-      "ibm.operator_collection_sdk.redeploy_collection",
-      outputChannel,
-      logPath,
-    );
+  async runRedeployCollectionCommand(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string> {
+    return this.executeSimpleCommand("ibm.operator_collection_sdk.redeploy_collection", outputChannel, logPath);
   }
 
   /**
@@ -397,15 +279,8 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  async runRedeployOperatorCommand(
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<string> {
-    return this.executeSimpleCommand(
-      "ibm.operator_collection_sdk.redeploy_operator",
-      outputChannel,
-      logPath,
-    );
+  async runRedeployOperatorCommand(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string> {
+    return this.executeSimpleCommand("ibm.operator_collection_sdk.redeploy_operator", outputChannel, logPath);
   }
 
   /**
@@ -415,27 +290,20 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  private executeSimpleCommand(
-    command: string,
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<any> {
+  private executeSimpleCommand(command: string, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     const cmd: string = "ansible-playbook";
     let args: Array<string> = [command];
     return this.run(cmd, args, outputChannel, logPath);
   }
 }
 
-async function getJsonData(
-  galaxyUrl: string,
-  galaxyNamespace: string,
-): Promise<any> {
+async function getJsonData(galaxyUrl: string, galaxyNamespace: string): Promise<any> {
   const apiUrl = `${galaxyUrl}/api/v3/plugin/ansible/content/published/collections/index/${galaxyNamespace}/operator_collection_sdk/versions/`;
   const legacyApiUrl = `${galaxyUrl}/api/internal/ui/repo-or-collection-detail/?namespace=${galaxyNamespace}&name=operator_collection_sdk`;
   const galaxyResponse = getRequest(apiUrl);
   const legacyGalaxyResponse = getRequest(legacyApiUrl);
   return Promise.all([galaxyResponse, legacyGalaxyResponse])
-    .then((responses) => {
+    .then(responses => {
       if (responses[0] !== undefined) {
         return responses[0];
       }
@@ -444,20 +312,19 @@ async function getJsonData(
       }
       return undefined;
     })
-    .catch((e) => {
+    .catch(e => {
       return e;
     });
 }
 
 async function getRequest(apiUrl: string): Promise<string | undefined> {
   const urlScheme = vscode.Uri.parse(apiUrl).scheme;
-  const httpType: HTTP | HTTPS =
-    urlScheme === "https" ? require("https") : require("http");
+  const httpType: HTTP | HTTPS = urlScheme === "https" ? require("https") : require("http");
   return new Promise<string | undefined>((resolve, reject) => {
     httpType
-      .get(apiUrl, (resp) => {
+      .get(apiUrl, resp => {
         let data = "";
-        resp.on("data", (chunk) => {
+        resp.on("data", chunk => {
           data += chunk;
         });
         if (resp.statusCode === 200) {
@@ -470,15 +337,12 @@ async function getRequest(apiUrl: string): Promise<string | undefined> {
           });
         }
       })
-      .on("error", (err) => {
+      .on("error", err => {
         reject(err);
       });
   });
 }
 
 function getLatestCollectionVersion(jsonData: any): string | undefined {
-  return (
-    jsonData?.data?.collection?.latest_version?.version ??
-    jsonData?.data[0]?.version
-  );
+  return jsonData?.data?.collection?.latest_version?.version ?? jsonData?.data[0]?.version;
 }

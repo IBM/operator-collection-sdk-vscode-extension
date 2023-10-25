@@ -8,15 +8,14 @@ import * as util from "../../utilities/util";
 import { Session } from "../../utilities/session";
 import { KubernetesObj } from "../../kubernetes/kubernetes";
 
-export class ContainerLogProvider
-  implements vscode.TextDocumentContentProvider
-{
-  // Static property to store the instances
-  private static containerLogProviders: ContainerLogProvider[] = [];
+export class ContainerLogProvider implements vscode.TextDocumentContentProvider {
+  constructor(private readonly session: Session) {}
 
-  constructor(private readonly session: Session) {
-    // Store the instances on the static property
-    ContainerLogProvider.containerLogProviders.push(this);
+  onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
+  onDidChange = this.onDidChangeEmitter.event;
+
+  refresh(uri: vscode.Uri): void {
+    this.onDidChangeEmitter.fire(uri);
   }
 
   async provideTextDocumentContent(uri: vscode.Uri): Promise<string> {

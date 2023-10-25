@@ -6,9 +6,11 @@
 export enum VSCodeCommands {
   sdkInstalled = "operator-collection-sdk.sdkInstalled",
   sdkOutdatedVersion = "operator-collection-sdk.sdkOutdatedVersion",
+  zosCloudBrokerInstalled = "operator-collection-sdk.zosCloudBrokerInstalled",
   sdkUpgradeVersion = "operator-collection-sdk.sdkUpgradeVersion",
   sdkUpgradeVersionSkip = "operator-collection-sdk.sdkUpgradeVersionSkip",
   loggedIn = "operator-collection-sdk.loggedIn",
+  validNamespace = "operator-collection-sdk.validNamespace",
   login = "operator-collection-sdk.login",
   logout = "operator-collection-sdk.logout",
   install = "operator-collection-sdk.install",
@@ -28,6 +30,8 @@ export enum VSCodeCommands {
   resourceRefresh = "operator-collection-sdk.resourceRefresh",
   refreshAll = "operator-collection-sdk.refreshAll",
   refreshOpenShiftInfo = "operator-collection-sdk.refreshOpenShiftInfo",
+  refreshContainerLog = "operator-collection-sdk.refreshContainerLog",
+  refreshVerboseContainerLog = "operator-collection-sdk.refreshVerboseContainerLog",
 }
 
 export enum VSCodeViewIds {
