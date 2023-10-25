@@ -20,9 +20,7 @@ export function initResources(context: vscode.ExtensionContext) {
   _context = context;
 }
 
-export function getPodStatusIcon(
-  containerStatuses: Array<k8s.V1ContainerStatus>,
-): ThemeIcons {
+export function getPodStatusIcon(containerStatuses: Array<k8s.V1ContainerStatus>): ThemeIcons {
   let runningContainers: number = 0;
   let failingContainers: number = 0;
   let pendingContainers: number = 0;
@@ -53,9 +51,7 @@ export function getPodStatusIcon(
   }
 }
 
-export function getPodContainerStatusIcon(
-  containerStatus: k8s.V1ContainerStatus,
-): ThemeIcons {
+export function getPodContainerStatusIcon(containerStatus: k8s.V1ContainerStatus): ThemeIcons {
   const containerState = containerStatus.state;
   if (containerState?.running) {
     return getPassingIcons();
@@ -72,9 +68,7 @@ export function getPodContainerStatusIcon(
   }
 }
 
-export function getCustomResourceStatusIcon(
-  customResourceObj: ObjectInstance,
-): ThemeIcons {
+export function getCustomResourceStatusIcon(customResourceObj: ObjectInstance): ThemeIcons {
   if (customResourceObj.metadata.deletionTimestamp) {
     return getPendingIcons();
   }
@@ -103,40 +97,16 @@ export function getCustomResourceStatusIcon(
 
 export function getPassingIcons(): Icons {
   let icons: Icons = {
-    dark: vscode.Uri.joinPath(
-      _context.extensionUri,
-      "resources",
-      "icons",
-      "dark",
-      "pass.svg",
-    ),
-    light: vscode.Uri.joinPath(
-      _context.extensionUri,
-      "resources",
-      "icons",
-      "light",
-      "pass.svg",
-    ),
+    dark: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "dark", "pass.svg"),
+    light: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "light", "pass.svg"),
   };
   return icons;
 }
 
 export function getFailingIcons(): ThemeIcons {
   let icons: Icons = {
-    dark: vscode.Uri.joinPath(
-      _context.extensionUri,
-      "resources",
-      "icons",
-      "dark",
-      "error.svg",
-    ),
-    light: vscode.Uri.joinPath(
-      _context.extensionUri,
-      "resources",
-      "icons",
-      "light",
-      "error.svg",
-    ),
+    dark: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "dark", "error.svg"),
+    light: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "light", "error.svg"),
   };
   return icons;
 }
@@ -147,40 +117,16 @@ export function getPendingIcons(): ThemeIcons {
 
 export function getOperatorCollectionSdkIcons(): ThemeIcons {
   let icons: Icons = {
-    dark: vscode.Uri.joinPath(
-      _context.extensionUri,
-      "resources",
-      "icons",
-      "dark",
-      "operator-collection-sdk.svg",
-    ),
-    light: vscode.Uri.joinPath(
-      _context.extensionUri,
-      "resources",
-      "icons",
-      "light",
-      "operator-collection-sdk.svg",
-    ),
+    dark: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "dark", "operator-collection-sdk.svg"),
+    light: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "light", "operator-collection-sdk.svg"),
   };
   return icons;
 }
 
 export function getBrokerIcons(): ThemeIcons {
   let icons: Icons = {
-    dark: vscode.Uri.joinPath(
-      _context.extensionUri,
-      "resources",
-      "icons",
-      "dark",
-      "broker.svg",
-    ),
-    light: vscode.Uri.joinPath(
-      _context.extensionUri,
-      "resources",
-      "icons",
-      "light",
-      "broker.svg",
-    ),
+    dark: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "dark", "broker.svg"),
+    light: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "light", "broker.svg"),
   };
   return icons;
 }

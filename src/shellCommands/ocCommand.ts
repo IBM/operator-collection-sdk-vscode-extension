@@ -15,11 +15,7 @@ export class OcCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise containing the the return code of the executed command
    */
-  private async run(
-    args?: Array<string>,
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<any> {
+  private async run(args?: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     const options: child_process.SpawnOptions = {
       env: process.env,
       shell: true,
@@ -40,11 +36,11 @@ export class OcCommand {
     }
 
     let output: string = "";
-    childProcess.stdout?.on("data", (data) => {
+    childProcess.stdout?.on("data", data => {
       outputChannel?.appendLine(data);
       output = output.concat(data);
     });
-    childProcess.stderr?.on("data", (data) => {
+    childProcess.stderr?.on("data", data => {
       outputChannel?.appendLine(data);
       output = output.concat(data);
     });
@@ -78,25 +74,8 @@ export class OcCommand {
    * @param instanceName
    * @returns
    */
-  async runOcExecCommand(
-    podName: string,
-    namespace: string,
-    containerName: string,
-    apiVersion: string,
-    kind: string,
-    instanceName: string,
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<any> {
-    const args: Array<string> = [
-      "exec",
-      podName,
-      "-c",
-      containerName,
-      "--",
-      "cat",
-      `/tmp/ansible-operator/runner/suboperator.zoscb.ibm.com/${apiVersion}/${kind}/${namespace}/${instanceName}/artifacts/latest/stdout`,
-    ];
+  async runOcExecCommand(podName: string, namespace: string, containerName: string, apiVersion: string, kind: string, instanceName: string, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
+    const args: Array<string> = ["exec", podName, "-c", containerName, "--", "cat", `/tmp/ansible-operator/runner/suboperator.zoscb.ibm.com/${apiVersion}/${kind}/${namespace}/${instanceName}/artifacts/latest/stdout`];
     return this.run(args, outputChannel, logPath);
   }
 
@@ -111,24 +90,8 @@ export class OcCommand {
    * @param instanceName
    * @returns
    */
-  async runOcCpCommand(
-    podName: string,
-    namespace: string,
-    containerName: string,
-    workspacePath: string,
-    apiVersion: string,
-    kind: string,
-    instanceName: string,
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<any> {
-    const args: Array<string> = [
-      "cp",
-      `${namespace}/${podName}:/tmp/ansible-operator/runner/suboperator.zoscb.ibm.com/${apiVersion}/${kind}/${namespace}/${instanceName}/artifacts/latest/stdout`,
-      workspacePath,
-      "-c",
-      containerName,
-    ];
+  async runOcCpCommand(podName: string, namespace: string, containerName: string, workspacePath: string, apiVersion: string, kind: string, instanceName: string, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
+    const args: Array<string> = ["cp", `${namespace}/${podName}:/tmp/ansible-operator/runner/suboperator.zoscb.ibm.com/${apiVersion}/${kind}/${namespace}/${instanceName}/artifacts/latest/stdout`, workspacePath, "-c", containerName];
     return this.run(args, outputChannel, logPath);
   }
 
@@ -138,11 +101,7 @@ export class OcCommand {
    * @param token
    * @returns
    */
-  async runOcLoginCommand(
-    args: Array<string>,
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<any> {
+  async runOcLoginCommand(args: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     const logInArg: Array<string> = ["login"];
     const finalArgs = logInArg.concat(args);
     return this.run(finalArgs, outputChannel, logPath);
@@ -152,10 +111,7 @@ export class OcCommand {
    * Executes the oc logout command
    * @returns
    */
-  async runOcLogoutCommand(
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<any> {
+  async runOcLogoutCommand(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     return this.run(["logout"], outputChannel, logPath);
   }
 
@@ -165,11 +121,7 @@ export class OcCommand {
    * @param token
    * @returns
    */
-  async runOcProjectCommand(
-    project: string,
-    outputChannel?: vscode.OutputChannel,
-    logPath?: string,
-  ): Promise<any> {
+  async runOcProjectCommand(project: string, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     const args: Array<string> = ["project", project];
     return this.run(args, outputChannel, logPath);
   }

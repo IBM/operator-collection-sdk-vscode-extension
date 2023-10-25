@@ -37,8 +37,7 @@ Configure your OpenShift server URL, and select your OpenShift Project directly 
 1. Download the `.vsix` file from the latest release in the [operator-collection-sdk-vscode-extension Github repository](https://github.com/IBM/operator-collection-sdk-vscode-extension/releases)
 2. Install the extension to your VS Code editor using one of the following options below.
 
-   - **Using the [code CLI](https://code.visualstudio.com/Download):**
-     Execute the `extensionName=$(ls *.vsix) && code --install-extension ${extensionName}` command to install the VS Code extension to your editor
+   - **Using the [code CLI](https://code.visualstudio.com/Download):** Execute the `extensionName=$(ls *.vsix) && code --install-extension ${extensionName}` command to install the VS Code extension to your editor
    - **Using the VS Code command palette:**
 
      1. From your VS Code editor, open the VS Code command palette by issuing the `CMD + SHIFT + P` command on Mac, or the `CTRL + SHIFT + P` command on Windows.
