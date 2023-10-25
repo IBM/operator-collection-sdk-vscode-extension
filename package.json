@@ -73,7 +73,7 @@
         "command": "operator-collection-sdk.viewVerboseLogs",
         "title": "View Verbose Logs",
         "category": "OC-SDK",
-        "icon": "$(file-binary)"
+        "icon": "$(file)"
       },
       {
         "command": "operator-collection-sdk.viewResource",
@@ -313,7 +313,7 @@
         },
         {
           "command": "operator-collection-sdk.viewVerboseLogs",
-          "when": "view == operator-collection-sdk.operators && viewItem == operator-container",
+          "when": "view == operator-collection-sdk.resources && viewItem == customresource-object",
           "group": "inline"
         },
         {
@@ -419,7 +419,8 @@
     ]
   },
   "extensionDependencies": [
-    "redhat.vscode-yaml"
+    "redhat.vscode-yaml",
+    "iliazeus.vscode-ansi"
   ],
   "scripts": {
     "vscode:prepublish": "npm run package",

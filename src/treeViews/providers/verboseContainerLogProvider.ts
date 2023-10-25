@@ -36,7 +36,7 @@ export class VerboseContainerLogProvider
       if (logData) {
         return logData;
       }
-      return "";
+      return undefined;
     }
   }
 }

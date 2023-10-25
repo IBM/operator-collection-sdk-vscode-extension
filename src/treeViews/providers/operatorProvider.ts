@@ -18,23 +18,12 @@ type TreeItem = OperatorTreeItem | undefined | void;
 export class OperatorsTreeProvider
   implements vscode.TreeDataProvider<OperatorTreeItem>
 {
-  // Static property to store the instances
-  private static operatorsTreeProviders: OperatorsTreeProvider[] = [];
   private _onDidChangeTreeData: vscode.EventEmitter<TreeItem> =
     new vscode.EventEmitter<TreeItem>();
   readonly onDidChangeTreeData: vscode.Event<TreeItem> =
     this._onDidChangeTreeData.event;
 
-  constructor(private readonly session: Session) {
-    // Store the instances on the static property
-    OperatorsTreeProvider.operatorsTreeProviders.push(this);
-  }
-
-  static refreshAll(): void {
-    for (const provider of OperatorsTreeProvider.operatorsTreeProviders) {
-      provider.refresh();
-    }
-  }
+  constructor(private readonly session: Session) {}
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
@@ -54,7 +43,13 @@ export class OperatorsTreeProvider
       if (element) {
         // Get operator children items
         if (element instanceof OperatorItem) {
-          return getOperatorPodItems(element);
+          return getOperatorPodItems(element).then((operatorPodItems) => {
+             element.syncPodItems(element.operatorName, operatorPodItems);
+            return operatorPodItems;
+          }).catch((e) => {
+            vscode.window.showErrorMessage(`Failure retrieving pods list: ${e}`);
+            return [];
+          });
         } else if (element instanceof OperatorPodItem) {
           return getOperatorContainerItems(element);
         }
