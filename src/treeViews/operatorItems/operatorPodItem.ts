@@ -22,7 +22,7 @@ export class OperatorPodItem extends OperatorTreeItem {
     );
     this.contextValue = "operaror-pod";
     this.iconPath = icons.getPodStatusIcon(containerStatus);
-    parentOperator.updatePodItem(this);
+    parentOperator.updatePodItems(this);
   }
 
   contextValue = "operator-pod";
@@ -33,17 +33,23 @@ export async function getOperatorPodItems(
 ): Promise<OperatorPodItem[]> {
   const operatorPodItems: Array<OperatorPodItem> = [];
   const k8s = new KubernetesObj();
-  const pods = await k8s.getOperatorPods(parentOperator.operatorName);
-  if (pods) {
-    for (const pod of pods) {
-      const containerStatus = await k8s.getOperatorContainerStatuses(
-        parentOperator.operatorName,
-        pod,
-      );
-      operatorPodItems.push(
-        new OperatorPodItem(pod, containerStatus, parentOperator),
-      );
+  return k8s.getOperatorPods(parentOperator.operatorName).then((pods) => {
+    if (pods) {
+      for (const pod of pods) {
+        k8s.getOperatorContainerStatuses(
+          parentOperator.operatorName,
+          pod,
+        ).then((containerStatus) => {
+          operatorPodItems.push(
+            new OperatorPodItem(pod, containerStatus, parentOperator),
+          );
+        }).catch((e) => {
+          throw new Error(e);
+        });
+      }
     }
-  }
-  return operatorPodItems;
+    return operatorPodItems;
+  }).catch((e) => {
+    throw new Error(e);
+  });
 }
