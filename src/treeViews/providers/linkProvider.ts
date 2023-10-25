@@ -17,56 +17,32 @@ export class LinksTreeProvider implements vscode.TreeDataProvider<LinkItem> {
     const links: Array<LinkItem> = [];
     if (!element) {
       links.push(
-        new LinkItem(
-          "Operator Collection Spec",
-          "Operator Collection specification documentation",
-          new vscode.ThemeIcon("book"),
-          util.Links.ocSpecification,
-          {
-            command: VSCodeCommands.openLink,
-            title: "",
-            arguments: [util.Links.ocSpecification],
-          },
-        ),
+        new LinkItem("Operator Collection Spec", "Operator Collection specification documentation", new vscode.ThemeIcon("book"), util.Links.ocSpecification, {
+          command: VSCodeCommands.openLink,
+          title: "",
+          arguments: [util.Links.ocSpecification],
+        })
       );
       links.push(
-        new LinkItem(
-          "Report an SDK Issue",
-          "Report an Operator Collection SDK issue",
-          new vscode.ThemeIcon("bug"),
-          util.Links.ocSDKIssues,
-          {
-            command: VSCodeCommands.openLink,
-            title: "",
-            arguments: [util.Links.ocSDKIssues],
-          },
-        ),
+        new LinkItem("Report an SDK Issue", "Report an Operator Collection SDK issue", new vscode.ThemeIcon("bug"), util.Links.ocSDKIssues, {
+          command: VSCodeCommands.openLink,
+          title: "",
+          arguments: [util.Links.ocSDKIssues],
+        })
       );
       links.push(
-        new LinkItem(
-          "Report a VS Code Extension Issue",
-          "Report an Operator Collection SDK VS Code extension issue",
-          new vscode.ThemeIcon("bug"),
-          util.Links.vscodeExtensionIssues,
-          {
-            command: VSCodeCommands.openLink,
-            title: "",
-            arguments: [util.Links.vscodeExtensionIssues],
-          },
-        ),
+        new LinkItem("Report a VS Code Extension Issue", "Report an Operator Collection SDK VS Code extension issue", new vscode.ThemeIcon("bug"), util.Links.vscodeExtensionIssues, {
+          command: VSCodeCommands.openLink,
+          title: "",
+          arguments: [util.Links.vscodeExtensionIssues],
+        })
       );
       links.push(
-        new LinkItem(
-          "Tutorial",
-          "Learn more by trying the Operator Collection development tutorial",
-          new vscode.ThemeIcon("mortar-board"),
-          util.Links.tutorial,
-          {
-            command: VSCodeCommands.openLink,
-            title: "",
-            arguments: [util.Links.tutorial],
-          },
-        ),
+        new LinkItem("Tutorial", "Learn more by trying the Operator Collection development tutorial", new vscode.ThemeIcon("mortar-board"), util.Links.tutorial, {
+          command: VSCodeCommands.openLink,
+          title: "",
+          arguments: [util.Links.tutorial],
+        })
       );
     }
 
