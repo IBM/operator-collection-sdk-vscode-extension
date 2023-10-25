@@ -238,9 +238,7 @@ export class KubernetesObj extends KubernetesContext {
         const msg = `Failure running the "oc exec" command. ${e}`;
         if ((e as string).includes("No such file or directory")) {
           console.error(msg);
-          vscode.window.showWarningMessage(
-            "Ansible-Runner task logs not yet generated for Custom Resource instance",
-          );
+          vscode.window.showWarningMessage("Ansible-Runner task logs not yet generated for Custom Resource instance");
           return undefined;
         } else {
           vscode.window.showErrorMessage(msg);
