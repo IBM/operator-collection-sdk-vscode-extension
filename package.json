@@ -313,7 +313,7 @@
         },
         {
           "command": "operator-collection-sdk.viewVerboseLogs",
-          "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object || viewItem == customresource-object)",
+          "when": "view == operator-collection-sdk.resources && viewItem == customresource-object",
           "group": "inline"
         },
         {
