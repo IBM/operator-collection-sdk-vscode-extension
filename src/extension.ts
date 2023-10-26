@@ -273,9 +273,10 @@ function createFile(command: string) {
     }
 
     try {
-      // If "playbooks" is present in filename and directory doesn't exist, create it
-      if (filename.includes("playbooks/") && !fs.existsSync(path.join(directory, "playbooks"))) {
-        fs.mkdirSync(path.join(directory, "playbooks"));
+      // If filePath contains additional directories that don't exist, create them
+      const additionalDirectories = path.dirname(filename);
+      if (!fs.existsSync(path.join(directory, additionalDirectories))) {
+        fs.mkdirSync(path.join(directory, additionalDirectories), { recursive: true });
       }
       fs.writeFileSync(filePath, content, "utf-8");
       vscode.window.showInformationMessage(`Successfully created file ${filename}`);
