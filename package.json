@@ -248,7 +248,12 @@
       {
         "view": "operator-collection-sdk.operators",
         "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift, and create a ZosCloudBroker instance to use this extension",
-        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && operator-collection-sdk.validNamespace"
+      },
+      {
+        "view": "operator-collection-sdk.operators",
+        "contents": "Select a valid project in Openshift and create a ZosCloudBroker instance to use this extension",
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && !operator-collection-sdk.validNamespace"
       },
       {
         "view": "operator-collection-sdk.resources",
@@ -258,7 +263,12 @@
       {
         "view": "operator-collection-sdk.resources",
         "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift, and create a ZosCloudBroker instance to use this extension",
-        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && operator-collection-sdk.validNamespace"
+      },
+      {
+        "view": "operator-collection-sdk.resources",
+        "contents": "Select a valid project in Openshift and create a ZosCloudBroker instance to use this extension",
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && !operator-collection-sdk.validNamespace"
       },
       {
         "view": "operator-collection-sdk.openshiftClusterInfo",
@@ -475,6 +485,7 @@
     "clean": "rm -rf ./dist ./out",
     "test": "node ./out/test/runTest.js",
     "build": "npm run clean && vsce package",
+    "build-prerelease": "npm run clean && vsce package --pre-release",
     "deploy": "extensionName=$(ls *.vsix) && code --install-extension ${extensionName}",
     "prepare": "husky install"
   },

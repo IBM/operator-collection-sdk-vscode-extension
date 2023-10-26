@@ -5,3 +5,4 @@ node_modules
 testFixures
 resources
 .eslintcache
+*.md

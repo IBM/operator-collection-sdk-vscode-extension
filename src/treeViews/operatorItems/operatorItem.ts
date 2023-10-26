@@ -18,12 +18,9 @@ export class OperatorItem extends OperatorTreeItem {
   constructor(
     public readonly operatorDisplayName: string,
     public readonly operatorName: string,
-    public readonly workspacePath: string,
+    public readonly workspacePath: string
   ) {
-    super(
-      `Operator: ${operatorDisplayName}`,
-      vscode.TreeItemCollapsibleState.Expanded,
-    );
+    super(`Operator: ${operatorDisplayName}`, vscode.TreeItemCollapsibleState.Expanded);
     this.contextValue = "operator";
     this.iconPath = icons.getOperatorCollectionSdkIcons();
 
@@ -35,7 +32,7 @@ export class OperatorItem extends OperatorTreeItem {
   private async updateExistingOperatorItemOrAppendNewItem(operatorItem: OperatorItem) {
     operatorItem.podItems = await getOperatorPodItems(operatorItem);
     if (OperatorItem.operatorItems.length > 0) {
-      const operatorItemIndex = (OperatorItem.operatorItems as any[]).findIndex((item) => (item as OperatorItem).operatorName === operatorItem.operatorName);
+      const operatorItemIndex = (OperatorItem.operatorItems as any[]).findIndex(item => (item as OperatorItem).operatorName === operatorItem.operatorName);
       if (operatorItemIndex > -1) {
         OperatorItem.operatorItems[operatorItemIndex] = operatorItem;
       } else {
@@ -48,7 +45,7 @@ export class OperatorItem extends OperatorTreeItem {
 
   updatePodItems(podItem: OperatorPodItem) {
     if (this.podItems.length > 0) {
-      const podItemIndex = (this.podItems as any[]).findIndex((item) => (item as OperatorPodItem).podObj.metadata?.name === podItem.podObj.metadata?.name);
+      const podItemIndex = (this.podItems as any[]).findIndex(item => (item as OperatorPodItem).podObj.metadata?.name === podItem.podObj.metadata?.name);
       if (podItemIndex > -1) {
         this.podItems[podItemIndex] = podItem;
       } else {
@@ -63,11 +60,11 @@ export class OperatorItem extends OperatorTreeItem {
     this.podItems = podItems;
 
     // Update instances in static property
-   const operatorItem = OperatorItem.getOperatorItemByName(operatorName);
-   if (operatorItem !== undefined) {
-    operatorItem.podItems = podItems;
-    this.updateExistingOperatorItemOrAppendNewItem(operatorItem);
-   }
+    const operatorItem = OperatorItem.getOperatorItemByName(operatorName);
+    if (operatorItem !== undefined) {
+      operatorItem.podItems = podItems;
+      this.updateExistingOperatorItemOrAppendNewItem(operatorItem);
+    }
   }
 
   static getOperatorItemByName(operatorName: string): OperatorItem | undefined {
@@ -94,15 +91,8 @@ export async function getOperatorItems(): Promise<OperatorItem[]> {
     let data = await vscode.workspace.openTextDocument(file);
     if (util.validateOperatorConfig(data)) {
       let operatorName = data.getText().split("name: ")[1].split("\n")[0];
-      let operatorDisplayName = data
-        .getText()
-        .split("displayName: ")[1]
-        .split("\n")[0];
-      let operatorItem = new OperatorItem(
-        operatorDisplayName,
-        operatorName,
-        workspacePath,
-      );
+      let operatorDisplayName = data.getText().split("displayName: ")[1].split("\n")[0];
+      let operatorItem = new OperatorItem(operatorDisplayName, operatorName, workspacePath);
       operatorItems.push(operatorItem);
     }
   }
