@@ -40,12 +40,11 @@
 					"enum": [
 						"string",
 						"number",
-						"integer",
 						"boolean",
 						"password",
 						"object"
 					],
-					"markdownDescription": "#### Description\r\nThe variable type as is needed to be passed down to the Ansible `playbook`. Valid values for this include `string`, `number`, `integer`, `boolean`, `password`.\r\nEnums (or \"dropdowns\") are also supported by setting `type: string` and providing an additional `options` field."
+					"markdownDescription": "#### Description\r\nThe variable type as is needed to be passed down to the Ansible `playbook`. Valid values for this include `string`, `number`, `boolean`, `password`.\r\nEnums (or \"dropdowns\") are also supported by setting `type: string` and providing an additional `options` field."
 				},
 				"kindReference": {
 					"type": "string",
@@ -263,12 +262,11 @@
 					"enum": [
 						"string",
 						"number",
-						"integer",
 						"boolean",
 						"password",
 						"object"
 					],
-					"markdownDescription": "#### Description\r\nThe variable type as is needed to be passed down to the Ansible `playbook`. Valid values for this include `string`, `number`, `integer`, `boolean`, `password`.\r\nThe `password` type will generate a dropdown list of the `Secrets` in the current namespace. This variable should be a reference to the `Secret` name selected by the user, in which the playbook/role should retrieve this `Secret` to read the private data.\r\nEnums (or \"dropdowns\") are also supported by setting `type: string` and providing an additional `options` field."
+					"markdownDescription": "#### Description\r\nThe variable type as is needed to be passed down to the Ansible `playbook`. Valid values for this include `string`, `number`, `boolean`, `password`.\r\nThe `password` type will generate a dropdown list of the `Secrets` in the current namespace. This variable should be a reference to the `Secret` name selected by the user, in which the playbook/role should retrieve this `Secret` to read the private data.\r\nEnums (or \"dropdowns\") are also supported by setting `type: string` and providing an additional `options` field."
 				},
 				"kindReference": {
 					"type": "string",
