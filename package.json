@@ -73,7 +73,7 @@
         "command": "operator-collection-sdk.viewVerboseLogs",
         "title": "View Verbose Logs",
         "category": "OC-SDK",
-        "icon": "$(file-binary)"
+        "icon": "$(file)"
       },
       {
         "command": "operator-collection-sdk.viewResource",
@@ -225,7 +225,12 @@
       {
         "view": "operator-collection-sdk.operators",
         "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift, and create a ZosCloudBroker instance to use this extension",
-        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && operator-collection-sdk.validNamespace"
+      },
+      {
+        "view": "operator-collection-sdk.operators",
+        "contents": "Select a valid project in Openshift and create a ZosCloudBroker instance to use this extension",
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && !operator-collection-sdk.validNamespace"
       },
       {
         "view": "operator-collection-sdk.resources",
@@ -235,7 +240,12 @@
       {
         "view": "operator-collection-sdk.resources",
         "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift, and create a ZosCloudBroker instance to use this extension",
-        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && operator-collection-sdk.validNamespace"
+      },
+      {
+        "view": "operator-collection-sdk.resources",
+        "contents": "Select a valid project in Openshift and create a ZosCloudBroker instance to use this extension",
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && !operator-collection-sdk.validNamespace"
       },
       {
         "view": "operator-collection-sdk.openshiftClusterInfo",
@@ -313,7 +323,7 @@
         },
         {
           "command": "operator-collection-sdk.viewVerboseLogs",
-          "when": "view == operator-collection-sdk.operators && viewItem == operator-container",
+          "when": "view == operator-collection-sdk.resources && viewItem == customresource-object",
           "group": "inline"
         },
         {
@@ -419,7 +429,8 @@
     ]
   },
   "extensionDependencies": [
-    "redhat.vscode-yaml"
+    "redhat.vscode-yaml",
+    "iliazeus.vscode-ansi"
   ],
   "scripts": {
     "vscode:prepublish": "npm run package",
@@ -434,6 +445,7 @@
     "clean": "rm -rf ./dist ./out",
     "test": "node ./out/test/runTest.js",
     "build": "npm run clean && vsce package",
+    "build-prerelease": "npm run clean && vsce package --pre-release",
     "deploy": "extensionName=$(ls *.vsix) && code --install-extension ${extensionName}",
     "prepare": "husky install"
   },

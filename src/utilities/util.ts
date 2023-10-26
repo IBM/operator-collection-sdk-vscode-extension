@@ -60,10 +60,7 @@ export const customResourceScheme: string = "customResource";
  * @returns — The vscode.WorkspaceFolder interface, or undefined if a directory doesn't exists
  */
 export function getCurrentWorkspaceRootFolder(): string | undefined {
-  if (
-    vscode.workspace.workspaceFolders &&
-    vscode.workspace.workspaceFolders?.length > 0
-  ) {
+  if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders?.length > 0) {
     return vscode.workspace.workspaceFolders[0].uri.path;
   }
   return undefined;
@@ -73,13 +70,9 @@ export function getCurrentWorkspaceRootFolder(): string | undefined {
  * Retrieve the list of Operator Collection names and workspace directories in the current workspace
  * @returns — A promise containing the WorkSpaceOperators object
  */
-export async function getOperatorsInWorkspace(
-  workspace: string,
-): Promise<WorkSpaceOperators> {
+export async function getOperatorsInWorkspace(workspace: string): Promise<WorkSpaceOperators> {
   const wsOperators: WorkSpaceOperators = {};
-  for (const file of await vscode.workspace.findFiles(
-    "**/operator-config.*ml",
-  )) {
+  for (const file of await vscode.workspace.findFiles("**/operator-config.*ml")) {
     let data = await vscode.workspace.openTextDocument(file);
     if (validateOperatorConfig(data)) {
       let operatorName = data.getText().split("name: ")[1].split("\n")[0];
@@ -94,9 +87,7 @@ export async function getOperatorsInWorkspace(
  * @param pwd - the current working directory
  * @returns - A Promise containing the operator-config version
  */
-export async function getOperatorConfigVersion(
-  pwd: string,
-): Promise<string | undefined> {
+export async function getOperatorConfigVersion(pwd: string): Promise<string | undefined> {
   return await getOperatorConfigInfo(pwd, "version");
 }
 
@@ -105,9 +96,7 @@ export async function getOperatorConfigVersion(
  * @param pwd - the current working directory
  * @returns - A Promise containing the operator csv name
  */
-export async function getOperatorCSVName(
-  pwd: string,
-): Promise<string | undefined> {
+export async function getOperatorCSVName(pwd: string): Promise<string | undefined> {
   const domain = await getOperatorConfigInfo(pwd, "domain");
   const name = await getOperatorConfigInfo(pwd, "name");
   const version = await getOperatorConfigInfo(pwd, "version");
@@ -118,10 +107,7 @@ export async function getOperatorCSVName(
   }
 }
 
-async function getOperatorConfigInfo(
-  pwd: string,
-  fieldName: string,
-): Promise<string | undefined> {
+async function getOperatorConfigInfo(pwd: string, fieldName: string): Promise<string | undefined> {
   const operatorConfigUri = getOperatorConfigUri(pwd);
   let data = await vscode.workspace.openTextDocument(operatorConfigUri);
   if (validateOperatorConfig(data)) {
@@ -136,9 +122,7 @@ async function getOperatorConfigInfo(
  * @param pwd - the current working directory
  * @returns - A Promise containing the converted API version
  */
-export async function getConvertedApiVersion(
-  pwd: string,
-): Promise<string | undefined> {
+export async function getConvertedApiVersion(pwd: string): Promise<string | undefined> {
   const version = await getOperatorConfigVersion(pwd);
   if (version) {
     let versionSplit = version.split(".");
@@ -179,9 +163,7 @@ function getOperatorConfigUri(pwd: string): vscode.Uri {
   } else if (fs.existsSync(path.join(pwd, "operator-config.yaml"))) {
     operatorConfigFilePath = path.join(pwd, "operator-config.yaml");
   } else {
-    vscode.window.showErrorMessage(
-      "operator-config file doesn't exist in workspace",
-    );
+    vscode.window.showErrorMessage("operator-config file doesn't exist in workspace");
   }
   return vscode.Uri.parse(operatorConfigFilePath);
 }
@@ -190,9 +172,7 @@ function getOperatorConfigUri(pwd: string): vscode.Uri {
  * Retrieve the list of Operator Collection names in the current workspace
  * @returns — A promise containing the WorkSpaceOperators object
  */
-export async function getOperatorNamesInWorkspace(
-  workspace: string,
-): Promise<string[]> {
+export async function getOperatorNamesInWorkspace(workspace: string): Promise<string[]> {
   let operatorsInWorkspace = await getOperatorsInWorkspace(workspace);
   let operatorNames: Array<string> = [];
   for (const operatorName in operatorsInWorkspace) {
@@ -206,10 +186,7 @@ export async function getOperatorNamesInWorkspace(
  * @param workspace - The directory to the workspace folder
  * @returns - A Promise containing the directory to the selected operator
  */
-export async function selectOperatorInWorkspace(
-  workspace: string,
-  operatorName?: string,
-): Promise<string | undefined> {
+export async function selectOperatorInWorkspace(workspace: string, operatorName?: string): Promise<string | undefined> {
   let operatorsInWorkspace = await getOperatorsInWorkspace(workspace);
   if (operatorName) {
     return operatorsInWorkspace[operatorName];
@@ -233,73 +210,6 @@ export async function selectOperatorInWorkspace(
   }
 }
 
-/**
- * Select the Custom Resource Operator in the workspace to execute against (if multiple operators exist)
- * @param workspace - The directory to the workspace folder
- * @returns - A Promise containing the directory to the selected operator
- */
-export async function selectCustomResourceFromOperatorInWorkspace(
-  pwd: string,
-): Promise<string | undefined> {
-  let kinds = await getKindsInOperatorConfig(pwd);
-  if (kinds.length > 1) {
-    const kindSelected = await vscode.window.showQuickPick(kinds, {
-      canPickMany: false,
-      ignoreFocusOut: true,
-      placeHolder: "Select the Kind where the instance was created",
-      title: "Kinds available for this operator",
-    });
-    if (!kindSelected) {
-      return undefined;
-    }
-    return kindSelected;
-  } else if (kinds.length === 1) {
-    return kinds[0];
-  } else {
-    return undefined;
-  }
-}
-
-/**
- * Select the Custom Resource Operator in the workspace to execute against (if multiple operators exist)
- * @param workspace - The directory to the workspace folder
- * @returns - A Promise containing the directory to the selected operator
- */
-export async function selectCustomResourceInstance(
-  pwd: string,
-  k8s: KubernetesObj,
-  apiVersion: string,
-  kind: string,
-): Promise<string | undefined> {
-  const crInstanceNames = await k8s.listCustomResouceInstanceNames(
-    apiVersion,
-    kind,
-  );
-  if (crInstanceNames) {
-    if (crInstanceNames.length > 1) {
-      const instanceSelected = await vscode.window.showQuickPick(
-        crInstanceNames,
-        {
-          canPickMany: false,
-          ignoreFocusOut: true,
-          placeHolder: "Select the instance logs to display",
-          title: "List of instances in the current namespace",
-        },
-      );
-      if (!instanceSelected) {
-        return undefined;
-      }
-      return instanceSelected;
-    } else if (crInstanceNames.length === 1) {
-      return crInstanceNames[0];
-    } else {
-      return undefined;
-    }
-  } else {
-    return undefined;
-  }
-}
-
 interface OperatorVariables {
   zosendpoint_type: string;
   zosendpoint_name: string;
@@ -314,23 +224,16 @@ interface OperatorVariables {
  * Prompts the user for the necessary info to create a new operator
  * @returns - A Promise containing the list of parameters to pass to the command
  */
-export async function requestOperatorInfo(
-  workspacePath: string,
-): Promise<string[] | undefined> {
+export async function requestOperatorInfo(workspacePath: string): Promise<string[] | undefined> {
   let args: Array<string> = [];
   const yesNoOptions: Array<string> = ["Yes", "No"];
-  const filePattern = new vscode.RelativePattern(
-    workspacePath,
-    "ocsdk-extra-vars.*ml",
-  );
+  const filePattern = new vscode.RelativePattern(workspacePath, "ocsdk-extra-vars.*ml");
   const ocsdkVarsFile = await vscode.workspace.findFiles(filePattern);
   let extraVarsFilePath: string = "";
   if (ocsdkVarsFile.length === 1) {
     extraVarsFilePath = ocsdkVarsFile[0].fsPath;
     const operatorConfigData = fs.readFileSync(extraVarsFilePath);
-    const operatorVars = yaml.load(
-      operatorConfigData.toString(),
-    ) as OperatorVariables;
+    const operatorVars = yaml.load(operatorConfigData.toString()) as OperatorVariables;
 
     if (operatorVars.passphrase === undefined) {
       const passphrase = await promptForPassphrase();
@@ -339,15 +242,12 @@ export async function requestOperatorInfo(
         args.push(`-e "passphrase=${passphrase}"`);
       } else if (passphrase === "") {
         args.push(`-e "passphrase="`);
-        const bypassPassphrase = await vscode.window.showQuickPick(
-          yesNoOptions,
-          {
-            canPickMany: false,
-            ignoreFocusOut: true,
-            placeHolder: "Bypass passphrase prompts?",
-            title: "Would you like to bypass passphrase prompts later?",
-          },
-        );
+        const bypassPassphrase = await vscode.window.showQuickPick(yesNoOptions, {
+          canPickMany: false,
+          ignoreFocusOut: true,
+          placeHolder: "Bypass passphrase prompts?",
+          title: "Would you like to bypass passphrase prompts later?",
+        });
         if (bypassPassphrase?.toLowerCase() === "yes") {
           operatorVars.passphrase = "";
           const operatorVarsStringData = JSON.stringify(operatorVars);
@@ -363,9 +263,7 @@ export async function requestOperatorInfo(
     args.push(`--extra-vars "@${extraVarsFilePath}"`);
     return args;
   } else if (ocsdkVarsFile.length > 1) {
-    vscode.window.showErrorMessage(
-      "Multiple ocsdk-extra-vars files in Operator Collection not allowed",
-    );
+    vscode.window.showErrorMessage("Multiple ocsdk-extra-vars files in Operator Collection not allowed");
     return undefined;
   }
 
@@ -430,8 +328,7 @@ export async function requestOperatorInfo(
   args.push(`-e "zosendpoint_port=${zosEndpointPort}"`);
 
   const zosEndpointUsername = await vscode.window.showInputBox({
-    prompt:
-      "Enter you SSH Username for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
+    prompt: "Enter you SSH Username for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
     ignoreFocusOut: true,
   });
 
@@ -444,8 +341,7 @@ export async function requestOperatorInfo(
   }
 
   const zosEndpointSSHKey = await vscode.window.showInputBox({
-    prompt:
-      "Enter the path to your private SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
+    prompt: "Enter the path to your private SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
     value: "~/.ssh/id_ed25519",
     ignoreFocusOut: true,
   });
@@ -472,8 +368,7 @@ export async function requestOperatorInfo(
     canPickMany: false,
     ignoreFocusOut: true,
     placeHolder: "Store variables to file?",
-    title:
-      "Would you like to store these variables to a file to bypass prompts later?",
+    title: "Would you like to store these variables to a file to bypass prompts later?",
   });
 
   if (saveToFile === undefined) {
@@ -508,29 +403,23 @@ export async function requestOperatorInfo(
 
 async function promptForPassphrase(): Promise<string | undefined> {
   return await vscode.window.showInputBox({
-    prompt:
-      "Enter the passphrase for the SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
+    prompt: "Enter the passphrase for the SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
     password: true,
     ignoreFocusOut: true,
   });
 }
 
-export async function generateProjectDropDown(
-  nslist?: Array<string>,
-): Promise<string | undefined> {
+export async function generateProjectDropDown(nslist?: Array<string>): Promise<string | undefined> {
   const args: Array<string> = [];
   const k8s = new KubernetesObj();
   const namespaceList = nslist ? nslist : await k8s.getNamespaceList();
   if (namespaceList) {
-    const namespaceSelection = await vscode.window.showQuickPick(
-      namespaceList,
-      {
-        canPickMany: false,
-        ignoreFocusOut: true,
-        placeHolder: "Select a Project",
-        title: "Update the current Project",
-      },
-    );
+    const namespaceSelection = await vscode.window.showQuickPick(namespaceList, {
+      canPickMany: false,
+      ignoreFocusOut: true,
+      placeHolder: "Select a Project",
+      title: "Update the current Project",
+    });
 
     if (!namespaceSelection) {
       return undefined;
@@ -551,15 +440,14 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
   const inputArgs = await vscode.window.showInputBox({
     prompt: `Enter your oc login command: oc login --server=SERVER_URL --token=AUTH_TOKEN`,
     ignoreFocusOut: true,
-    validateInput: (text) => {
+    validateInput: text => {
       const ocLoginArgs = text.trimStart();
 
       // validate arguments
       const validRegex: { [key: string]: RegExp } = {
         "OC Command": /^(oc login)/gm,
         "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/gm,
-        "Server URL":
-          /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
+        "Server URL": /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
       };
 
       for (const rx in validRegex) {
@@ -577,30 +465,21 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
     args = inputArgs
       .trimStart()
       .split(" ")
-      ?.filter((item) => {
+      ?.filter(item => {
         return item.length;
       })
       ?.slice(2);
 
     return args;
   } else {
-    vscode.window.showErrorMessage(
-      "Failed to log in because no arguments were supplied.",
-    );
+    vscode.window.showErrorMessage("Failed to log in because no arguments were supplied.");
     return undefined;
   }
 }
 
 export function validateOperatorConfig(document: vscode.TextDocument): boolean {
   const text = document.getText();
-  if (
-    text.includes("domain") &&
-    text.includes("name") &&
-    text.includes("version") &&
-    text.includes("displayName") &&
-    text.includes("resources") &&
-    text.includes("description")
-  ) {
+  if (text.includes("domain") && text.includes("name") && text.includes("version") && text.includes("displayName") && text.includes("resources") && text.includes("description")) {
     return true;
   } else {
     return false;
@@ -617,34 +496,16 @@ export async function pollRun(attempts: number): Promise<void> {
   }, 5000);
 }
 
-export function buildContainerLogUri(
-  podName: string,
-  containerName: string,
-): vscode.Uri {
+export function buildContainerLogUri(podName: string, containerName: string): vscode.Uri {
   return vscode.Uri.parse(`${logScheme}://${podName}/${containerName}`);
 }
 
-export function buildVerboseContainerLogUri(
-  podName: string,
-  containerName: string,
-  apiVersion: string,
-  kind: string,
-  instanceName: string,
-): vscode.Uri {
-  return vscode.Uri.parse(
-    `${verboseLogScheme}://${podName}/${containerName}/${apiVersion}/${kind}/${instanceName}`,
-  );
+export function buildVerboseContainerLogUri(podName: string, containerName: string, apiVersion: string, kind: string, instanceName: string): vscode.Uri {
+  return vscode.Uri.parse(`${verboseLogScheme}://${podName}/${containerName}/${apiVersion}/${kind}/${instanceName}`);
 }
 
-export function buildCustomResourceUri(
-  kind: string,
-  instanceName: string,
-  group: string,
-  apiVersion: string,
-): vscode.Uri {
-  return vscode.Uri.parse(
-    `${customResourceScheme}://${kind}/${group}/${apiVersion}/${instanceName}`,
-  );
+export function buildCustomResourceUri(kind: string, instanceName: string, group: string, apiVersion: string): vscode.Uri {
+  return vscode.Uri.parse(`${customResourceScheme}://${kind}/${group}/${apiVersion}/${instanceName}`);
 }
 
 export function parseContainerLogUri(uri: vscode.Uri): {
@@ -703,13 +564,11 @@ export function parseCustomResourceUri(uri: vscode.Uri): {
 }
 
 export async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export function getAnsibleGalaxySettings(property: string): any {
-  const configuration = vscode.workspace.getConfiguration(
-    "operatorCollectionSdk.ansibleGalaxy",
-  );
+  const configuration = vscode.workspace.getConfiguration("operatorCollectionSdk.ansibleGalaxy");
   const setting = configuration.get(property);
   if (setting instanceof String && setting === "") {
     switch (property) {
@@ -726,8 +585,6 @@ export function getAnsibleGalaxySettings(property: string): any {
 }
 
 export function getLinterSettings(property: string): any {
-  const configuration = vscode.workspace.getConfiguration(
-    "operatorCollectionSdk.linter",
-  );
+  const configuration = vscode.workspace.getConfiguration("operatorCollectionSdk.linter");
   return configuration.get(property);
 }
