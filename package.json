@@ -145,6 +145,11 @@
         "title": "Delete Custom Resource",
         "category": "OC-SDK",
         "icon": "$(trash)"
+      },
+      {
+        "command": "operator-collection-sdk.createFile",
+        "title": "Create Boilerplate File",
+        "category": "OC-SDK"
       }
     ],
     "configuration": [
