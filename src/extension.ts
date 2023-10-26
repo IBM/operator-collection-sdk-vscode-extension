@@ -293,7 +293,7 @@ function createFile(command: string) {
 
 function createGalaxyBoilerplateFile(command: string) {
   return vscode.commands.registerCommand(command, async uri => {
-    const filename = "galaxy.yaml";
+    const filename = "galaxy.yml";
     const directory = path.dirname(uri.fsPath);
 
     if (directory) {
@@ -306,7 +306,7 @@ function createGalaxyBoilerplateFile(command: string) {
 
 function createOperatorConfigBoilerplateFile(command: string) {
   return vscode.commands.registerCommand(command, async uri => {
-    const filename = "operator-config.yaml";
+    const filename = "operator-config.yml";
     const directory = path.dirname(uri.fsPath);
 
     if (directory) {
@@ -319,7 +319,7 @@ function createOperatorConfigBoilerplateFile(command: string) {
 
 function createPlaybookBoilerplateFile(command: string) {
   return vscode.commands.registerCommand(command, async uri => {
-    const filename = "playbooks/playbook.yaml";
+    const filename = "playbooks/playbook.yml";
     const directory = path.dirname(uri.fsPath);
 
     if (directory) {
