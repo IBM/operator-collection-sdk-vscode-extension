@@ -24,35 +24,69 @@
 		"ObjectVariables": {
 			"properties": {
 				"name": {
-					"type": "string"
+					"type": "string",
+					"markdownDescription": "#### Description\r\nThe variable name that SHALL be provided to the defined `playbook` as an \"extra vars\" (`-e`) input parameter during execution. The provided value MUST conform to an existing variable referenced in the `playbook` or underlying Ansible role."
 				},
 				"description": {
-					"type": "string"
+					"type": "string",
+					"markdownDescription": "#### Description\r\nA short description that SHALL be visible in the OCP Kubernetes Custom Resource creation UIs under the provided `displayName`. This value MUST provide any relevant information for users to understand the purpose for the provided `var`."
 				},
 				"displayName": {
-					"type": "string"
+					"type": "string",
+					"markdownDescription": "#### Description\r\nA short label that SHALL be visible in the OCP Kubernete's Custom Resource creation UIs."
 				},
 				"type": {
-					"type": "string"
+					"type": "string",
+					"enum": [
+						"string",
+						"number",
+						"integer",
+						"boolean",
+						"password",
+						"object"
+					],
+					"markdownDescription": "#### Description\r\nThe variable type as is needed to be passed down to the Ansible `playbook`. Valid values for this include `string`, `number`, `integer`, `boolean`, `password`.\r\nEnums (or \"dropdowns\") are also supported by setting `type: string` and providing an additional `options` field."
 				},
 				"kindReference": {
-					"type": "string"
+					"type": "string",
+					"markdownDescription": "#### Description\r\nSpecify this field if the `playbook` requires information from other Kubernetes resources managed by the z/OS Cloud Broker.\r\nThis will enable a dynamically populated dropdown in the OCP UIs containing all previously created instances of the specified `kind`. Use this for running actions against previously created instances."
 				},
 				"default": {
-					"type": "string"
+					"oneOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "number"
+						},
+						{
+							"type": "boolean"
+						},
+						{
+							"type": "object"
+						}
+					],
+					"markdownDescription": "#### Description\r\nA default value that should be set in the OCP UIs for this variable."
 				},
 				"options": {
 					"items": {
 						"type": "string"
 					},
-					"type": "array"
+					"type": "array",
+					"markdownDescription": "#### Description\r\nA list of valid `strings` to specify the available options for an enum (\"dropdown\") `type`."
 				},
 				"required": {
-					"type": "boolean"
+					"type": "boolean",
+					"markdownDescription": "#### Description\r\nSet this field to `true` if this variable MUST be input by the user before resource creation is allowed."
 				}
 			},
 			"additionalProperties": false,
-			"type": "object"
+			"type": "object",
+			"required": [
+				"name",
+				"displayName",
+				"type"
+			]
 		},
 		"OperatorConfig": {
 			"properties": {
@@ -231,7 +265,8 @@
 						"number",
 						"integer",
 						"boolean",
-						"password"
+						"password",
+						"object"
 					],
 					"markdownDescription": "#### Description\r\nThe variable type as is needed to be passed down to the Ansible `playbook`. Valid values for this include `string`, `number`, `integer`, `boolean`, `password`.\r\nThe `password` type will generate a dropdown list of the `Secrets` in the current namespace. This variable should be a reference to the `Secret` name selected by the user, in which the playbook/role should retrieve this `Secret` to read the private data.\r\nEnums (or \"dropdowns\") are also supported by setting `type: string` and providing an additional `options` field."
 				},
@@ -249,6 +284,9 @@
 						},
 						{
 							"type": "boolean"
+						},
+						{
+							"type": "object"
 						}
 					],
 					"markdownDescription": "#### Description\r\nA default value that should be set in the OCP UIs for this variable."
@@ -268,10 +306,12 @@
 					"items": {
 						"$ref": "#/$defs/ObjectVariables"
 					},
-					"type": "array"
+					"type": "array",
+					"markdownDescription": "#### Description\r\nA list of variables that SHOULD be provided in the object. See Object Variables. This value is required when the `type` is set to `object`."
 				},
 				"array": {
-					"type": "boolean"
+					"type": "boolean",
+					"markdownDescription": "#### Description\r\nSet this field to `true` if the variable should be stored as an array. Arrays are only supported for the `string`"
 				}
 			},
 			"additionalProperties": false,
