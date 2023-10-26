@@ -20,6 +20,8 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
     range: vscode.Range,
     context: vscode.CodeActionContext,
   ): vscode.CodeAction[] | undefined {
+    const actions: vscode.CodeAction[] = [];
+
     // provide file scaffold options for specific yaml files
     if (
       (document &&
@@ -29,26 +31,30 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
       for (const diagnostic of context.diagnostics) {
         // if the error is playbook is invalid
         if (
-          diagnostic.message.includes(
+          diagnostic.severity === vscode.DiagnosticSeverity.Error &&
+          (diagnostic.message.includes(
             VSCodeDiagnosticMessages.invalidPlaybookError,
-          )
+          ) ||
+            diagnostic.message.includes(
+              VSCodeDiagnosticMessages.invalidFinalizerError,
+            ))
         ) {
           const filename = diagnostic.message.trim().split("-")[1].trim();
           const directory = path.dirname(document.uri.fsPath);
 
-          return [this.createBoilerplateFileAction(filename, directory)];
+          actions.push(this.createBoilerplateFileAction(filename, directory));
         }
       }
     }
 
-    return [];
+    return actions;
   }
 
   private createBoilerplateFileAction(
     filename: string,
     directory: string,
   ): vscode.CodeAction {
-    const actionTitle = `Create Boilerplate File for "${filename}"`;
+    const actionTitle = `Create boilerplate file for "${filename}"?`;
     const action = new vscode.CodeAction(
       actionTitle,
       vscode.CodeActionKind.QuickFix,

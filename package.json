@@ -36,6 +36,9 @@
     "workspaceContains:{**/operator-config.yaml,**/operator-config.yml}"
   ],
   "main": "./dist/extension.js",
+  "enabledApiProposals": [
+    "contribEditorContentMenu"
+  ],
   "contributes": {
     "commands": [
       {
@@ -148,7 +151,22 @@
       },
       {
         "command": "operator-collection-sdk.createFile",
-        "title": "Create Boilerplate File",
+        "title": "Create boilerplate YAML file",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createGalaxyBoilerplateFile",
+        "title": "Create galaxy.yaml/yml boilerplate file",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createOperatorConfigBoilerplateFile",
+        "title": "Create operator-config.yaml/yml boilerplate file",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createPlaybookBoilerplateFile",
+        "title": "Create playbook.yaml/yml boilerplate file",
         "category": "OC-SDK"
       }
     ],
@@ -268,6 +286,23 @@
       ]
     },
     "menus": {
+      "explorer/context": [
+        {
+          "command": "operator-collection-sdk.createGalaxyBoilerplateFile",
+          "when": "true",
+          "group": "navigation"
+        },
+        {
+          "command": "operator-collection-sdk.createOperatorConfigBoilerplateFile",
+          "when": "true",
+          "group": "navigation"
+        },
+        {
+          "command": "operator-collection-sdk.createPlaybookBoilerplateFile",
+          "when": "true",
+          "group": "navigation"
+        }
+      ],
       "view/title": [
         {
           "command": "operator-collection-sdk.refreshAll",

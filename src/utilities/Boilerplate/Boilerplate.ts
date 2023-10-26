@@ -1,7 +1,6 @@
 // To preserve whitespace DO NOT reformat this file
 
-export const playbookBoilerplateContent = `
----
+export const playbookBoilerplateContent = `---
 - name: Boilerplate Playbook
   hosts: all
   gather_facts: false
@@ -19,13 +18,7 @@ export const playbookBoilerplateContent = `
 
 `;
 
-export const variablesBoilerplateContent = `
-example_variable_name: example_variable_value
-
-`;
-
-export const operatorConfigBoilerplateContent = `
-domain: namespace
+export const operatorConfigBoilerplateContent = `domain: namespace
 name: example
 version: 0.0.0
 roles:
