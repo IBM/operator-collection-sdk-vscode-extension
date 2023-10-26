@@ -9,10 +9,7 @@ import { Session } from "../../utilities/session";
 import { KubernetesObj } from "../../kubernetes/kubernetes";
 import { VSCodeCommands } from "../../utilities/commandConstants";
 
-export class VerboseContainerLogProvider
-  implements vscode.TextDocumentContentProvider
-{
-
+export class VerboseContainerLogProvider implements vscode.TextDocumentContentProvider {
   constructor(private readonly session: Session) {}
 
   onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>();
@@ -26,17 +23,11 @@ export class VerboseContainerLogProvider
     if (this.session.loggedIntoOpenShift) {
       const k8s = new KubernetesObj();
       const uriObj = util.parseVerboseContainerLogUri(uri);
-      const logData = await k8s.downloadVerboseContainerLogs(
-        uriObj.podName,
-        uriObj.containerName,
-        uriObj.apiVersion,
-        uriObj.kind,
-        uriObj.instanceName,
-      );
+      const logData = await k8s.downloadVerboseContainerLogs(uriObj.podName, uriObj.containerName, uriObj.apiVersion, uriObj.kind, uriObj.instanceName);
       if (logData) {
         return logData;
       }
-      return "";
+      return undefined;
     }
   }
 }
