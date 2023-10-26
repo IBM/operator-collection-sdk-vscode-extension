@@ -7,7 +7,13 @@ import * as vscode from "vscode";
 import * as util from "./utilities/util";
 import * as path from "path";
 import * as fs from "fs";
-import { VSCodeCommands, VSCodeViewIds } from "./utilities/commandConstants";
+import * as yaml from "js-yaml";
+import {
+  VSCodeCommands,
+  VSCodeViewIds,
+  VSCodeDiagnosticMessages,
+} from "./utilities/commandConstants";
+import { ScaffoldCodeActionProvider } from "./treeViews/providers/scaffoldCodeActionProvider";
 import { OperatorsTreeProvider } from "./treeViews/providers/operatorProvider";
 import { OperatorItem } from "./treeViews/operatorItems/operatorItem";
 import { OpenShiftItem } from "./treeViews/openshiftItems/openshiftItem";
@@ -32,8 +38,8 @@ import { Session } from "./utilities/session";
 import { OperatorConfig } from "./linter/models";
 import { AnsibleGalaxyYmlSchema } from "./linter/galaxy";
 import { getLinterSettings, LinterSettings } from "./utilities/util";
-import * as yaml from "js-yaml";
 import { AboutTreeProvider } from "./treeViews/providers/aboutProvider";
+import * as BoilerplateContent from "./utilities/Boilerplate/Boilerplate";
 
 export async function activate(context: vscode.ExtensionContext) {
   // Set context as a global as some tests depend on it
@@ -68,6 +74,18 @@ export async function activate(context: vscode.ExtensionContext) {
         updateDiagnostics(textDocumentChangeEvent.document, collection);
       }),
     );
+    context.subscriptions.push(
+      vscode.languages.registerCodeActionsProvider(
+        "yaml",
+        new ScaffoldCodeActionProvider(),
+        {
+          providedCodeActionKinds:
+            ScaffoldCodeActionProvider.providedCodeActionKinds,
+        },
+      ),
+    );
+
+    context.subscriptions.push(createFile(VSCodeCommands.createFile));
   }
 
   const ocSdkCmd = new OcSdkCommand();
@@ -193,7 +211,10 @@ export async function activate(context: vscode.ExtensionContext) {
     executeContainerViewLogCommand(VSCodeCommands.viewLogs, session),
   );
   context.subscriptions.push(
-    executeCustomResourceViewLogCommand(VSCodeCommands.viewVerboseLogs, session),
+    executeCustomResourceViewLogCommand(
+      VSCodeCommands.viewVerboseLogs,
+      session,
+    ),
   );
   context.subscriptions.push(
     executeOpenLinkCommand(VSCodeCommands.openEditLink),
@@ -312,6 +333,67 @@ export async function activate(context: vscode.ExtensionContext) {
         });
       },
     ),
+  );
+}
+
+function createFile(command: string) {
+  return vscode.commands.registerCommand(
+    command,
+    async (filename: string, directory: string) => {
+      let content: string = "";
+      let folder: string = "";
+      let filepath: string = "";
+
+      // available scaffold types:
+      // galaxy.yaml, operator-config.yaml, vars, playbooks
+      const operatorConfigRX = /operator-config\.ya?ml$/gm;
+      const galaxyRX = /galaxy\.ya?ml$/gm;
+      const variablesRX = /variables\.ya?ml$/gm;
+      const playbookRX = /\.ya?ml$/gm;
+
+      if (operatorConfigRX.test(filename)) {
+        content = BoilerplateContent.operatorConfigBoilerplateContent;
+      } else if (galaxyRX.test(filename)) {
+        content = BoilerplateContent.galaxyBoilerplateContent;
+      } else if (variablesRX.test(filename)) {
+        content = BoilerplateContent.variablesBoilerplateContent;
+      } else if (playbookRX.test(filename)) {
+        content = BoilerplateContent.playbookBoilerplateContent;
+      } else {
+        vscode.window.showErrorMessage(
+          `Cannot create scaffold for file ${filename}. Supported file types are: (.yaml/.yml)`,
+        );
+        return;
+      }
+
+      const filePath = path.join(directory, filename);
+
+      if (fs.existsSync(filePath)) {
+        // If the file exists, ask user for permision to overwrite
+        const canProceed = await vscode.window.showInformationMessage(
+          `The file ${filename} already exists. Do you want to overwrite it?`,
+          { modal: true },
+          "Yes",
+          "No",
+        );
+
+        if (!canProceed || canProceed === "No") {
+          return;
+        }
+      }
+
+      fs.writeFile(filePath, content, (e) => {
+        if (e) {
+          const msg = `Error attempting to create file ${filename}: ${e}`;
+          console.log(msg);
+          vscode.window.showErrorMessage(msg);
+        }
+      });
+
+      vscode.window.showInformationMessage(
+        `Successfully created file ${filename}`,
+      );
+    },
   );
 }
 
@@ -641,8 +723,7 @@ function executeContainerViewLogCommand(
                 containerItemArgs.podObj.metadata?.name!,
                 containerItemArgs.containerStatus.name,
               );
-              const doc =
-                await vscode.workspace.openTextDocument(logUri);
+              const doc = await vscode.workspace.openTextDocument(logUri);
               await vscode.window.showTextDocument(doc, {
                 preview: false,
               });
@@ -676,68 +757,85 @@ function executeCustomResourceViewLogCommand(
         .update()
         .then(async (proceed) => {
           if (proceed && customResourcesItemArgs !== undefined) {
-            console.log("OperatorName: " + customResourcesItemArgs );
-            const operatorItem = OperatorItem.getOperatorItemByName(customResourcesItemArgs.operatorName);
+            console.log("OperatorName: " + customResourcesItemArgs);
+            const operatorItem = OperatorItem.getOperatorItemByName(
+              customResourcesItemArgs.operatorName,
+            );
             let podName: string = "";
             let containerName: string = "";
             if (operatorItem?.podItems.length === 0) {
-              vscode.window.showErrorMessage("Failure retrieving logs because operator pod doesn't exist");
+              vscode.window.showErrorMessage(
+                "Failure retrieving logs because operator pod doesn't exist",
+              );
               return;
             }
-            const podItem = operatorItem?.podItems
-            .find((item) => {
+            const podItem = operatorItem?.podItems.find((item) => {
               if (item.podObj.status?.containerStatuses) {
-                for (const containerStatus of item.podObj.status?.containerStatuses) {
-                  if (!containerStatus.name.startsWith("init") && containerStatus.state !== containerStatus.state?.terminated) {
+                for (const containerStatus of item.podObj.status
+                  ?.containerStatuses) {
+                  if (
+                    !containerStatus.name.startsWith("init") &&
+                    containerStatus.state !== containerStatus.state?.terminated
+                  ) {
                     return item;
                   }
                 }
               }
             });
-           
+
             if (podItem !== undefined) {
               if (podItem.podObj.metadata?.name !== undefined) {
                 podName = podItem.podObj.metadata?.name;
               }
               if (podItem.podObj.status?.containerStatuses !== undefined) {
-                for (const container of podItem.podObj.status?.containerStatuses) {
+                for (const container of podItem.podObj.status
+                  ?.containerStatuses) {
                   if (!container.name.startsWith("init")) {
                     containerName = container.name;
                   }
                 }
               }
               if (podName === "") {
-                vscode.window.showErrorMessage("Unabled to determine Pod name for corresponding instance");
+                vscode.window.showErrorMessage(
+                  "Unabled to determine Pod name for corresponding instance",
+                );
                 return;
               } else if (containerName === "") {
-                vscode.window.showErrorMessage("Unabled to determine container name for corresponding instance");
+                vscode.window.showErrorMessage(
+                  "Unabled to determine container name for corresponding instance",
+                );
                 return;
               } else {
                 const logUri = util.buildVerboseContainerLogUri(
                   podName,
                   containerName,
-                  customResourcesItemArgs.customResourceObj.apiVersion.split("/")[1],
+                  customResourcesItemArgs.customResourceObj.apiVersion.split(
+                    "/",
+                  )[1],
                   customResourcesItemArgs.customResourceObj.kind,
                   customResourcesItemArgs.customResourceObj.metadata.name,
                 );
                 try {
-                  const doc =
-                  await vscode.workspace.openTextDocument(logUri);
+                  const doc = await vscode.workspace.openTextDocument(logUri);
                   await vscode.window.showTextDocument(doc, {
                     preview: false,
                   });
-                  vscode.commands.executeCommand("iliazeus.vscode-ansi.showPretty");
+                  vscode.commands.executeCommand(
+                    "iliazeus.vscode-ansi.showPretty",
+                  );
                   vscode.commands.executeCommand(
                     VSCodeCommands.refreshVerboseContainerLog,
                     logUri,
                   );
                 } catch (e) {
                   return;
-                } 
-              } 
+                }
+              }
             } else {
-              vscode.window.showWarningMessage("Unable to retrieve logs while operator pod is initializing");
-            }            
+              vscode.window.showWarningMessage(
+                "Unable to retrieve logs while operator pod is initializing",
+              );
+            }
           }
         })
         .catch((e) => {
@@ -1241,7 +1339,10 @@ async function updateDiagnostics(
               if (resourcePlaybookSymbol) {
                 diagnostics.push({
                   range: resourcePlaybookSymbol.range,
-                  message: `Invalid Playbook for Kind ${resource.kind} - ${resource.playbook}`,
+
+                  // provideCodeActions in scaffoldCodeActionProvider.ts relies on this error string, change with CAUTION
+                  message: `${VSCodeDiagnosticMessages.invalidPlaybookError} ${resource.kind} - ${resource.playbook}`,
+
                   severity: vscode.DiagnosticSeverity.Error,
                 });
               }

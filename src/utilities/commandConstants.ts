@@ -31,6 +31,11 @@ export enum VSCodeCommands {
   refreshOpenShiftInfo = "operator-collection-sdk.refreshOpenShiftInfo",
   refreshContainerLog = "operator-collection-sdk.refreshContainerLog",
   refreshVerboseContainerLog = "operator-collection-sdk.refreshVerboseContainerLog",
+  createFile = "operator-collection-sdk.createFile",
+}
+
+export enum VSCodeDiagnosticMessages {
+  invalidPlaybookError = "Invalid Playbook for Kind",
 }
 
 export enum VSCodeViewIds {
