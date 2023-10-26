@@ -36,9 +36,6 @@
     "workspaceContains:{**/operator-config.yaml,**/operator-config.yml}"
   ],
   "main": "./dist/extension.js",
-  "enabledApiProposals": [
-    "contribEditorContentMenu"
-  ],
   "contributes": {
     "commands": [
       {
