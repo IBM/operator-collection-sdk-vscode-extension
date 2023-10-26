@@ -577,9 +577,12 @@ export class KubernetesObj extends KubernetesContext {
         }
       })
       .catch(e => {
-        const msg = `Failure retrieving Namespace list: ${JSON.stringify(e)}`;
-        console.error(msg);
-        vscode.window.showErrorMessage(msg);
+        // Bypass 403 error messages since these will always occur when the user is logged out
+        if (e.statusCode !== 403) {
+          const msg = `Failure retrieving Namespace list: ${JSON.stringify(e)}`;
+          console.error(msg);
+          vscode.window.showErrorMessage(msg);
+        }
         return undefined;
       });
   }
