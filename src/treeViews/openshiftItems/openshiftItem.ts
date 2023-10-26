@@ -10,7 +10,7 @@ export class OpenShiftItem extends vscode.TreeItem {
     public readonly label: string,
     public readonly description: string | undefined,
     public readonly icon: vscode.ThemeIcon,
-    public readonly contextValue: string,
+    public readonly contextValue: string
   ) {
     super(label, vscode.TreeItemCollapsibleState.None);
     this.contextValue = contextValue;
