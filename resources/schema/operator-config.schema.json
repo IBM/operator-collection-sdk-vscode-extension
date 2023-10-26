@@ -64,6 +64,9 @@
 						},
 						{
 							"type": "object"
+						},
+						{
+							"type": "integer"
 						}
 					],
 					"markdownDescription": "#### Description\r\nA default value that should be set in the OCP UIs for this variable."
@@ -287,6 +290,9 @@
 						},
 						{
 							"type": "object"
+						},
+						{
+							"type": "integer"
 						}
 					],
 					"markdownDescription": "#### Description\r\nA default value that should be set in the OCP UIs for this variable."
