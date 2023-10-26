@@ -32,10 +32,14 @@ export enum VSCodeCommands {
   refreshContainerLog = "operator-collection-sdk.refreshContainerLog",
   refreshVerboseContainerLog = "operator-collection-sdk.refreshVerboseContainerLog",
   createFile = "operator-collection-sdk.createFile",
+  createGalaxyBoilerplateFile = "operator-collection-sdk.createGalaxyBoilerplateFile",
+  createOperatorConfigBoilerplateFile = "operator-collection-sdk.createOperatorConfigBoilerplateFile",
+  createPlaybookBoilerplateFile = "operator-collection-sdk.createPlaybookBoilerplateFile",
 }
 
 export enum VSCodeDiagnosticMessages {
   invalidPlaybookError = "Invalid Playbook for Kind",
+  invalidFinalizerError = "Invalid Finalizer for Kind",
 }
 
 export enum VSCodeViewIds {

@@ -84,8 +84,6 @@ export async function activate(context: vscode.ExtensionContext) {
         },
       ),
     );
-
-    context.subscriptions.push(createFile(VSCodeCommands.createFile));
   }
 
   const ocSdkCmd = new OcSdkCommand();
@@ -226,6 +224,18 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     viewResourceCommand(VSCodeCommands.viewResource, session),
   );
+  context.subscriptions.push(createFile(VSCodeCommands.createFile));
+  context.subscriptions.push(
+    createGalaxyBoilerplateFile(VSCodeCommands.createGalaxyBoilerplateFile),
+  );
+  context.subscriptions.push(
+    createOperatorConfigBoilerplateFile(
+      VSCodeCommands.createOperatorConfigBoilerplateFile,
+    ),
+  );
+  context.subscriptions.push(
+    createPlaybookBoilerplateFile(VSCodeCommands.createPlaybookBoilerplateFile),
+  );
   context.subscriptions.push(
     vscode.commands.registerCommand(VSCodeCommands.refresh, () => {
       session
@@ -341,22 +351,17 @@ function createFile(command: string) {
     command,
     async (filename: string, directory: string) => {
       let content: string = "";
-      let folder: string = "";
-      let filepath: string = "";
 
       // available scaffold types:
       // galaxy.yaml, operator-config.yaml, vars, playbooks
       const operatorConfigRX = /operator-config\.ya?ml$/gm;
       const galaxyRX = /galaxy\.ya?ml$/gm;
-      const variablesRX = /variables\.ya?ml$/gm;
       const playbookRX = /\.ya?ml$/gm;
 
       if (operatorConfigRX.test(filename)) {
         content = BoilerplateContent.operatorConfigBoilerplateContent;
       } else if (galaxyRX.test(filename)) {
         content = BoilerplateContent.galaxyBoilerplateContent;
-      } else if (variablesRX.test(filename)) {
-        content = BoilerplateContent.variablesBoilerplateContent;
       } else if (playbookRX.test(filename)) {
         content = BoilerplateContent.playbookBoilerplateContent;
       } else {
@@ -366,35 +371,113 @@ function createFile(command: string) {
         return;
       }
 
-      const filePath = path.join(directory, filename);
+      // join path and replace .yaml/.yml with ""
+      let filePath = path.join(directory, filename).replace(playbookRX, "");
 
-      if (fs.existsSync(filePath)) {
+      // keep file endings consistent
+      let fileExists: boolean = false;
+      if (fs.existsSync(filePath + ".yaml")) {
+        fileExists = true;
+        filePath = filePath + ".yaml";
+      } else if (fs.existsSync(filePath + ".yml")) {
+        fileExists = true;
+        filePath = filePath + ".yml";
+      } else {
+        filePath = filePath + ".yaml";
+      }
+
+      if (fileExists) {
         // If the file exists, ask user for permision to overwrite
         const canProceed = await vscode.window.showInformationMessage(
           `The file ${filename} already exists. Do you want to overwrite it?`,
           { modal: true },
           "Yes",
-          "No",
         );
 
-        if (!canProceed || canProceed === "No") {
+        if (!canProceed || canProceed !== "Yes") {
           return;
         }
       }
 
-      fs.writeFile(filePath, content, (e) => {
+      try {
+        // If "playbooks" is present in filename and directory doesn't exist, create it
+        if (
+          filename.includes("playbooks/") &&
+          !fs.existsSync(path.join(directory, "playbooks"))
+        ) {
+          fs.mkdirSync(path.join(directory, "playbooks"));
+        }
+        fs.writeFileSync(filePath, content, "utf-8");
+        vscode.window.showInformationMessage(
+          `Successfully created file ${filename}`,
+        );
+      } catch (e) {
         if (e) {
           const msg = `Error attempting to create file ${filename}: ${e}`;
           console.log(msg);
           vscode.window.showErrorMessage(msg);
         }
-      });
-
-      vscode.window.showInformationMessage(
-        `Successfully created file ${filename}`,
-      );
+        return;
+      }
     },
   );
+}
+
+function createGalaxyBoilerplateFile(command: string) {
+  return vscode.commands.registerCommand(command, async (uri) => {
+    const filename = "galaxy.yaml";
+    const directory = path.dirname(uri.fsPath);
+
+    if (directory) {
+      vscode.commands.executeCommand(
+        VSCodeCommands.createFile,
+        filename,
+        directory,
+      );
+    } else {
+      vscode.window.showErrorMessage(
+        "Failed to create file: Output directory is undefined.",
+      );
+    }
+  });
+}
+
+function createOperatorConfigBoilerplateFile(command: string) {
+  return vscode.commands.registerCommand(command, async (uri) => {
+    const filename = "operator-config.yaml";
+    const directory = path.dirname(uri.fsPath);
+
+    if (directory) {
+      vscode.commands.executeCommand(
+        VSCodeCommands.createFile,
+        filename,
+        directory,
+      );
+    } else {
+      vscode.window.showErrorMessage(
+        "Failed to create file: Output directory is undefined.",
+      );
+    }
+  });
+}
+
+function createPlaybookBoilerplateFile(command: string) {
+  return vscode.commands.registerCommand(command, async (uri) => {
+    const filename = "playbooks/playbook.yaml";
+    const directory = path.dirname(uri.fsPath);
+
+    if (directory) {
+      vscode.commands.executeCommand(
+        VSCodeCommands.createFile,
+        filename,
+        directory,
+      );
+    } else {
+      vscode.window.showErrorMessage(
+        "Failed to create file: Output directory is undefined.",
+      );
+    }
+  });
 }
 
 function installOcSdk(
@@ -1379,7 +1462,10 @@ async function updateDiagnostics(
               if (resourceFinalizerymbol) {
                 diagnostics.push({
                   range: resourceFinalizerymbol.range,
-                  message: `Invalid Finalizer for Kind ${resource.kind} - ${resource.playbook}`,
+
+                  // provideCodeActions in scaffoldCodeActionProvider.ts relies on this error string, change with CAUTION
+                  message: `${VSCodeDiagnosticMessages.invalidFinalizerError} ${resource.kind} - ${resource.finalizer}`,
+
                   severity: vscode.DiagnosticSeverity.Error,
                 });
               }
