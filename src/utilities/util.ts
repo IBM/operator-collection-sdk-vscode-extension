@@ -18,7 +18,7 @@ export enum Links {
   ocSpecification = "https://github.com/IBM/operator-collection-sdk/blob/main/docs/spec.md",
   ocSDKIssues = "https://github.com/IBM/operator-collection-sdk/issues",
   vscodeExtensionIssues = "https://github.com/IBM/operator-collection-sdk-vscode-extension/issues",
-  tutorial = "https://github.com/IBM/operator-collection-sdk/blob/main/docs/tutorial.md",
+  tutorial = "https://mediacenter.ibm.com/playlist/dedicated/1_6hssue17/1_lcap76s4",
 }
 
 export enum ZosCloudBrokerKinds {
