@@ -170,7 +170,7 @@ export class KubernetesObj extends KubernetesContext {
       .catch(e => {
         const errorMessage = e.body?.message as String;
         if (errorMessage.includes("PodInitializing")) {
-          vscode.window.showErrorMessage("Unable to retrieve logs for this container while the Pod is initializing. Please try again after Pod initialization completes.");
+          vscode.window.showWarningMessage("Unable to retrieve logs for this container while the Pod is initializing. Please try again after Pod initialization completes.");
           return undefined;
         }
         const msg = `Failure retrieving Pod logs. ${JSON.stringify(e)}`;
