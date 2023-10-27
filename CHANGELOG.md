@@ -1,5 +1,11 @@
 # Change Log
 
+### v1.0.0
+- Updated linter json schema with latest spec changes
+- Open link failure message change
+- Fixed namespace failures during OCP logout
+- Restrict viewing resources while operations are pending
+
 ### v0.4.0
 
 - Display z/OS Cloud Broker install status in About view
