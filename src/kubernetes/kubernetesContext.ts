@@ -4,6 +4,7 @@ import * as k8s from "@kubernetes/client-node";
 import * as fs from "fs";
 import { VSCodeCommands } from "../utilities/commandConstants";
 import { OcCommand } from "../shellCommands/ocCommand";
+import * as util from "../utilities/util";
 
 export class KubernetesContext {
   public coreV1Api: k8s.CoreV1Api | undefined = undefined;
@@ -48,7 +49,7 @@ export class KubernetesContext {
         }
       });
     } else {
-      // validate kube config by trying to make APi Client
+      // validate kube config by trying to make Api Clients
       try {
         this.openshiftServerURL = kc.getCurrentCluster()?.server;
         this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
@@ -67,7 +68,7 @@ export class KubernetesContext {
    */
   public async attemptOCLogin(ocCmd: OcCommand): Promise<Boolean> {
     return new Promise(async (resolve, reject) => {
-      const args = await this.requestLogInInfo();
+      const args = await util.requestLogInInfo();
       if (args) {
         try {
           const response = await ocCmd.runOcLoginCommand(args);
@@ -83,41 +84,5 @@ export class KubernetesContext {
         reject(false);
       }
     });
-  }
-
-  /**
-   * A copy of the requestLogInInfo from utilities. Copied to avoid circular dependency issue.
-   * @returns - A Promise containing an array of `oc login` arguments or undefined.
-   */
-  private async requestLogInInfo(): Promise<string[] | undefined> {
-    let args: Array<string> = [];
-
-    const serverURL = await vscode.window.showInputBox({
-      prompt: "Enter your OpenShift Server URL",
-      ignoreFocusOut: true,
-    });
-
-    if (serverURL === undefined) {
-      return undefined;
-    } else if (serverURL === "") {
-      vscode.window.showErrorMessage("OpenShift server URL is required to log in");
-      return undefined;
-    }
-
-    args.push(`--server="${serverURL}"`);
-    const token = await vscode.window.showInputBox({
-      prompt: "Enter your OpenShift token",
-      password: true,
-      ignoreFocusOut: true,
-    });
-
-    if (token === undefined) {
-      return undefined;
-    } else if (token === "") {
-      vscode.window.showErrorMessage("OpenShift token is required to log in");
-      return undefined;
-    }
-    args.push(`--token="${token}"`);
-    return args;
   }
 }
