@@ -357,11 +357,15 @@ function logOut(command: string, ocCmd: OcCommand, session: Session): vscode.Dis
 type CustomResources = ZosEndpointsItem | SubOperatorConfigsItem | OperatorCollectionsItem | CustomResourceItem | CustomResourcesItem;
 function executeOpenLinkCommand(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(command, async (args: CustomResources | LinkItem | string) => {
-    let linkUri = typeof args === "string" ? vscode.Uri.parse(args) : vscode.Uri.parse(args.link);
-    try {
-      await vscode.env.openExternal(linkUri);
-    } catch (e) {
-      vscode.window.showErrorMessage(`Failure opening external link: ${e}`);
+    if (args) {
+      let linkUri = typeof args === "string" ? vscode.Uri.parse(args) : vscode.Uri.parse(args.link);
+      try {
+        await vscode.env.openExternal(linkUri);
+      } catch (e) {
+        vscode.window.showErrorMessage(`Failure opening external link: ${e}`);
+      }
+    } else {
+      vscode.window.showErrorMessage("Unable to open link while tree view is refreshing. Please try again in a few seconds.");
     }
   });
 }
