@@ -53,26 +53,35 @@ export class ResourcesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
       if (element) {
         // Get operator children items
         if (element instanceof OperatorItem) {
-          resourceItems.push(new ZosEndpointItem(element));
-          resourceItems.push(new OperatorCollectionItem(element));
-          resourceItems.push(new SubOperatorConfigItem(element));
-          const consoleUrl = await k8s.getOpenshifConsoleUrl();
-          const apiVersion = await util.getConvertedApiVersion(element.workspacePath);
-          const operatorCsvName = await util.getOperatorCSVName(element.workspacePath);
-          const kinds = await util.getKindsInOperatorConfig(element.workspacePath);
-          if (apiVersion && operatorCsvName) {
-            const customResourceCsvInstalled = await k8s.isCustomResourceOperatorInstalled(operatorCsvName);
-            for (const kind of kinds) {
-              let createCustomResourceUrl: string = "";
-              if (customResourceCsvInstalled) {
-                createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/clusterserviceversions/${operatorCsvName}/${util.customResourceGroup}~${apiVersion}~${kind}/~new`;
-              } else {
-                createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/${util.customResourceGroup}~${apiVersion}~${kind}/~new`;
+          return Promise.all([k8s.getOpenshifConsoleUrl(), util.getConvertedApiVersion(element.workspacePath), util.getOperatorCSVName(element.workspacePath), util.getKindsInOperatorConfig(element.workspacePath)])
+            .then(values => {
+              const consoleUrl = values[0];
+              const apiVersion = values[1];
+              const operatorCsvName = values[2];
+              const kinds = values[3];
+
+              if (apiVersion && operatorCsvName) {
+                return k8s.isCustomResourceOperatorInstalled(operatorCsvName).then(customResourceCsvInstalled => {
+                  resourceItems.push(new ZosEndpointItem(element));
+                  resourceItems.push(new OperatorCollectionItem(element));
+                  resourceItems.push(new SubOperatorConfigItem(element));
+                  for (const kind of kinds) {
+                    let createCustomResourceUrl: string = "";
+                    if (customResourceCsvInstalled) {
+                      createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/clusterserviceversions/${operatorCsvName}/${util.customResourceGroup}~${apiVersion}~${kind}/~new`;
+                    } else {
+                      createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/${util.customResourceGroup}~${apiVersion}~${kind}/~new`;
+                    }
+                    resourceItems.push(new CustomResourceItem(kind, apiVersion, element.operatorName, operatorCsvName, createCustomResourceUrl));
+                  }
+                  return resourceItems;
+                });
               }
-              resourceItems.push(new CustomResourceItem(kind, apiVersion, element.operatorName, operatorCsvName, createCustomResourceUrl));
-            }
-          }
-          return resourceItems;
+              return [];
+            })
+            .catch(() => {
+              return [];
+            });
         } else if (element instanceof ZosEndpointItem) {
           return getZosEndpointsItem();
         } else if (element instanceof OperatorCollectionItem) {

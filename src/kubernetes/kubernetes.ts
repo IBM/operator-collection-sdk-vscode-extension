@@ -170,7 +170,7 @@ export class KubernetesObj extends KubernetesContext {
       .catch(e => {
         const errorMessage = e.body?.message as String;
         if (errorMessage.includes("PodInitializing")) {
-          vscode.window.showErrorMessage("Unable to retrieve logs for this container while the Pod is initializing. Please try again after Pod initialization completes.");
+          vscode.window.showWarningMessage("Unable to retrieve logs for this container while the Pod is initializing. Please try again after Pod initialization completes.");
           return undefined;
         }
         const msg = `Failure retrieving Pod logs. ${JSON.stringify(e)}`;
@@ -577,9 +577,12 @@ export class KubernetesObj extends KubernetesContext {
         }
       })
       .catch(e => {
-        const msg = `Failure retrieving Namespace list: ${JSON.stringify(e)}`;
-        console.error(msg);
-        vscode.window.showErrorMessage(msg);
+        // Bypass 403 error messages since these will always occur when the user is logged out
+        if (e.statusCode !== 403) {
+          const msg = `Failure retrieving Namespace list: ${JSON.stringify(e)}`;
+          console.error(msg);
+          vscode.window.showErrorMessage(msg);
+        }
         return undefined;
       });
   }
