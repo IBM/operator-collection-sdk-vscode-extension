@@ -7,7 +7,7 @@
   },
   "icon": "resources/icons/operator-collection-sdk.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
-  "version": "0.4.0",
+  "version": "1.0.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension"
@@ -307,14 +307,14 @@
           "group": "inline@1"
         },
         {
-          "command": "operator-collection-sdk.redeployCollection",
-          "when": "view == operator-collection-sdk.operators && viewItem == operator",
-          "group": "inline@3"
-        },
-        {
           "command": "operator-collection-sdk.redeployOperator",
           "when": "view == operator-collection-sdk.operators && viewItem == operator",
           "group": "inline@2"
+        },
+        {
+          "command": "operator-collection-sdk.redeployCollection",
+          "when": "view == operator-collection-sdk.operators && viewItem == operator",
+          "group": "inline@3"
         },
         {
           "command": "operator-collection-sdk.viewLogs",
@@ -322,28 +322,28 @@
           "group": "inline"
         },
         {
-          "command": "operator-collection-sdk.viewVerboseLogs",
-          "when": "view == operator-collection-sdk.resources && viewItem == customresource-object",
-          "group": "inline"
+          "command": "operator-collection-sdk.viewResource",
+          "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object || viewItem == customresource-object)",
+          "group": "inline@0"
         },
         {
           "command": "operator-collection-sdk.openEditLink",
           "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object || viewItem == customresource-object)",
-          "group": "inline"
+          "group": "inline@1"
         },
         {
-          "command": "operator-collection-sdk.viewResource",
-          "when": "view == operator-collection-sdk.resources && (viewItem == zosendpoint-object || viewItem == suboperatorconfig-object ||  viewItem == operatorcollection-object || viewItem == customresource-object)",
-          "group": "inline"
-        },
-        {
-          "command": "operator-collection-sdk.openAddLink",
-          "when": "view == operator-collection-sdk.resources && viewItem == customresources",
-          "group": "inline"
+          "command": "operator-collection-sdk.viewVerboseLogs",
+          "when": "view == operator-collection-sdk.resources && viewItem == customresource-object",
+          "group": "inline@2"
         },
         {
           "command": "operator-collection-sdk.deleteCustomResource",
           "when": "view == operator-collection-sdk.resources && viewItem == customresource-object",
+          "group": "inline@3"
+        },
+        {
+          "command": "operator-collection-sdk.openAddLink",
+          "when": "view == operator-collection-sdk.resources && viewItem == customresources",
           "group": "inline"
         },
         {
