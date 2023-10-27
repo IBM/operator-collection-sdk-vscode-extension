@@ -365,7 +365,7 @@ function executeOpenLinkCommand(command: string): vscode.Disposable {
         vscode.window.showErrorMessage(`Failure opening external link: ${e}`);
       }
     } else {
-      vscode.window.showErrorMessage("Unable to open link while tree view is refreshing. Please try again in a few seconds.");
+      vscode.window.showWarningMessage("Unable to open link while tree view is refreshing. Please try again in a few seconds.");
     }
   });
 }
@@ -612,7 +612,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
 function executeSdkCommandWithUserInput(command: string, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
   return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem, logPath?: string) => {
     if (session.operationPending) {
-      vscode.window.showWarningMessage("Please wait for the current operation to finish before switching projects.");
+      vscode.window.showWarningMessage("Please wait for the current operation to finish before starting another.");
       return;
     }
     session.update().then(async proceed => {
