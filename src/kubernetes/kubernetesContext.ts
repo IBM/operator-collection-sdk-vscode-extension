@@ -68,7 +68,7 @@ export class KubernetesContext {
    */
   public async attemptOCLogin(ocCmd: OcCommand): Promise<Boolean> {
     return new Promise(async (resolve, reject) => {
-      const args = await util.requestLogInInfo();
+      const args = await this.requestLogInInfo();
       if (args) {
         try {
           const response = await ocCmd.runOcLoginCommand(args);
@@ -77,12 +77,59 @@ export class KubernetesContext {
           vscode.commands.executeCommand(VSCodeCommands.refreshAll);
           resolve(true);
         } catch (error) {
-          vscode.window.showErrorMessage("Failure logging in to OpenShift cluster");
+          vscode.window.showErrorMessage(`Failure logging in to OpenShift cluster: ${error}`);
           reject(false);
         }
       } else {
         reject(false);
       }
     });
+  }
+
+  /**
+   * *** Copied from utilities to avioid circular dependency ***
+   * Prompts the user for the necessary info to log in to an OpenShift cluster
+   * @returns - A Promise containing the list of parameters to pass to the command
+   */
+  public async requestLogInInfo(): Promise<string[] | undefined> {
+    let args: Array<string> = [];
+
+    const inputArgs = await vscode.window.showInputBox({
+      prompt: `Enter your oc login command: oc login --server=SERVER_URL --token=AUTH_TOKEN`,
+      ignoreFocusOut: true,
+      validateInput: text => {
+        const ocLoginArgs = text.trimStart();
+
+        // validate arguments
+        const validRegex: { [key: string]: RegExp } = {
+          "OC Command": /^(oc login)/gm,
+          "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/gm,
+          "Server URL": /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
+        };
+
+        for (const rx in validRegex) {
+          const failedRegex = !validRegex[rx].test(ocLoginArgs);
+          if (failedRegex) {
+            return "Format: oc login --server=SERVER_URL --token=AUTH_TOKEN (optionally --insecure-skip-tls-verify)";
+          }
+        }
+
+        return null;
+      },
+    });
+
+    if (inputArgs) {
+      args = inputArgs
+        .trimStart()
+        .split(" ")
+        ?.filter(item => {
+          return item.length;
+        })
+        ?.slice(2);
+
+      return args;
+    } else {
+      return undefined;
+    }
   }
 }
