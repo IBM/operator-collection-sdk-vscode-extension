@@ -65,7 +65,7 @@ export class KubernetesContext {
    * @param ocCmd - The oc command to be executed
    * @returns - A Promise containing a boolean signaling the success of the executed command
    */
-  public async attemptOCLogin(ocCmd: OcCommand): Promise<Boolean> {
+  private async attemptOCLogin(ocCmd: OcCommand): Promise<Boolean> {
     return new Promise(async (resolve, reject) => {
       const args = await this.requestLogInInfo();
       if (args) {
@@ -90,7 +90,7 @@ export class KubernetesContext {
    * Prompts the user for the necessary info to log in to an OpenShift cluster
    * @returns - A Promise containing the list of parameters to pass to the command
    */
-  public async requestLogInInfo(): Promise<string[] | undefined> {
+  private async requestLogInInfo(): Promise<string[] | undefined> {
     let args: Array<string> = [];
 
     const inputArgs = await vscode.window.showInputBox({
