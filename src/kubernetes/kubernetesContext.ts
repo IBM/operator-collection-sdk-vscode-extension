@@ -4,7 +4,6 @@ import * as k8s from "@kubernetes/client-node";
 import * as fs from "fs";
 import { VSCodeCommands } from "../utilities/commandConstants";
 import { OcCommand } from "../shellCommands/ocCommand";
-import * as util from "../utilities/util";
 
 export class KubernetesContext {
   public coreV1Api: k8s.CoreV1Api | undefined = undefined;
