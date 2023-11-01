@@ -1,5 +1,8 @@
 # Change Log
 
+### v1.0.1
+- Bypass 401 failures when extension activates but user isn't logged into OpenShift
+
 ### v1.0.0
 - Updated linter json schema with latest spec changes
 - Open link failure message change
