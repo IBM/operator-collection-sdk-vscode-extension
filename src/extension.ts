@@ -471,20 +471,24 @@ function logOut(command: string, ocCmd: OcCommand, session: Session): vscode.Dis
 type CustomResources = ZosEndpointsItem | SubOperatorConfigsItem | OperatorCollectionsItem | CustomResourceItem | CustomResourcesItem;
 function executeOpenLinkCommand(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(command, async (args: CustomResources | LinkItem | string) => {
-    let linkUri = typeof args === "string" ? vscode.Uri.parse(args) : vscode.Uri.parse(args.link);
-    try {
-      await vscode.env.openExternal(linkUri);
-    } catch (e) {
-      vscode.window.showErrorMessage(`Failure opening external link: ${e}`);
+    if (args) {
+      let linkUri = typeof args === "string" ? vscode.Uri.parse(args) : vscode.Uri.parse(args.link);
+      try {
+        await vscode.env.openExternal(linkUri);
+      } catch (e) {
+        vscode.window.showErrorMessage(`Failure opening external link: ${e}`);
+      }
+    } else {
+      vscode.window.showWarningMessage("Unable to open link while tree view is refreshing. Please try again in a few seconds.");
     }
   });
 }
 
 function viewResourceCommand(command: string, session: Session): vscode.Disposable {
-  return vscode.commands.registerCommand(command, async (args: CustomResources) => {
+  return vscode.commands.registerCommand(command, (args: CustomResources) => {
     session
       .update()
-      .then(async proceed => {
+      .then(proceed => {
         if (proceed) {
           let kind: string;
           let instanceName: string;
@@ -511,17 +515,15 @@ function viewResourceCommand(command: string, session: Session): vscode.Disposab
             group = args.customResourceObj.apiVersion.split("/")[0];
             apiVersion = args.customResourceObj.apiVersion.split("/")[1];
           } else {
-            vscode.window.showErrorMessage("Unable to preview resource for invalid resource type");
+            vscode.window.showWarningMessage("Unable to view resource while operation is pending.");
             return;
           }
           const uri = util.buildCustomResourceUri(kind!, instanceName!, group!, apiVersion!);
-          try {
-            const doc = await vscode.workspace.openTextDocument(uri);
-            await vscode.window.showTextDocument(doc, { preview: false });
-            await vscode.languages.setTextDocumentLanguage(doc, "yaml");
-          } catch (e) {
-            return;
-          }
+          vscode.workspace.openTextDocument(uri).then(doc => {
+            vscode.window.showTextDocument(doc, { preview: false }).then(() => {
+              vscode.languages.setTextDocumentLanguage(doc, "yaml");
+            });
+          });
         }
       })
       .catch(e => {
@@ -545,7 +547,7 @@ function executeContainerViewLogCommand(command: string, session: Session): vsco
             vscode.commands.executeCommand("iliazeus.vscode-ansi.showPretty");
             vscode.commands.executeCommand(VSCodeCommands.refreshContainerLog, logUri);
           } else {
-            vscode.window.showInformationMessage("Please wait for the operator to finish loading, then try again.");
+            vscode.window.showWarningMessage("Please wait for the operator to finish loading, then try again.");
           }
         }
       })
@@ -724,7 +726,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
 function executeSdkCommandWithUserInput(command: string, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
   return vscode.commands.registerCommand(command, async (operatorItemArg: OperatorItem, logPath?: string) => {
     if (session.operationPending) {
-      vscode.window.showWarningMessage("Please wait for the current operation to finish before switching projects.");
+      vscode.window.showWarningMessage("Please wait for the current operation to finish before starting another.");
       return;
     }
     session.update().then(async proceed => {
@@ -753,11 +755,12 @@ function executeSdkCommandWithUserInput(command: string, session: Session, outpu
                   vscode.window.showInformationMessage("Create Operator request in progress");
                 }
                 session.operationPending = true;
-                const poll = util.pollRun(40);
-                const runCreateOperatorCommand = ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel, logPath).then(() => {
-                  session.operationPending = false;
-                });
-                Promise.all([poll, runCreateOperatorCommand])
+                Promise.all([
+                  util.pollRun(40),
+                  ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel, logPath).then(() => {
+                    session.operationPending = false;
+                  }),
+                ])
                   .then(() => {
                     session.operationPending = false;
                     vscode.window.showInformationMessage("Create Operator command executed successfully");

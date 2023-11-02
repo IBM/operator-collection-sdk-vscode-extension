@@ -35,7 +35,7 @@ jobs:
 
       - name: Build Extension
         run: |
-          npm run build-prerelease
+          npm run build
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
 
       - uses: actions/upload-artifact@v2
