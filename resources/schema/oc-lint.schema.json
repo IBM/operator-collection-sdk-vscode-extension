@@ -1,0 +1,59 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/OcLinterConfig",
+    "definitions": {
+        "OcLinterConfig": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "exclude_paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "use_default_rules": {
+                    "type": "boolean"
+                },
+                "skip_list": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "missing-galaxy",
+                            "match-domain",
+                            "match-name",
+                            "match-version",
+                            "ansible-config",
+                            "playbook-path",
+                            "hosts-all",
+                            "missing-playbook",
+                            "finalizer-path",
+                            "missing-finalizer"
+                        ]
+                    }
+                },
+                "enable_list": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "missing-galaxy",
+                            "match-domain",
+                            "match-name",
+                            "match-version",
+                            "ansible-config",
+                            "playbook-path",
+                            "hosts-all",
+                            "missing-playbook",
+                            "finalizer-path",
+                            "missing-finalizer"
+                        ]
+                    }
+                }
+            },
+            "required": [],
+            "title": "OcLinterConfig"
+        }
+    }
+}
