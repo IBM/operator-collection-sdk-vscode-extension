@@ -36,6 +36,7 @@ export enum VSCodeCommands {
   createGalaxyBoilerplateFile = "operator-collection-sdk.createGalaxyBoilerplateFile",
   createOperatorConfigBoilerplateFile = "operator-collection-sdk.createOperatorConfigBoilerplateFile",
   createPlaybookBoilerplateFile = "operator-collection-sdk.createPlaybookBoilerplateFile",
+  inlineReplaceWith = "operator-collection-sdk.refactorInline",
 }
 
 export enum VSCodeDiagnosticMessages {

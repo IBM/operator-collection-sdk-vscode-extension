@@ -11,6 +11,7 @@ import * as yaml from "js-yaml";
 import { setInterval } from "timers";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
+import { match } from "assert";
 
 type WorkSpaceOperators = { [key: string]: string };
 
@@ -587,4 +588,94 @@ export function getAnsibleGalaxySettings(property: string): any {
 export function getLinterSettings(property: string): any {
   const configuration = vscode.workspace.getConfiguration("operatorCollectionSdk.linter");
   return configuration.get(property);
+}
+
+export function getDirectoryFiles(directory: string, recurse: boolean = false, fileExtensions: string[] = []): string[] {
+  const directoryItems = fs.readdirSync(directory, {
+    withFileTypes: true,
+    recursive: true,
+  });
+
+  const files: string[] = [];
+  const directories: string[] = [];
+  for (let i = 0; i < directoryItems.length; i++) {
+    const item = path.join(directory, directoryItems[i].name);
+    if (fs.lstatSync(item).isDirectory()) {
+      directories.push(item);
+    } else {
+      if (fileExtensions.length) {
+        if (fileExtensions.some(extension => item.includes(extension))) {
+          files.push(item);
+        }
+      } else {
+        files.push(item);
+      }
+    }
+  }
+
+  if (recurse && directories.length) {
+    const subdirectoryFiles = directories.map(subdirectory => {
+      return getDirectoryFiles(subdirectory, recurse, fileExtensions);
+    });
+
+    for (let i = 0; i < subdirectoryFiles.length; i++) {
+      files.push.apply(files, subdirectoryFiles[i]); // extend array
+    }
+  }
+
+  return files;
+}
+
+export function pruneDirectoryStem(stem: string, items: string[]) {
+  const re = new RegExp(`^${stem}/`, "gm");
+  return items.map(item => item.replace(re, ""));
+}
+
+// Jaro String Similarity Algorithm
+export function calcuateStringSimilarty(s1: string, s2: string) {
+  if (s1 === s2) {
+    return 1.0;
+  }
+
+  const mask1 = new Array(s1.length).fill(0);
+  const mask2 = new Array(s2.length).fill(0);
+  const matchDistance = Math.floor(Math.max(s1.length, s2.length) / 2) - 1;
+
+  // calculate matches (characters which match within a specified distance)
+  for (let i = 0; i < s1.length; i++) {
+    for (let j = 0; j < s2.length; j++) {
+      let l = i;
+      let r = i;
+      for (let m = 0; m <= matchDistance; m++) {
+        if (s2[l] === s1[i] || s2[r] === s1[i]) {
+          mask1[i] = 1;
+          mask2[j] = 1;
+        }
+        l = Math.max(0, l - m);
+        r = Math.min(s2.length, r + m);
+      }
+    }
+  }
+
+  // distance is bidirectional so the value will be the same for both masks
+  const matches = mask1.reduce((acc, currVal) => acc + currVal, 0);
+  if (matches === 0) {
+    return 0;
+  }
+
+  // calculate transpositions (# of non matching characters per index)
+  let nonMatching = 0;
+  const matches1 = s1.split("").filter((_, index) => mask1[index]);
+  const matches2 = s2.split("").filter((_, index) => mask2[index]);
+  for (let i = 0; i < matches1.length; i++) {
+    if (matches1[i] !== matches2[i]) {
+      nonMatching++;
+    }
+  }
+  const transpositions = nonMatching / 2;
+
+  // calulate similarity score
+  const similarity = (1 / 3) * (matches / s1.length + matches / s2.length + (matches - transpositions) / matches);
+
+  return similarity;
 }

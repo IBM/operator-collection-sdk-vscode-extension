@@ -126,6 +126,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openAddLink));
   context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openLink));
   context.subscriptions.push(viewResourceCommand(VSCodeCommands.viewResource, session));
+  context.subscriptions.push(executeInlineReplaceWith(VSCodeCommands.inlineReplaceWith));
   context.subscriptions.push(createFile(VSCodeCommands.createFile));
   context.subscriptions.push(createGalaxyBoilerplateFile(VSCodeCommands.createGalaxyBoilerplateFile));
   context.subscriptions.push(createOperatorConfigBoilerplateFile(VSCodeCommands.createOperatorConfigBoilerplateFile));
@@ -225,6 +226,18 @@ export async function activate(context: vscode.ExtensionContext) {
       });
     })
   );
+}
+
+function executeInlineReplaceWith(command: string) {
+  return vscode.commands.registerCommand(command, async (refactorText: string, document: vscode.TextDocument, range: vscode.Range) => {
+    try {
+      const edit = new vscode.WorkspaceEdit();
+      edit.replace(document.uri, range, refactorText);
+      vscode.workspace.applyEdit(edit);
+    } catch (e) {
+      vscode.window.showErrorMessage(`Failed to edit "${path.basename(document.uri.fsPath)}": ${e}`);
+    }
+  });
 }
 
 function createFile(command: string) {

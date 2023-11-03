@@ -147,23 +147,28 @@
         "icon": "$(trash)"
       },
       {
+        "command": "operator-collection-sdk.refactorInline",
+        "title": "Refactor YAML file inline",
+        "category": "OC-SDK"
+      },
+      {
         "command": "operator-collection-sdk.createFile",
         "title": "Create boilerplate YAML file",
         "category": "OC-SDK"
       },
       {
         "command": "operator-collection-sdk.createGalaxyBoilerplateFile",
-        "title": "Create galaxy.yaml/yml boilerplate file",
+        "title": "New galaxy.yaml file...",
         "category": "OC-SDK"
       },
       {
         "command": "operator-collection-sdk.createOperatorConfigBoilerplateFile",
-        "title": "Create operator-config.yaml/yml boilerplate file",
+        "title": "New operator-config.yaml file...",
         "category": "OC-SDK"
       },
       {
         "command": "operator-collection-sdk.createPlaybookBoilerplateFile",
-        "title": "Create playbook.yaml/yml boilerplate file",
+        "title": "New playbook.yaml file...",
         "category": "OC-SDK"
       }
     ],
@@ -292,22 +297,33 @@
         }
       ]
     },
+    "submenus": [
+      {
+        "id": "operator-collection-sdk.submenu",
+        "label": "Operator Collection SDK",
+        "group": "submenu"
+      }
+    ],
     "menus": {
       "explorer/context": [
         {
-          "command": "operator-collection-sdk.createGalaxyBoilerplateFile",
-          "when": "true",
-          "group": "navigation"
-        },
+          "submenu": "operator-collection-sdk.submenu",
+          "group": "navigation@100",
+          "when": "explorerResourceIsFolder"
+        }
+      ],
+      "operator-collection-sdk.submenu": [
         {
-          "command": "operator-collection-sdk.createOperatorConfigBoilerplateFile",
-          "when": "true",
-          "group": "navigation"
+          "command": "operator-collection-sdk.createGalaxyBoilerplateFile",
+          "group": "ocsdk-submenu@0"
         },
         {
           "command": "operator-collection-sdk.createPlaybookBoilerplateFile",
-          "when": "true",
-          "group": "navigation"
+          "group": "ocsdk-submenu@1"
+        },
+        {
+          "command": "operator-collection-sdk.createOperatorConfigBoilerplateFile",
+          "group": "ocsdk-submenu@2"
         }
       ],
       "view/title": [
