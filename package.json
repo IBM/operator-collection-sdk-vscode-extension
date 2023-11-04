@@ -170,6 +170,11 @@
         "command": "operator-collection-sdk.createPlaybookBoilerplateFile",
         "title": "New playbook.yaml file...",
         "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.convertToAirgapCollection",
+        "title": "Convert to Airgap Collection",
+        "category": "OC-SDK"
       }
     ],
     "configuration": [
@@ -324,6 +329,10 @@
         {
           "command": "operator-collection-sdk.createOperatorConfigBoilerplateFile",
           "group": "ocsdk-submenu@2"
+        },
+        {
+          "command": "operator-collection-sdk.convertToAirgapCollection",
+          "group": "ocsdk-submenu@3"
         }
       ],
       "view/title": [

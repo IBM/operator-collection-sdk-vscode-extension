@@ -12,6 +12,7 @@ import { setInterval } from "timers";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
 import { match } from "assert";
+import { type } from "os";
 
 type WorkSpaceOperators = { [key: string]: string };
 
@@ -590,16 +591,16 @@ export function getLinterSettings(property: string): any {
   return configuration.get(property);
 }
 
-export function getDirectoryFiles(directory: string, recurse: boolean = false, fileExtensions: string[] = []): string[] {
-  const directoryItems = fs.readdirSync(directory, {
+export function getDirectoryContent(directory: string, recurse: boolean = false, fileExtensions: string[] = []): [string[], string[]] {
+  const directoryContent = fs.readdirSync(directory, {
     withFileTypes: true,
     recursive: true,
   });
 
   const files: string[] = [];
   const directories: string[] = [];
-  for (let i = 0; i < directoryItems.length; i++) {
-    const item = path.join(directory, directoryItems[i].name);
+  for (let i = 0; i < directoryContent.length; i++) {
+    const item = path.join(directory, directoryContent[i].name);
     if (fs.lstatSync(item).isDirectory()) {
       directories.push(item);
     } else {
@@ -614,16 +615,55 @@ export function getDirectoryFiles(directory: string, recurse: boolean = false, f
   }
 
   if (recurse && directories.length) {
-    const subdirectoryFiles = directories.map(subdirectory => {
-      return getDirectoryFiles(subdirectory, recurse, fileExtensions);
+    const subdirectoryContent = directories.map(subdirectory => {
+      return getDirectoryContent(subdirectory, recurse, fileExtensions);
     });
 
-    for (let i = 0; i < subdirectoryFiles.length; i++) {
-      files.push.apply(files, subdirectoryFiles[i]); // extend array
+    for (let i = 0; i < subdirectoryContent.length; i++) {
+      const [f, d] = subdirectoryContent[i];
+      files.push.apply(files, f); // extend array
+      directories.push.apply(directories, d); // extend array
     }
   }
 
-  return files;
+  return [files, directories];
+}
+
+export function findNearestFolderOrFile(queue: string[], workspaceRootFolderName: string, target: string | RegExp, visited: string[] = []): string | undefined {
+  try {
+    if (queue.length === 0) {
+      return "";
+    }
+
+    const [files, directories] = getDirectoryContent(queue[0]);
+    visited.push(queue[0]);
+
+    // if we find the target in this directory, return target
+    const targetRegex = typeof target === "string" ? new RegExp(`${target}\$`, "gm") : target;
+    const filesMatching = files.filter(file => targetRegex.test(file));
+    if (filesMatching.length) {
+      return filesMatching[0];
+    }
+    const dirsMatching = directories.filter(dir => targetRegex.test(dir));
+    if (dirsMatching.length) {
+      return dirsMatching[0];
+    }
+
+    // otherwise keep searching recursively
+    for (let i = 0; i < directories.length; i++) {
+      if (!visited.includes(directories[i])) {
+        queue.push(directories[i]);
+      }
+    }
+    const parentDirectory = queue[0].substring(0, queue[0].lastIndexOf("/"));
+    if (parentDirectory.includes(workspaceRootFolderName) && !visited.includes(parentDirectory)) {
+      queue.push(parentDirectory);
+    }
+
+    return findNearestFolderOrFile(queue.slice(1), workspaceRootFolderName, target, visited);
+  } catch (e) {
+    console.log(`Recursion Error: ${e}`);
+  }
 }
 
 export function pruneDirectoryStem(stem: string, items: string[]) {

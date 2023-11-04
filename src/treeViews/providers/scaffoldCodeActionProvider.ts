@@ -62,7 +62,7 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
   }
 
   private async gatherDirectoryPlaybooks(directory: string): Promise<string[]> {
-    const files = util.getDirectoryFiles(directory, true, [".yaml", ".yml"]);
+    const [files, _] = util.getDirectoryContent(directory, true, [".yaml", ".yml"]);
 
     const filteredFiles = [];
     for (let i = 0; i < files.length; i++) {
