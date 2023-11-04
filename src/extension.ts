@@ -262,10 +262,12 @@ function createFile(command: string): vscode.Disposable {
       return;
     }
 
-    // join path and replace .yaml/.yml with ""
+    // save fileName extension and strip filePath of extension
+    const extension = filename.match(playbookRX)?.[0];
     let filePath = path.join(directory, filename).replace(playbookRX, "");
 
-    // keep file endings consistent
+    // need to check if the file or alternate extension file exists
+    // e.g. if "file.yaml" is specified, we need to check if "file.yml" exists too
     let fileExists: boolean = false;
     if (fs.existsSync(filePath + ".yaml")) {
       fileExists = true;
@@ -274,7 +276,7 @@ function createFile(command: string): vscode.Disposable {
       fileExists = true;
       filePath = filePath + ".yml";
     } else {
-      filePath = filePath + ".yaml";
+      filePath = filePath + extension;
     }
 
     if (fileExists) {
@@ -348,7 +350,7 @@ function convertToAirgapCollection(command: string, outputChannel?: vscode.Outpu
   return vscode.commands.registerCommand(command, async uri => {
     const workspaceFolder = util.getCurrentWorkspaceRootFolder();
     const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
-    const directory = uri.fsPath;
+    const directory = uri.fsPath; // this function expects a directory path not a file path
 
     if (rootFolder) {
       const targetRegex = /operator-config.ya?ml$/gm;
@@ -356,11 +358,11 @@ function convertToAirgapCollection(command: string, outputChannel?: vscode.Outpu
 
       if (nearestOperatorConfigFile) {
         const collectionRoot = path.dirname(nearestOperatorConfigFile);
-        vscode.window.showInformationMessage(`Converting \"${path.basename(collectionRoot)}\" airgap collection...`);
+        vscode.window.showInformationMessage(`Converting \"${path.basename(collectionRoot)}\" to an airgap collection...`);
         try {
           let ocSdkCommand = new OcSdkCommand(collectionRoot);
           await ocSdkCommand.runCreateOfflineRequirements(outputChannel, logPath).then(() => {
-            vscode.window.showInformationMessage(`Successfully converted \"${path.basename(collectionRoot)}\" to airgap collection`);
+            vscode.window.showInformationMessage(`Successfully converted \"${path.basename(collectionRoot)}\" to an airgap collection`);
           });
         } catch (e) {
           vscode.window.showErrorMessage(`Failed to convert collection: ${e}`);

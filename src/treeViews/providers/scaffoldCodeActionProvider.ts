@@ -12,16 +12,16 @@ import * as util from "../../utilities/util";
 export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
 
-  async provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext): Promise<vscode.CodeAction[] | undefined> {
+  public async provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext): Promise<vscode.CodeAction[] | undefined> {
     const actions: vscode.CodeAction[] = [];
 
     // provide file scaffold options for operator-config.yaml/yml only
-    if (document && /^operator-config.ya?ml$/gm.test(path.basename(document.uri.fsPath).trim())) {
+    if (document && /^operator-config.ya?ml$/gm.test(path.basename(document.uri.fsPath))) {
       for (const diagnostic of context.diagnostics) {
-        // if the error is playbook is invalid
+        // if the error is ~"playbook is invalid" error, create codeAction
         if (diagnostic.severity === vscode.DiagnosticSeverity.Error && (diagnostic.message.includes(VSCodeDiagnosticMessages.invalidPlaybookError) || diagnostic.message.includes(VSCodeDiagnosticMessages.invalidFinalizerError))) {
           // split on "-" to remove the diagnostic message, rejoin on "-" if the file name had "-"
-          const filename = diagnostic.message.trim().split("-").slice(1).join("-").trim();
+          const filename = diagnostic.message.split("-").slice(1).join("-").trim();
           const directory = path.dirname(document.uri.fsPath);
 
           // get candidates, rank, and order based on the similarity of strings
@@ -34,8 +34,8 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
                 score: util.calcuateStringSimilarty(filename, playbook),
               };
             })
-            .sort((a, b) => b.score - a.score) // sort options based on score decending
-            .filter(item => item.score >= 0.7); // discard poor similarity candidates
+            .sort((a, b) => b.score - a.score) // sort candidates based on score decending
+            .filter(item => item.score >= 0.5); // discard candidates with poor rankings
 
           if (similarPlaybooks.length) {
             let yamlKey: string = "";
@@ -49,6 +49,8 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
             const replaceActions = similarPlaybooks.slice(0, 3).map(item => {
               return this.inlineReplaceWithAction(yamlKey, item.playbook, document, range);
             });
+
+            //
 
             actions.push.apply(actions, replaceActions); // extend actions array
           }
@@ -73,8 +75,6 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
           filteredFiles.push(files[i]);
         }
       } catch (e) {
-        // Switch to console log after testing
-        // vscode.window.showWarningMessage(`Can't open file ${files[i].name}: ${e}`);
         console.log(`Can't open file ${files[i]}: ${e}`);
       }
     }
@@ -94,6 +94,12 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
     return action;
   }
 
+  /**
+   * Returns a vscode.CodeAction
+   * @param stem - A String.
+   * @param paths - A String Array containing pathways.
+   * @returns A String Array containing pruned pathways.
+   */
   private inlineReplaceWithAction(yamlKey: string, suggestion: string, document: vscode.TextDocument, range: vscode.Range, isPreferred: boolean = false): vscode.CodeAction {
     const actionTitle = `Did you mean "${suggestion}" instead?`;
     const action = new vscode.CodeAction(actionTitle, vscode.CodeActionKind.QuickFix);

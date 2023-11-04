@@ -590,6 +590,13 @@ export function getLinterSettings(property: string): any {
   return configuration.get(property);
 }
 
+/**
+ * Returns all children within a specified directory.
+ * @param directory - A String representing the directory to derive content from.
+ * @param recurse - A optional Boolean specifiying whether to get return the content of all decendants via recursion.
+ * @param fileExtensions - An optional String Array containing the desired return file types (i.e. [".yaml", ".yml"]).
+ * @returns An array object of files and directories (i.e. const [files, subdirectories] = getDirectoryContent(...)).
+ */
 export function getDirectoryContent(directory: string, recurse: boolean = false, fileExtensions: string[] = []): [string[], string[]] {
   const directoryContent = fs.readdirSync(directory, {
     withFileTypes: true,
@@ -628,6 +635,14 @@ export function getDirectoryContent(directory: string, recurse: boolean = false,
   return [files, directories];
 }
 
+/**
+ * Executes omni-directional Breadth First Search on file system starting parameter queue[0].
+ * @param queue - Mutable String Array initalized with the directory to being searching from (i.e. const queue = [directoryPath]).
+ * @param workspaceRootFolderName - The root vscode workspace folder. Serves as a limit past which recursion will stop.
+ * @param target - Either a Sting containing the target file or directory name or a Regular Expression to test candidates against.
+ * @param visited - Created and used internally (not to be passsed during function call).
+ * @returns A string representing the pathway to the nearest target or undefined.
+ */
 export function findNearestFolderOrFile(queue: string[], workspaceRootFolderName: string, target: string | RegExp, visited: string[] = []): string | undefined {
   try {
     if (queue.length === 0) {
@@ -665,12 +680,23 @@ export function findNearestFolderOrFile(queue: string[], workspaceRootFolderName
   }
 }
 
-export function pruneDirectoryStem(stem: string, items: string[]) {
+/**
+ * Removes a common stem from all supplied pathways.
+ * @param stem - A String.
+ * @param paths - A String Array containing pathways.
+ * @returns A String Array containing pruned pathways.
+ */
+export function pruneDirectoryStem(stem: string, paths: string[]) {
   const re = new RegExp(`^${stem}/`, "gm");
-  return items.map(item => item.replace(re, ""));
+  return paths.map(pathway => pathway.replace(re, ""));
 }
 
-// Jaro String Similarity Algorithm
+/**
+ * Implements the Jaro string similarity algorithm.
+ * @param s1 - A String.
+ * @param s2 - A String.
+ * @returns A similarty score between the two strings.
+ */
 export function calcuateStringSimilarty(s1: string, s2: string) {
   if (s1 === s2) {
     return 1.0;
