@@ -254,6 +254,20 @@ export class OcSdkCommand {
   }
 
   /**
+   * Executes the Operator Collection SDK Create Offline Requirements command
+   * @param args - The arguments to pass to the command
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async runCreateOfflineRequirements(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
+    process.env.ANSIBLE_JINJA2_NATIVE = "true";
+    const cmd: string = "ansible-playbook";
+    const args = ["ibm.operator_collection_sdk.create_offline_requirements"];
+    return this.run(cmd, args, outputChannel, logPath);
+  }
+
+  /**
    * Executes the Operator Collection SDK Delete Operator command
    * @param outputChannel - The VS Code output channel to display command output
    * @param logPath - Log path to store command output

@@ -128,6 +128,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(viewResourceCommand(VSCodeCommands.viewResource, session));
   context.subscriptions.push(executeInlineReplaceWith(VSCodeCommands.inlineReplaceWith));
   context.subscriptions.push(createFile(VSCodeCommands.createFile));
+  context.subscriptions.push(convertToAirgapCollection(VSCodeCommands.convertToAirgapCollection, outputChannel));
   context.subscriptions.push(createGalaxyBoilerplateFile(VSCodeCommands.createGalaxyBoilerplateFile));
   context.subscriptions.push(createOperatorConfigBoilerplateFile(VSCodeCommands.createOperatorConfigBoilerplateFile));
   context.subscriptions.push(createPlaybookBoilerplateFile(VSCodeCommands.createPlaybookBoilerplateFile));
@@ -240,12 +241,12 @@ function executeInlineReplaceWith(command: string) {
   });
 }
 
-function createFile(command: string) {
+function createFile(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(command, async (filename: string, directory: string) => {
     let content: string = "";
 
     // available scaffold types:
-    // galaxy.yaml, operator-config.yaml, vars, playbooks
+    // galaxy.yaml, operator-config.yaml, playbooks
     const operatorConfigRX = /operator-config\.ya?ml$/gm;
     const galaxyRX = /galaxy\.ya?ml$/gm;
     const playbookRX = /\.ya?ml$/gm;
@@ -304,10 +305,10 @@ function createFile(command: string) {
   });
 }
 
-function createGalaxyBoilerplateFile(command: string) {
+function createGalaxyBoilerplateFile(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(command, async uri => {
     const filename = "galaxy.yml";
-    const directory = path.dirname(uri.fsPath);
+    const directory = uri.fsPath;
 
     if (directory) {
       vscode.commands.executeCommand(VSCodeCommands.createFile, filename, directory);
@@ -317,10 +318,10 @@ function createGalaxyBoilerplateFile(command: string) {
   });
 }
 
-function createOperatorConfigBoilerplateFile(command: string) {
+function createOperatorConfigBoilerplateFile(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(command, async uri => {
     const filename = "operator-config.yml";
-    const directory = path.dirname(uri.fsPath);
+    const directory = uri.fsPath;
 
     if (directory) {
       vscode.commands.executeCommand(VSCodeCommands.createFile, filename, directory);
@@ -330,15 +331,43 @@ function createOperatorConfigBoilerplateFile(command: string) {
   });
 }
 
-function createPlaybookBoilerplateFile(command: string) {
+function createPlaybookBoilerplateFile(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(command, async uri => {
-    const filename = "playbooks/playbook.yml";
-    const directory = path.dirname(uri.fsPath);
+    const filename = "playbook.yml";
+    const directory = uri.fsPath;
 
     if (directory) {
       vscode.commands.executeCommand(VSCodeCommands.createFile, filename, directory);
     } else {
       vscode.window.showErrorMessage("Failed to create file: Output directory is undefined.");
+    }
+  });
+}
+
+function convertToAirgapCollection(command: string, outputChannel?: vscode.OutputChannel, logPath?: string) {
+  return vscode.commands.registerCommand(command, async uri => {
+    const workspaceFolder = util.getCurrentWorkspaceRootFolder();
+    const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
+    const directory = uri.fsPath;
+
+    if (rootFolder) {
+      const targetRegex = /operator-config.ya?ml$/gm;
+      const nearestOperatorConfigFile = util.findNearestFolderOrFile([directory], rootFolder, targetRegex);
+
+      if (nearestOperatorConfigFile) {
+        const collectionRoot = path.dirname(nearestOperatorConfigFile);
+        vscode.window.showInformationMessage(`Converting \"${path.basename(collectionRoot)}\" airgap collection...`);
+        try {
+          let ocSdkCommand = new OcSdkCommand(collectionRoot);
+          await ocSdkCommand.runCreateOfflineRequirements(outputChannel, logPath).then(() => {
+            vscode.window.showInformationMessage(`Successfully converted \"${path.basename(collectionRoot)}\" to airgap collection`);
+          });
+        } catch (e) {
+          vscode.window.showErrorMessage(`Failed to convert collection: ${e}`);
+        }
+      } else {
+        vscode.window.showErrorMessage("No requirements.yml file was detected in this collection. Has it been created?");
+      }
     }
   });
 }
