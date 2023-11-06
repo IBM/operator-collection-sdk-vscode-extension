@@ -48,7 +48,7 @@ export class KubernetesContext {
         }
       });
     } else {
-      // validate kube config by trying to make APi Client
+      // validate kube config by trying to make Api Clients
       try {
         this.openshiftServerURL = kc.getCurrentCluster()?.server;
         this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
@@ -65,7 +65,7 @@ export class KubernetesContext {
    * @param ocCmd - The oc command to be executed
    * @returns - A Promise containing a boolean signaling the success of the executed command
    */
-  public async attemptOCLogin(ocCmd: OcCommand): Promise<Boolean> {
+  private async attemptOCLogin(ocCmd: OcCommand): Promise<Boolean> {
     return new Promise(async (resolve, reject) => {
       const args = await this.requestLogInInfo();
       if (args) {
@@ -76,7 +76,7 @@ export class KubernetesContext {
           vscode.commands.executeCommand(VSCodeCommands.refreshAll);
           resolve(true);
         } catch (error) {
-          vscode.window.showErrorMessage("Failure logging in to OpenShift cluster");
+          vscode.window.showErrorMessage(`Failure logging in to OpenShift cluster: ${error}`);
           reject(false);
         }
       } else {
@@ -86,38 +86,49 @@ export class KubernetesContext {
   }
 
   /**
-   * A copy of the requestLogInInfo from utilities. Copied to avoid circular dependency issue.
-   * @returns - A Promise containing an array of `oc login` arguments or undefined.
+   * *** Copied from utilities to avioid circular dependency ***
+   * Prompts the user for the necessary info to log in to an OpenShift cluster
+   * @returns - A Promise containing the list of parameters to pass to the command
    */
   private async requestLogInInfo(): Promise<string[] | undefined> {
     let args: Array<string> = [];
 
-    const serverURL = await vscode.window.showInputBox({
-      prompt: "Enter your OpenShift Server URL",
+    const inputArgs = await vscode.window.showInputBox({
+      prompt: `Enter your oc login command: oc login --server=SERVER_URL --token=AUTH_TOKEN`,
       ignoreFocusOut: true,
+      validateInput: text => {
+        const ocLoginArgs = text.trimStart();
+
+        // validate arguments
+        const validRegex: { [key: string]: RegExp } = {
+          "OC Command": /^(oc login)/gm,
+          "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/gm,
+          "Server URL": /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
+        };
+
+        for (const rx in validRegex) {
+          const failedRegex = !validRegex[rx].test(ocLoginArgs);
+          if (failedRegex) {
+            return "Format: oc login --server=SERVER_URL --token=AUTH_TOKEN (optionally --insecure-skip-tls-verify)";
+          }
+        }
+
+        return null;
+      },
     });
 
-    if (serverURL === undefined) {
-      return undefined;
-    } else if (serverURL === "") {
-      vscode.window.showErrorMessage("OpenShift server URL is required to log in");
+    if (inputArgs) {
+      args = inputArgs
+        .trimStart()
+        .split(" ")
+        ?.filter(item => {
+          return item.length;
+        })
+        ?.slice(2);
+
+      return args;
+    } else {
       return undefined;
     }
-
-    args.push(`--server="${serverURL}"`);
-    const token = await vscode.window.showInputBox({
-      prompt: "Enter your OpenShift token",
-      password: true,
-      ignoreFocusOut: true,
-    });
-
-    if (token === undefined) {
-      return undefined;
-    } else if (token === "") {
-      vscode.window.showErrorMessage("OpenShift token is required to log in");
-      return undefined;
-    }
-    args.push(`--token="${token}"`);
-    return args;
   }
 }
