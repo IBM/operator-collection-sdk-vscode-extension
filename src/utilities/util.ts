@@ -472,7 +472,6 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
 
     return args;
   } else {
-    vscode.window.showErrorMessage("Failed to log in because no arguments were supplied.");
     return undefined;
   }
 }
