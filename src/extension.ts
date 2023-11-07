@@ -310,10 +310,67 @@ function createFile(command: string): vscode.Disposable {
 function createGalaxyBoilerplateFile(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(command, async uri => {
     const filename = "galaxy.yml";
-    const directory = uri.fsPath;
+    const selecteDirectory = uri.fsPath;
+    const workspaceFolder = util.getCurrentWorkspaceRootFolder();
+    const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
 
-    if (directory) {
-      vscode.commands.executeCommand(VSCodeCommands.createFile, filename, directory);
+    let collectionDirectory = "";
+    const fileRX = {
+      // Regex is makes it simpler to check for .yaml vs .yml files
+      operatorConfigRX: /operator-config.ya?ml$/gm,
+      galaxyRX: /galaxy.ya?ml$/gm,
+    };
+
+    // check if there are any operator-config/galaxy files in this directory or any of
+    // its subdirectories, if there are, the collectionDirectory location is ambiguous
+    const collectionFiles = util.getMatchingDecendants(selecteDirectory, [fileRX.operatorConfigRX, fileRX.galaxyRX], true, [".yaml", ".yml"]);
+    const operatorConfigFiles = collectionFiles.filter(file => fileRX.operatorConfigRX.test(file));
+    const galaxyFiles = collectionFiles.filter(file => fileRX.galaxyRX.test(file));
+
+    if (operatorConfigFiles.length > 1) {
+      vscode.window.showWarningMessage("This directory contains multiple collections. Select a specific collection to create a galaxy.yml file.");
+      return;
+    } else if (operatorConfigFiles.length === 1) {
+      collectionDirectory = path.dirname(operatorConfigFiles[0]);
+    } else {
+      if (rootFolder) {
+        const nearestOperatorConfigFile = util.findNearestFolderOrFile([selecteDirectory], rootFolder, fileRX.operatorConfigRX);
+
+        // if there is an operator-config file nearby and its path is an ancector of
+        // the current selected directory, then the galaxy file should go there instead
+        // because we should not allow the user to create nested collections
+        if (nearestOperatorConfigFile && path.dirname(selecteDirectory).includes(path.dirname(nearestOperatorConfigFile))) {
+          collectionDirectory = path.dirname(nearestOperatorConfigFile);
+        }
+      }
+    }
+
+    if (collectionDirectory === "") {
+      // check if there are any galaxy files in this directory or any of
+      // its subdirectories, if there are, the collectionDirectory location is ambiguous
+      if (galaxyFiles.length > 1) {
+        vscode.window.showWarningMessage(`The folder "${path.basename(selecteDirectory)}" or its subfolders contain(s) multiple galaxy files within it. Each collection should contain exactly one galaxy file.`);
+        return;
+      } else if (galaxyFiles.length === 1) {
+        collectionDirectory = path.dirname(operatorConfigFiles[0]);
+      } else {
+        if (rootFolder) {
+          const nearestGalaxyFile = util.findNearestFolderOrFile([selecteDirectory], rootFolder, fileRX.galaxyRX);
+
+          // if there is a galaxy file nearby and its path is an ancector of
+          // the current selected directory, then the galaxy file should go there instead
+          // because we should not allow the user to create nested collections
+          if (nearestGalaxyFile && path.dirname(selecteDirectory).includes(path.dirname(nearestGalaxyFile))) {
+            collectionDirectory = path.dirname(nearestGalaxyFile);
+          } else {
+            collectionDirectory = selecteDirectory;
+          }
+        }
+      }
+    }
+
+    if (collectionDirectory) {
+      vscode.commands.executeCommand(VSCodeCommands.createFile, filename, collectionDirectory);
     } else {
       vscode.window.showErrorMessage("Failed to create file: Output directory is undefined.");
     }
@@ -350,6 +407,15 @@ function convertToAirgapCollection(command: string, outputChannel?: vscode.Outpu
   return vscode.commands.registerCommand(command, async uri => {
     const workspaceFolder = util.getCurrentWorkspaceRootFolder();
     const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
+
+    // if (
+    //   path.basename(uri.fsPath) === rootFolder
+    //   && !(fs.existsSync(path.join(uri, "operator-config.yaml")) || fs.existsSync(path.join(uri, "operator-config.yml")))
+    // ) {
+    //   vscode.window.showErrorMessage("No operator-config.yml file was detected in the root folder. Select the collection folder to convert to an airgap collection.");
+    //   return;
+    // }
+
     const directory = uri.fsPath; // this function expects a directory path not a file path
 
     if (rootFolder) {
@@ -368,7 +434,7 @@ function convertToAirgapCollection(command: string, outputChannel?: vscode.Outpu
           vscode.window.showErrorMessage(`Failed to convert collection: ${e}`);
         }
       } else {
-        vscode.window.showErrorMessage("No requirements.yml file was detected in this collection. Has it been created?");
+        vscode.window.showErrorMessage("No operator-config.yml file was detected in this collection. Has it been created?");
       }
     }
   });
