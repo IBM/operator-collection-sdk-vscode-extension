@@ -276,6 +276,7 @@ function initOperatorCollection(command: string, session: Session, outputChannel
   return vscode.commands.registerCommand(command, async (logPath?: string) => {
     const args = await util.requestInitOperatorCollectionInfo();
     if (args && args.length > 1) {
+      outputChannel?.show();
       session.operationPending = true;
       let pwd = util.getCurrentWorkspaceRootFolder();
       let ocSdkCommand = new OcSdkCommand(pwd);
