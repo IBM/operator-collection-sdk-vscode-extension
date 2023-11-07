@@ -435,25 +435,22 @@ export async function generateProjectDropDown(nslist?: Array<string>): Promise<s
  * @returns - A Promise containing the list of parameters to pass to the command
  */
 export async function requestLogInInfo(): Promise<string[] | undefined> {
-  let args: Array<string> = [];
-
   const inputArgs = await vscode.window.showInputBox({
-    prompt: `Enter your oc login command: oc login --server=SERVER_URL --token=AUTH_TOKEN`,
+    prompt: `Enter your oc login command: oc login --token=AUTH_TOKEN --server=SERVER_URL`,
     ignoreFocusOut: true,
     validateInput: text => {
       const ocLoginArgs = text.trimStart();
-
-      // validate arguments
       const validRegex: { [key: string]: RegExp } = {
         "OC Command": /^(oc login)/gm,
-        "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/gm,
-        "Server URL": /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
+        "Auth Token": /([\s]+--token=sha256~[A-Za-z0-9-_]+)/gm,
+        "Server URL": /([\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
       };
 
+      // validate arguments
       for (const rx in validRegex) {
         const failedRegex = !validRegex[rx].test(ocLoginArgs);
         if (failedRegex) {
-          return "Format: oc login --server=SERVER_URL --token=AUTH_TOKEN (optionally --insecure-skip-tls-verify)";
+          return "Format: oc login --token=AUTH_TOKEN --server=SERVER_URL (optionally --insecure-skip-tls-verify)";
         }
       }
 
@@ -462,13 +459,13 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
   });
 
   if (inputArgs) {
-    args = inputArgs
-      .trimStart()
-      .split(" ")
-      ?.filter(item => {
-        return item.length;
-      })
-      ?.slice(2);
+    // there is an issue vscode when moving the "validRegex" object outside the
+    // scope of the "validateInput" function above so regex is duplicated here
+    const args = [
+      inputArgs.match(/([\s]+--token=sha256~[A-Za-z0-9-_]+)/gm)![0]!.trim(), // add token
+      inputArgs.match(/([\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm)![0]!.trim(), // add URL
+      inputArgs.match(/--insecure-skip-tls-verify/gm)?.[0] ?? "", // add skip flag if it exists
+    ];
 
     return args;
   } else {
