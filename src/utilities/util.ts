@@ -636,48 +636,67 @@ export function getDirectoryContent(directory: string, recurse: boolean = false,
 }
 
 /**
+ * Returns paths to the decendants of directory that match a given target or empty if no matches are found.
+ * @param directory - A String representing the directory to check for target from.
+ * @param target - A Regular Expresion Array containing either the target file names or directory names as they are to be tested.
+ * @param checkRecursively - A optional Boolean specifiying whether to check for target in all decendants.
+ * @param fileExtensions - An optional String Array containing the type of target file (i.e. [".yaml", ".yml"]). Can help prune the search.
+ * @returns An empty String Array if no matches are found or an Array containing the paths of matched files.
+ */
+export function getMatchingDecendants(directory: string, targets: RegExp[], checkRecursively: boolean = false, fileExtensions: string[] = []): string[] {
+  const [files, directories] = getDirectoryContent(directory, checkRecursively, fileExtensions);
+  const filesMatching = files.filter(file => targets.some(target => target.test(file)));
+  if (filesMatching.length) {
+    return filesMatching;
+  }
+  if (fileExtensions.length === 0) {
+    const dirsMatching = directories.filter(dir => targets.some(target => target.test(dir)));
+    if (dirsMatching.length) {
+      return dirsMatching;
+    }
+  }
+  return [];
+}
+
+/**
  * Executes omni-directional Breadth First Search on file system starting parameter queue[0].
  * @param queue - Mutable String Array initalized with the directory to being searching from (i.e. const queue = [directoryPath]).
  * @param workspaceRootFolderName - The root vscode workspace folder. Serves as a limit past which recursion will stop.
  * @param target - Either a Sting containing the target file or directory name or a Regular Expression to test candidates against.
  * @param visited - Created and used internally (not to be passsed during function call).
- * @returns A string representing the pathway to the nearest target or undefined.
+ * @returns A String representing the pathway to the nearest target or empty string.
  */
 export function findNearestFolderOrFile(queue: string[], workspaceRootFolderName: string, target: string | RegExp, visited: string[] = []): string | undefined {
-  try {
-    if (queue.length === 0) {
-      return "";
-    }
-
-    const [files, directories] = getDirectoryContent(queue[0]);
-    visited.push(queue[0]);
-
-    // if we find the target in this directory, return target
-    const targetRegex = typeof target === "string" ? new RegExp(`${target}\$`, "gm") : target;
-    const filesMatching = files.filter(file => targetRegex.test(file));
-    if (filesMatching.length) {
-      return filesMatching[0];
-    }
-    const dirsMatching = directories.filter(dir => targetRegex.test(dir));
-    if (dirsMatching.length) {
-      return dirsMatching[0];
-    }
-
-    // otherwise keep searching recursively
-    for (let i = 0; i < directories.length; i++) {
-      if (!visited.includes(directories[i])) {
-        queue.push(directories[i]);
-      }
-    }
-    const parentDirectory = queue[0].substring(0, queue[0].lastIndexOf("/"));
-    if (parentDirectory.includes(workspaceRootFolderName) && !visited.includes(parentDirectory)) {
-      queue.push(parentDirectory);
-    }
-
-    return findNearestFolderOrFile(queue.slice(1), workspaceRootFolderName, target, visited);
-  } catch (e) {
-    console.log(`Recursion Error: ${e}`);
+  if (queue.length === 0) {
+    return "";
   }
+
+  const [files, directories] = getDirectoryContent(queue[0]);
+  visited.push(queue[0]);
+
+  // if we find the target in this directory, return target
+  const targetRegex = typeof target === "string" ? new RegExp(`${target}\$`, "gm") : target;
+  const filesMatching = files.filter(file => targetRegex.test(file));
+  if (filesMatching.length) {
+    return filesMatching[0];
+  }
+  const dirsMatching = directories.filter(dir => targetRegex.test(dir));
+  if (dirsMatching.length) {
+    return dirsMatching[0];
+  }
+
+  // otherwise keep searching recursively
+  for (let i = 0; i < directories.length; i++) {
+    if (!visited.includes(directories[i])) {
+      queue.push(directories[i]);
+    }
+  }
+  const parentDirectory = queue[0].substring(0, queue[0].lastIndexOf("/"));
+  if (parentDirectory.includes(workspaceRootFolderName) && !visited.includes(parentDirectory)) {
+    queue.push(parentDirectory);
+  }
+
+  return findNearestFolderOrFile(queue.slice(1), workspaceRootFolderName, target, visited);
 }
 
 /**
@@ -689,6 +708,16 @@ export function findNearestFolderOrFile(queue: string[], workspaceRootFolderName
 export function pruneDirectoryStem(stem: string, paths: string[]) {
   const re = new RegExp(`^${stem}/`, "gm");
   return paths.map(pathway => pathway.replace(re, ""));
+}
+
+/**
+ * Checks if a candidate path is an ancestor of the primary path.
+ * @param primary - A String path.
+ * @param candidate - A String path.
+ * @returns A boolean signaling whether the candidate path is an exact ancestor.
+ */
+export function pathsIsDecendant(primary: string, candidate: string) {
+  return primary.includes(candidate);
 }
 
 /**
