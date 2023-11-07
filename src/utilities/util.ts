@@ -70,7 +70,7 @@ export function getCurrentWorkspaceRootFolder(): string | undefined {
  * Retrieve the list of Operator Collection names and workspace directories in the current workspace
  * @returns — A promise containing the WorkSpaceOperators object
  */
-export async function getOperatorsInWorkspace(workspace: string): Promise<WorkSpaceOperators> {
+export async function getOperatorsInWorkspace(): Promise<WorkSpaceOperators> {
   const wsOperators: WorkSpaceOperators = {};
   for (const file of await vscode.workspace.findFiles("**/operator-config.*ml")) {
     let data = await vscode.workspace.openTextDocument(file);
@@ -80,6 +80,17 @@ export async function getOperatorsInWorkspace(workspace: string): Promise<WorkSp
     }
   }
   return wsOperators;
+}
+
+/**
+ * Determinate is a collection exists in the current workspace
+ * @returns — A promise returning a boolean if the collection exists
+ */
+export async function isCollectionInWorkspace(initFlag: boolean): Promise<boolean> {
+  return await getOperatorsInWorkspace().then(operators => {
+    const totalOperators = Object.keys(operators)?.length;
+    return totalOperators >= 1 ? false : !initFlag;
+  });
 }
 
 /**
@@ -173,7 +184,7 @@ function getOperatorConfigUri(pwd: string): vscode.Uri {
  * @returns — A promise containing the WorkSpaceOperators object
  */
 export async function getOperatorNamesInWorkspace(workspace: string): Promise<string[]> {
-  let operatorsInWorkspace = await getOperatorsInWorkspace(workspace);
+  let operatorsInWorkspace = await getOperatorsInWorkspace();
   let operatorNames: Array<string> = [];
   for (const operatorName in operatorsInWorkspace) {
     operatorNames.push(operatorName);
@@ -187,7 +198,7 @@ export async function getOperatorNamesInWorkspace(workspace: string): Promise<st
  * @returns - A Promise containing the directory to the selected operator
  */
 export async function selectOperatorInWorkspace(workspace: string, operatorName?: string): Promise<string | undefined> {
-  let operatorsInWorkspace = await getOperatorsInWorkspace(workspace);
+  let operatorsInWorkspace = await getOperatorsInWorkspace();
   if (operatorName) {
     return operatorsInWorkspace[operatorName];
   }
@@ -474,6 +485,40 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
   } else {
     return undefined;
   }
+}
+
+/**
+ * Prompts the user for the necessary info to create an Operator Collection
+ * @returns - A Promise containing the list of parameters to pass to the command
+ */
+export async function requestInitOperatorCollectionInfo(): Promise<string[] | undefined> {
+  let args: Array<string> = [];
+
+  const ansibleGalaxyNamespace = await vscode.window.showInputBox({
+    prompt: `Enter your Ansible Galaxy namespace`,
+    ignoreFocusOut: true,
+    validateInput: text => {
+      const ocLoginArgs = text.trimStart();
+      const validValuesRegex = /^[a-zA-Z0-9]+$/;
+      const isvalid = !validValuesRegex.test(text?.trimStart());
+      return isvalid ? text : null;
+    },
+  });
+
+  const offlineInstall = await vscode.window.showInputBox({
+    prompt: `Will this collection be executed in an offline environment [y/n]`,
+    ignoreFocusOut: true,
+    validateInput: text => {
+      const validValuesRegex = /^(yes|y|no|n)$/i;
+      const isvalid = !validValuesRegex.test(text?.trimStart());
+      return isvalid ? text : null;
+    },
+  });
+
+  args.push(`-e "collection_name=racf_operator"`);
+  args.push(`-e "collection_namespace=${ansibleGalaxyNamespace}"`);
+  args.push(`-e "offline_install=${offlineInstall}"`);
+  return args;
 }
 
 export function validateOperatorConfig(document: vscode.TextDocument): boolean {

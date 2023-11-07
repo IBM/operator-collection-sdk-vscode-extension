@@ -225,12 +225,17 @@
       {
         "view": "operator-collection-sdk.operators",
         "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift, and create a ZosCloudBroker instance to use this extension",
-        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && operator-collection-sdk.validNamespace"
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && operator-collection-sdk.validNamespace && !operator-collection-sdk.isCollectionInWorkspace"
       },
       {
         "view": "operator-collection-sdk.operators",
         "contents": "Select a valid project in Openshift and create a ZosCloudBroker instance to use this extension",
-        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && !operator-collection-sdk.validNamespace"
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && !operator-collection-sdk.validNamespace &&operator-collection-sdk.isCollectionInWorkspace"
+      },
+      {
+        "view": "operator-collection-sdk.operators",
+        "contents": "Operator Collection isn’t detected in current workspace \n[Initialize Operator Collection](command:operator-collection-sdk.initCollection)\n[skip](command:operator-collection-sdk.initCollectionSkip)",
+        "when": "operator-collection-sdk.sdkInstalled && !operator-collection-sdk.sdkOutdatedVersion && operator-collection-sdk.isCollectionInWorkspace"
       },
       {
         "view": "operator-collection-sdk.resources",
@@ -251,11 +256,6 @@
         "view": "operator-collection-sdk.openshiftClusterInfo",
         "contents": "Log in to an OpenShift Cluster to use this extension\n[Log in to OpenShift](command:operator-collection-sdk.login)",
         "when": "!operator-collection-sdk.loggedIn"
-      },
-      {
-        "view": "operator-collection-sdk.operators",
-        "contents": "Log in to an OpenShift Cluster to use this extension",
-        "when": "!operator-collection-sdk.loggedIn && operator-collection-sdk.sdkInstalled"
       },
       {
         "view": "operator-collection-sdk.about",
