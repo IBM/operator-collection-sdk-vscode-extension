@@ -38,8 +38,10 @@ export class ResourcesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
     }
   }
 
-  refresh(): void {
+  async refresh(): Promise<boolean> {
+    vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(this.session.skipOCinit));
     this._onDidChangeTreeData.fire();
+    return true;
   }
 
   getTreeItem(element: ResourceItem): vscode.TreeItem {
