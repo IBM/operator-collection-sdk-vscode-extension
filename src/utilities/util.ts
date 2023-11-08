@@ -235,6 +235,15 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     const operatorConfigData = fs.readFileSync(extraVarsFilePath);
     const operatorVars = yaml.load(operatorConfigData.toString()) as OperatorVariables;
 
+    if (operatorVars.zosendpoint_type === "local"){
+      args.push(`-e "zosendpoint_host="`);
+      args.push(`-e "zosendpoint_port="`);
+      args.push(`-e "ssh_key="`);
+      args.push(`-e "username="`);
+      args.push(`-e "passphrase="`);
+      return args;
+    }
+
     if (operatorVars.passphrase === undefined) {
       const passphrase = await promptForPassphrase();
 
@@ -273,7 +282,6 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     zosendpoint_host: "",
     zosendpoint_port: "",
     username: "",
-    passphrase: "",
     ssh_key: "",
   };
 
@@ -373,12 +381,37 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
       args.push(`-e "passphrase=${zosEndpointPassphrase}"`);
     }
 
+    const saveToFile = await vscode.window.showQuickPick(yesNoOptions, {
+      canPickMany: false,
+      ignoreFocusOut: true,
+      placeHolder: "Store variables to file?",
+      title: "Would you like to store these variables to a file to bypass prompts later?",
+    });
+  
+    if (saveToFile === undefined) {
+      return undefined;
+    }
+    if (saveToFile.toLowerCase() === "yes") {
+      extraVarsFilePath = path.join(workspacePath, "ocsdk-extra-vars.yml");
+      if (zosEndpointPassphrase === "") {
+        // only store passphrase variable if it's empty
+        operatorVariables.passphrase = "";
+      }
+  
+      const stringData = JSON.stringify(operatorVariables, null, 2);
+      const varsYaml = yaml.dump(JSON.parse(stringData));
+      try {
+        fs.writeFileSync(extraVarsFilePath, varsYaml);
+      } catch (e) {
+        console.error("Failure storing variables to file");
+      }
+    }
+
     operatorVariables.zosendpoint_type = zosEndpointType;
     operatorVariables.zosendpoint_name = zosEndpointName
     operatorVariables.zosendpoint_host = zosEndpointHost;
     operatorVariables.zosendpoint_port = zosEndpointPort;
     operatorVariables.username = zosEndpointUsername;
-    operatorVariables.passphrase = zosEndpointPassphrase;
     operatorVariables.ssh_key = zosEndpointSSHKey;
 
   } else if (zosEndpointType === "local"){
@@ -392,29 +425,6 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     args.push(`-e "username="`);
     args.push(`-e "passphrase="`);
   } 
-
-  const saveToFile = await vscode.window.showQuickPick(yesNoOptions, {
-    canPickMany: false,
-    ignoreFocusOut: true,
-    placeHolder: "Store variables to file?",
-    title: "Would you like to store these variables to a file to bypass prompts later?",
-  });
-
-  if (saveToFile === undefined) {
-    return undefined;
-  }
-
-  if (saveToFile.toLowerCase() === "yes") {
-    extraVarsFilePath = path.join(workspacePath, "ocsdk-extra-vars.yml");
-
-    const stringData = JSON.stringify(operatorVariables, null, 2);
-    const varsYaml = yaml.dump(JSON.parse(stringData));
-    try {
-      fs.writeFileSync(extraVarsFilePath, varsYaml);
-    } catch (e) {
-      console.error("Failure storing variables to file");
-    }
-  }
 
   return args;
 }
