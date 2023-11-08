@@ -8,6 +8,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { VSCodeCommands, VSCodeDiagnosticMessages } from "../../utilities/commandConstants";
 import * as util from "../../utilities/util";
+import * as workspace from "../../utilities/workspace";
 
 export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
@@ -64,7 +65,7 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
   }
 
   private async gatherDirectoryPlaybooks(directory: string): Promise<string[]> {
-    const [files, _] = util.getDirectoryContent(directory, true, [".yaml", ".yml"]);
+    const [files, _] = workspace.getDirectoryContent(directory, true, [".yaml", ".yml"]);
 
     const filteredFiles = [];
     for (let i = 0; i < files.length; i++) {
@@ -79,7 +80,7 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
       }
     }
 
-    return util.pruneDirectoryStem(directory, filteredFiles);
+    return workspace.pruneDirectoryStem(directory, filteredFiles);
   }
 
   private createBoilerplateFileAction(filename: string, directory: string, isPreferred: boolean = false): vscode.CodeAction {

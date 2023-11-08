@@ -58,17 +58,6 @@ export const verboseLogScheme: string = "verboseContainerLogs";
 export const customResourceScheme: string = "customResource";
 
 /**
- * Retrieve the current workspace root directory if it exists
- * @returns — The vscode.WorkspaceFolder interface, or undefined if a directory doesn't exists
- */
-export function getCurrentWorkspaceRootFolder(): string | undefined {
-  if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders?.length > 0) {
-    return vscode.workspace.workspaceFolders[0].uri.path;
-  }
-  return undefined;
-}
-
-/**
  * Retrieve the list of Operator Collection names and workspace directories in the current workspace
  * @returns — A promise containing the WorkSpaceOperators object
  */
@@ -591,136 +580,6 @@ export function getLinterSettings(property: string): any {
 }
 
 /**
- * Returns all children within a specified directory.
- * @param directory - A String representing the directory to derive content from.
- * @param recurse - A optional Boolean specifiying whether to get return the content of all decendants via recursion.
- * @param fileExtensions - An optional String Array containing the desired return file types (i.e. [".yaml", ".yml"]).
- * @returns An array object of files and directories (i.e. const [files, subdirectories] = getDirectoryContent(...)).
- */
-export function getDirectoryContent(directory: string, recurse: boolean = false, fileExtensions: string[] = []): [string[], string[]] {
-  const directoryContent = fs.readdirSync(directory, {
-    withFileTypes: true,
-    recursive: true,
-  });
-
-  const files: string[] = [];
-  const directories: string[] = [];
-  for (let i = 0; i < directoryContent.length; i++) {
-    const item = path.join(directory, directoryContent[i].name);
-    if (fs.lstatSync(item).isDirectory()) {
-      directories.push(item);
-    } else {
-      if (fileExtensions.length) {
-        if (fileExtensions.some(extension => item.includes(extension))) {
-          files.push(item);
-        }
-      } else {
-        files.push(item);
-      }
-    }
-  }
-
-  if (recurse && directories.length) {
-    const subdirectoryContent = directories.map(subdirectory => {
-      return getDirectoryContent(subdirectory, recurse, fileExtensions);
-    });
-
-    for (let i = 0; i < subdirectoryContent.length; i++) {
-      const [f, d] = subdirectoryContent[i];
-      files.push.apply(files, f); // extend array
-      directories.push.apply(directories, d); // extend array
-    }
-  }
-
-  return [files, directories];
-}
-
-/**
- * Returns paths to the decendants of directory that match a given target or empty if no matches are found.
- * @param directory - A String representing the directory to check for target from.
- * @param target - A Regular Expresion Array containing either the target file names or directory names as they are to be tested.
- * @param checkRecursively - A optional Boolean specifiying whether to check for target in all decendants.
- * @param fileExtensions - An optional String Array containing the type of target file (i.e. [".yaml", ".yml"]). Can help prune the search.
- * @returns An empty String Array if no matches are found or an Array containing the paths of matched files.
- */
-export function getMatchingDecendants(directory: string, targets: RegExp[], checkRecursively: boolean = false, fileExtensions: string[] = []): string[] {
-  const [files, directories] = getDirectoryContent(directory, checkRecursively, fileExtensions);
-  const filesMatching = files.filter(file => targets.some(target => target.test(file)));
-  if (filesMatching.length) {
-    return filesMatching;
-  }
-  if (fileExtensions.length === 0) {
-    const dirsMatching = directories.filter(dir => targets.some(target => target.test(dir)));
-    if (dirsMatching.length) {
-      return dirsMatching;
-    }
-  }
-  return [];
-}
-
-/**
- * Executes omni-directional Breadth First Search on file system starting parameter queue[0].
- * @param queue - Mutable String Array initalized with the directory to being searching from (i.e. const queue = [directoryPath]).
- * @param workspaceRootFolderName - The root vscode workspace folder. Serves as a limit past which recursion will stop.
- * @param target - Either a Sting containing the target file or directory name or a Regular Expression to test candidates against.
- * @param visited - Created and used internally (not to be passsed during function call).
- * @returns A String representing the pathway to the nearest target or empty string.
- */
-export function findNearestFolderOrFile(queue: string[], workspaceRootFolderName: string, target: string | RegExp, visited: string[] = []): string | undefined {
-  if (queue.length === 0) {
-    return "";
-  }
-
-  const [files, directories] = getDirectoryContent(queue[0]);
-  visited.push(queue[0]);
-
-  // if we find the target in this directory, return target
-  const targetRegex = typeof target === "string" ? new RegExp(`${target}\$`, "gm") : target;
-  const filesMatching = files.filter(file => targetRegex.test(file));
-  if (filesMatching.length) {
-    return filesMatching[0];
-  }
-  const dirsMatching = directories.filter(dir => targetRegex.test(dir));
-  if (dirsMatching.length) {
-    return dirsMatching[0];
-  }
-
-  // otherwise keep searching recursively
-  for (let i = 0; i < directories.length; i++) {
-    if (!visited.includes(directories[i])) {
-      queue.push(directories[i]);
-    }
-  }
-  const parentDirectory = queue[0].substring(0, queue[0].lastIndexOf("/"));
-  if (parentDirectory.includes(workspaceRootFolderName) && !visited.includes(parentDirectory)) {
-    queue.push(parentDirectory);
-  }
-
-  return findNearestFolderOrFile(queue.slice(1), workspaceRootFolderName, target, visited);
-}
-
-/**
- * Removes a common stem from all supplied pathways.
- * @param stem - A String.
- * @param paths - A String Array containing pathways.
- * @returns A String Array containing pruned pathways.
- */
-export function pruneDirectoryStem(stem: string, paths: string[]) {
-  const re = new RegExp(`^${stem}/`, "gm");
-  return paths.map(pathway => pathway.replace(re, ""));
-}
-
-/**
- * Checks if a candidate path is an ancestor of the primary path.
- * @param primary - A String path.
- * @param candidate - A String path.
- * @returns A boolean signaling whether the candidate path is an exact ancestor.
- */
-export function pathsIsDecendant(primary: string, candidate: string) {
-  return primary.includes(candidate);
-}
-
-/**
  * Implements the Jaro string similarity algorithm.
  * @param s1 - A String.
  * @param s2 - A String.
@@ -738,8 +597,8 @@ export function calcuateStringSimilarty(s1: string, s2: string) {
   // calculate matches (characters which match within a specified distance)
   for (let i = 0; i < s1.length; i++) {
     for (let j = 0; j < s2.length; j++) {
-      let l = i;
-      let r = i;
+      let l = i; // points to left of index
+      let r = i; // points to right of index
       for (let m = 0; m <= matchDistance; m++) {
         if (s2[l] === s1[i] || s2[r] === s1[i]) {
           mask1[i] = 1;
@@ -751,7 +610,7 @@ export function calcuateStringSimilarty(s1: string, s2: string) {
     }
   }
 
-  // distance is bidirectional so the value will be the same for both masks
+  // distance is bidirectional so the sum will be the same for both masks
   const matches = mask1.reduce((acc, currVal) => acc + currVal, 0);
   if (matches === 0) {
     return 0;

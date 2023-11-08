@@ -5,6 +5,7 @@
 
 import * as vscode from "vscode";
 import * as util from "./utilities/util";
+import * as workspace from "./utilities/workspace";
 import * as path from "path";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
@@ -244,16 +245,17 @@ function executeInlineReplaceWith(command: string) {
 function createFile(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(command, async (filename: string, directory: string) => {
     let content: string = "";
-
-    // available scaffold types:
-    // galaxy.yaml, operator-config.yaml, playbooks
-    const operatorConfigRX = /operator-config\.ya?ml$/gm;
-    const galaxyRX = /galaxy\.ya?ml$/gm;
-    const playbookRX = /\.ya?ml$/gm;
+    const operatorConfigRX = /operator-config\.ya?ml$/;
+    const galaxyRX = /galaxy\.ya?ml$/;
+    const playbookRX = /\.ya?ml$/;
 
     if (operatorConfigRX.test(filename)) {
+      //TODO: get values from counter file
+
       content = BoilerplateContent.operatorConfigBoilerplateContent;
     } else if (galaxyRX.test(filename)) {
+      //TODO: get values from counter file
+
       content = BoilerplateContent.galaxyBoilerplateContent;
     } else if (playbookRX.test(filename)) {
       content = BoilerplateContent.playbookBoilerplateContent;
@@ -266,8 +268,7 @@ function createFile(command: string): vscode.Disposable {
     const extension = filename.match(playbookRX)?.[0];
     let filePath = path.join(directory, filename).replace(playbookRX, "");
 
-    // need to check if the file or alternate extension file exists
-    // e.g. if "file.yaml" is specified, we need to check if "file.yml" exists too
+    // we need to check if either "*.yaml" or "*.yml" versions exist
     let fileExists: boolean = false;
     if (fs.existsSync(filePath + ".yaml")) {
       fileExists = true;
@@ -279,9 +280,9 @@ function createFile(command: string): vscode.Disposable {
       filePath = filePath + extension;
     }
 
+    // if the file exists, ask user for permision to overwrite
     if (fileExists) {
-      // If the file exists, ask user for permision to overwrite
-      const canProceed = await vscode.window.showInformationMessage(`The file ${filename} already exists. Do you want to overwrite it?`, { modal: true }, "Yes");
+      const canProceed = await vscode.window.showInformationMessage(`${filename.replace(playbookRX, "")} file already exists in the collection: "${path.basename(path.dirname(filePath))}". Do you want to overwrite it?`, { modal: true }, "Yes");
 
       if (!canProceed || canProceed !== "Yes") {
         return;
@@ -289,7 +290,7 @@ function createFile(command: string): vscode.Disposable {
     }
 
     try {
-      // If filePath contains additional directories that don't exist, create them
+      // if filePath contains additional directories that don't exist, create them
       const additionalDirectories = path.dirname(filename);
       if (!fs.existsSync(path.join(directory, additionalDirectories))) {
         fs.mkdirSync(path.join(directory, additionalDirectories), { recursive: true });
@@ -310,69 +311,33 @@ function createFile(command: string): vscode.Disposable {
 function createGalaxyBoilerplateFile(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(command, async uri => {
     const filename = "galaxy.yml";
-    const selecteDirectory = uri.fsPath;
-    const workspaceFolder = util.getCurrentWorkspaceRootFolder();
-    const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
+    const candidateDirectory = uri.fsPath;
+    const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionRoot(candidateDirectory);
 
-    let collectionDirectory = "";
-    const fileRX = {
-      // Regex is makes it simpler to check for .yaml vs .yml files
-      operatorConfigRX: /operator-config.ya?ml$/gm,
-      galaxyRX: /galaxy.ya?ml$/gm,
-    };
-
-    // check if there are any operator-config/galaxy files in this directory or any of
-    // its subdirectories, if there are, the collectionDirectory location is ambiguous
-    const collectionFiles = util.getMatchingDecendants(selecteDirectory, [fileRX.operatorConfigRX, fileRX.galaxyRX], true, [".yaml", ".yml"]);
-    const operatorConfigFiles = collectionFiles.filter(file => fileRX.operatorConfigRX.test(file));
-    const galaxyFiles = collectionFiles.filter(file => fileRX.galaxyRX.test(file));
-
-    if (operatorConfigFiles.length > 1) {
-      vscode.window.showWarningMessage("This directory contains multiple collections. Select a specific collection to create a galaxy.yml file.");
+    if (collectionPathIsAmbiguous) {
+      vscode.window.showWarningMessage(
+        `
+        The folder "${path.basename(candidateDirectory)}" or two or more of its subfolders contain(s) multiple collections. 
+        Select a specific collection to create a file of this type.
+        `
+      );
       return;
-    } else if (operatorConfigFiles.length === 1) {
-      collectionDirectory = path.dirname(operatorConfigFiles[0]);
-    } else {
-      if (rootFolder) {
-        const nearestOperatorConfigFile = util.findNearestFolderOrFile([selecteDirectory], rootFolder, fileRX.operatorConfigRX);
-
-        // if there is an operator-config file nearby and its path is an ancector of
-        // the current selected directory, then the galaxy file should go there instead
-        // because we should not allow the user to create nested collections
-        if (nearestOperatorConfigFile && path.dirname(selecteDirectory).includes(path.dirname(nearestOperatorConfigFile))) {
-          collectionDirectory = path.dirname(nearestOperatorConfigFile);
-        }
-      }
     }
 
-    if (collectionDirectory === "") {
-      // check if there are any galaxy files in this directory or any of
-      // its subdirectories, if there are, the collectionDirectory location is ambiguous
-      if (galaxyFiles.length > 1) {
-        vscode.window.showWarningMessage(`The folder "${path.basename(selecteDirectory)}" or its subfolders contain(s) multiple galaxy files within it. Each collection should contain exactly one galaxy file.`);
-        return;
-      } else if (galaxyFiles.length === 1) {
-        collectionDirectory = path.dirname(operatorConfigFiles[0]);
-      } else {
-        if (rootFolder) {
-          const nearestGalaxyFile = util.findNearestFolderOrFile([selecteDirectory], rootFolder, fileRX.galaxyRX);
+    const destinationDirectory = collectionDirectory ? collectionDirectory : candidateDirectory;
 
-          // if there is a galaxy file nearby and its path is an ancector of
-          // the current selected directory, then the galaxy file should go there instead
-          // because we should not allow the user to create nested collections
-          if (nearestGalaxyFile && path.dirname(selecteDirectory).includes(path.dirname(nearestGalaxyFile))) {
-            collectionDirectory = path.dirname(nearestGalaxyFile);
-          } else {
-            collectionDirectory = selecteDirectory;
-          }
-        }
+    if (destinationDirectory) {
+      if (destinationDirectory !== candidateDirectory) {
+        vscode.window.showWarningMessage(
+          `
+          Attempting to create file at "${path.basename(destinationDirectory)}" instead of "${path.basename(candidateDirectory)}"; 
+          Each collection should contain exactly one ${filename} file, and collections cannot be nested.
+          `
+        );
       }
-    }
-
-    if (collectionDirectory) {
-      vscode.commands.executeCommand(VSCodeCommands.createFile, filename, collectionDirectory);
+      vscode.commands.executeCommand(VSCodeCommands.createFile, filename, destinationDirectory);
     } else {
-      vscode.window.showErrorMessage("Failed to create file: Output directory is undefined.");
+      vscode.window.showErrorMessage(`Failed to create ${filename} file.`);
     }
   });
 }
@@ -380,12 +345,33 @@ function createGalaxyBoilerplateFile(command: string): vscode.Disposable {
 function createOperatorConfigBoilerplateFile(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(command, async uri => {
     const filename = "operator-config.yml";
-    const directory = uri.fsPath;
+    const candidateDirectory = uri.fsPath;
+    const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionRoot(candidateDirectory);
 
-    if (directory) {
-      vscode.commands.executeCommand(VSCodeCommands.createFile, filename, directory);
+    if (collectionPathIsAmbiguous) {
+      vscode.window.showWarningMessage(
+        `
+        The folder "${path.basename(candidateDirectory)}" or two or more of its subfolders contain(s) multiple collections. 
+        Select a specific collection to create a file of this type.
+        `
+      );
+      return;
+    }
+
+    const destinationDirectory = collectionDirectory ? collectionDirectory : candidateDirectory;
+
+    if (destinationDirectory) {
+      if (destinationDirectory !== candidateDirectory) {
+        vscode.window.showWarningMessage(
+          `
+          Attempting to create file at "${path.basename(destinationDirectory)}" instead of "${path.basename(candidateDirectory)}"; 
+          Each collection should contain exactly one ${filename} file, and collections cannot be nested.
+          `
+        );
+      }
+      vscode.commands.executeCommand(VSCodeCommands.createFile, filename, destinationDirectory);
     } else {
-      vscode.window.showErrorMessage("Failed to create file: Output directory is undefined.");
+      vscode.window.showErrorMessage(`Failed to create ${filename} file.`);
     }
   });
 }
@@ -398,43 +384,60 @@ function createPlaybookBoilerplateFile(command: string): vscode.Disposable {
     if (directory) {
       vscode.commands.executeCommand(VSCodeCommands.createFile, filename, directory);
     } else {
-      vscode.window.showErrorMessage("Failed to create file: Output directory is undefined.");
+      vscode.window.showErrorMessage(`Failed to create ${filename} file: Destination Folder is ambiguous.`);
     }
   });
 }
 
 function convertToAirgapCollection(command: string, outputChannel?: vscode.OutputChannel, logPath?: string) {
   return vscode.commands.registerCommand(command, async uri => {
-    const workspaceFolder = util.getCurrentWorkspaceRootFolder();
+    const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
     const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
-
-    // if (
-    //   path.basename(uri.fsPath) === rootFolder
-    //   && !(fs.existsSync(path.join(uri, "operator-config.yaml")) || fs.existsSync(path.join(uri, "operator-config.yml")))
-    // ) {
-    //   vscode.window.showErrorMessage("No operator-config.yml file was detected in the root folder. Select the collection folder to convert to an airgap collection.");
-    //   return;
-    // }
-
-    const directory = uri.fsPath; // this function expects a directory path not a file path
-
+    const directory = uri.fsPath;
     if (rootFolder) {
-      const targetRegex = /operator-config.ya?ml$/gm;
-      const nearestOperatorConfigFile = util.findNearestFolderOrFile([directory], rootFolder, targetRegex);
-
-      if (nearestOperatorConfigFile) {
-        const collectionRoot = path.dirname(nearestOperatorConfigFile);
-        vscode.window.showInformationMessage(`Converting \"${path.basename(collectionRoot)}\" to an airgap collection...`);
-        try {
-          let ocSdkCommand = new OcSdkCommand(collectionRoot);
-          await ocSdkCommand.runCreateOfflineRequirements(outputChannel, logPath).then(() => {
-            vscode.window.showInformationMessage(`Successfully converted \"${path.basename(collectionRoot)}\" to an airgap collection`);
-          });
-        } catch (e) {
-          vscode.window.showErrorMessage(`Failed to convert collection: ${e}`);
+      // determine which collection to convert based on the uri clicked
+      const [nearestCollection, collectionPathIsAmbiguous] = workspace.findNearestCollectionRoot(directory);
+      if (nearestCollection === "") {
+        if (collectionPathIsAmbiguous) {
+          vscode.window.showWarningMessage(
+            `
+            The folder "${path.basename(directory)}" or two or more of its subfolders contain(s) multiple collections. 
+            Select a specific collection to create convert to an airgap collection.
+            `
+          );
+        } else {
+          vscode.window.showWarningMessage(`The folder "${path.basename(directory)}" does not contain any collections.`);
         }
-      } else {
-        vscode.window.showErrorMessage("No operator-config.yml file was detected in this collection. Has it been created?");
+        return;
+      }
+
+      // ensure the nearest collection path is an ancestor path or decendant path
+      if (!workspace.pathsIsAncestorOrDecendant(directory, nearestCollection)) {
+        vscode.window.showWarningMessage(`This folder doesn't contain any collections. Did you mean to convert "${path.basename(nearestCollection)}" instead?`);
+        return;
+      }
+
+      // validate the requirements file exists
+      const collectionRequirements = workspace.getMatchingDecendants(nearestCollection, [/requirements.ya?ml/], true, [".yaml", ".yml"]);
+      if (collectionRequirements.length === 0) {
+        vscode.window.showWarningMessage(
+          `
+          No requirements.yml file detected within the collection "${path.basename(nearestCollection)}". 
+          Airgap conversion requires a "collections/requirements.yml" file.
+          `
+        );
+        return;
+      }
+
+      vscode.window.showInformationMessage(`Converting \"${path.basename(nearestCollection)}\" to an airgap collection...`);
+      try {
+        let ocSdkCommand = new OcSdkCommand(nearestCollection);
+        outputChannel?.show();
+        await ocSdkCommand.runCreateOfflineRequirements(outputChannel, logPath).then(() => {
+          vscode.window.showInformationMessage(`Successfully converted \"${path.basename(nearestCollection)}\" to an airgap collection`);
+        });
+      } catch (e) {
+        vscode.window.showErrorMessage(`Failed to convert collection: ${e}`);
       }
     }
   });
@@ -752,7 +755,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
           if (operatorItemArg) {
             workspacePath = operatorItemArg.workspacePath;
           } else {
-            let pwd = util.getCurrentWorkspaceRootFolder();
+            let pwd = workspace.getCurrentWorkspaceRootFolder();
             if (pwd) {
               workspacePath = await util.selectOperatorInWorkspace(pwd);
               workspacePath = path.parse(workspacePath!).dir;
@@ -845,7 +848,7 @@ function executeSdkCommandWithUserInput(command: string, session: Session, outpu
         if (operatorItemArg) {
           workspacePath = operatorItemArg.workspacePath;
         } else {
-          let pwd = util.getCurrentWorkspaceRootFolder();
+          let pwd = workspace.getCurrentWorkspaceRootFolder();
           if (pwd) {
             workspacePath = await util.selectOperatorInWorkspace(pwd);
             workspacePath = path.parse(workspacePath!).dir;
