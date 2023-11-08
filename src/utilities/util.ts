@@ -493,6 +493,8 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
  */
 export async function requestInitOperatorCollectionInfo(): Promise<string[] | undefined> {
   let args: Array<string> = [];
+  const yesNoOptions: Array<string> = ["Yes", "No"];
+  const offlineInstallTitle = "Will this collection be executed in an offline environment [y/n]?";
 
   const ansibleGalaxyNamespace = await vscode.window.showInputBox({
     prompt: `Enter your Ansible Galaxy namespace`,
@@ -505,15 +507,16 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
     },
   });
 
-  const offlineInstall = await vscode.window.showInputBox({
-    prompt: `Will this collection be executed in an offline environment [y/n]`,
+  const offlineInstall = await vscode.window.showQuickPick(yesNoOptions, {
+    canPickMany: false,
     ignoreFocusOut: true,
-    validateInput: text => {
-      const validValuesRegex = /^(yes|y|no|n)$/i;
-      const isvalid = !validValuesRegex.test(text?.trimStart());
-      return isvalid ? text : null;
-    },
+    placeHolder: offlineInstallTitle,
+    title: offlineInstallTitle,
   });
+
+  if (ansibleGalaxyNamespace === undefined || ansibleGalaxyNamespace === "" || offlineInstall === undefined || offlineInstall === "") {
+    return undefined;
+  }
 
   args.push(`-e "collection_name=racf_operator"`);
   args.push(`-e "collection_namespace=${ansibleGalaxyNamespace}"`);
