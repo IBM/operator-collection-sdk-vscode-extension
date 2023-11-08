@@ -234,7 +234,7 @@
       },
       {
         "view": "operator-collection-sdk.operators",
-        "contents": "Operator Collection isn’t detected in current workspace \n[Initialize Operator Collection](command:operator-collection-sdk.initCollection)\n[skip](command:operator-collection-sdk.initCollectionSkip)",
+        "contents": "Operator Collection isn’t detected in current workspace \n[Initialize Operator Collection](command:operator-collection-sdk.initCollection)\n[Skip](command:operator-collection-sdk.initCollectionSkip)",
         "when": "operator-collection-sdk.sdkInstalled && !operator-collection-sdk.sdkOutdatedVersion && operator-collection-sdk.isCollectionInWorkspace"
       },
       {
