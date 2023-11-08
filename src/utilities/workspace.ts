@@ -161,42 +161,19 @@ export function pruneDirectoryStem(stem: string, paths: string[]) {
 }
 
 /**
- * Checks if the candidate path is an ancestor path. All folders in the candidate
- * (ancestor) path must be present in the primary (decendant) path.
- * @param primary - A String path.
- * @param candidate - A String path.
- * @returns A boolean signaling whether the candidate path is an ancestor.
- */
-export function pathIsAncestor(primary: string, candidate: string) {
-  return primary.includes(candidate);
-}
-
-/**
- * Checks if the candidate path is a decendant path. All folders in the primary
- * (ancestor) path must be present in the candidate (decendant) path.
- * @param primary - A String path.
- * @param candidate - A String path.
- * @returns A boolean signaling whether the candidate path is a decendant.
- */
-export function pathIsDecendant(primary: string, candidate: string) {
-  return candidate.includes(primary);
-}
-
-/**
  * Checks if a candidate path is an ancestor or decendant of a primary path.
  * @param primary - A String path.
  * @param candidate - A String path.
  * @returns A boolean signaling whether the candidate path is in the direct path "bloodline".
  */
 export function pathIsAncestorOrDecendant(primary: string, candidate: string) {
-  return pathIsAncestor(primary, candidate) || pathIsDecendant(primary, candidate);
+  return candidate.includes(primary) || primary.includes(candidate);
 }
 
 /**
  * Evaluates whether the directory path passed is a valid directory for a collection and returns it,
  * the nearest collection path, or an empty string.
  * @param directory - A candidate directory to evaluate.
- * @param displayErrors - A Boolean that can be used to turn of vscode alerts if needed.
  * @returns A String path to the nearest collection within the path's ancestors or decendants or empty String
  * if it could not be determined.
  * @returns A Boolean, ambiguous, specifying that the nearest collection could not be determined if true.
