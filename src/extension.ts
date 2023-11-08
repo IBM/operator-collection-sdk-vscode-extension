@@ -274,18 +274,24 @@ function updateOcSdkVersion(command: string, ocSdkCmd: OcSdkCommand, session: Se
 
 function initOperatorCollection(command: string, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
   return vscode.commands.registerCommand(command, async (logPath?: string) => {
-    const args = await util.requestInitOperatorCollectionInfo();
-    if (args && args.length > 1) {
-      outputChannel?.show();
-      session.operationPending = true;
-      let pwd = util.getCurrentWorkspaceRootFolder();
-      let ocSdkCommand = new OcSdkCommand(pwd);
-      ocSdkCommand.runInitOperatorCollection(args, outputChannel, logPath).then(async () => {
-        session.operationPending = false;
-        vscode.window.showInformationMessage(`Initialization of Operator Collection ${args[1]} executed successfully`);
-        vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
-        vscode.commands.executeCommand(VSCodeCommands.refresh);
-      });
+    if (session.operationPending) {
+      vscode.window.showWarningMessage("Another Operation is processing");
+    } else {
+      const args = await util.requestInitOperatorCollectionInfo();
+      if (args && args.length > 1) {
+        outputChannel?.show();
+        session.operationPending = true;
+        let pwd = util.getCurrentWorkspaceRootFolder();
+        let ocSdkCommand = new OcSdkCommand(pwd);
+        ocSdkCommand.runInitOperatorCollection(args, outputChannel, logPath).then(async () => {
+          session.operationPending = false;
+          vscode.window.showInformationMessage(`Initialization of Operator Collection ${args[1]} executed successfully`);
+          vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
+          vscode.commands.executeCommand(VSCodeCommands.refresh);
+        });
+      } else {
+        vscode.window.showWarningMessage("Could not Initialize Operator Collection");
+      }
     }
   });
 }
