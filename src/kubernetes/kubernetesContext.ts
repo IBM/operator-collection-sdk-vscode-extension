@@ -96,9 +96,9 @@ export class KubernetesContext {
       "Auth Token": /[\s]+--token=sha256~[A-Za-z0-9-_]+/,
       "Server URL": /[\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+/,
       "Skip Flag": /([\s]+--insecure-skip-tls-verify(=?[\S]+){0,1})/,
-      Certificate: /([\s]+--certificate-authority=?[\S]+)/,
+      "Cert Auth": /([\s]+--certificate-authority=?[\S]+)/,
     };
-    const optionalArguments = ["Skip Flag", "Certificate"];
+    const optionalArguments = ["Skip Flag", "Cert Auth"];
 
     const inputArgs = await vscode.window.showInputBox({
       prompt: `Enter your oc login command: oc login --token=AUTH_TOKEN --server=SERVER_URL`,
@@ -130,7 +130,7 @@ export class KubernetesContext {
         inputArgs.match(validRegex["Auth Token"])![0]!.trim(), // add token
         inputArgs.match(validRegex["Server URL"])![0]!.trim(), // add URL
         inputArgs.match(validRegex["Skip Flag"])?.[0]?.trim() ?? "", // add skip flag if it exists
-        inputArgs.match(validRegex["Certificate"])?.[0]?.trim() ?? "", // add certificate authority if it exists
+        inputArgs.match(validRegex["Cert Auth"])?.[0]?.trim() ?? "", // add certificate authority if it exists
       ];
 
       return args;
