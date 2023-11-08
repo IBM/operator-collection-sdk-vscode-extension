@@ -17,21 +17,22 @@ export const playbookBoilerplateContent = `---
 
 `;
 
-export const operatorConfigBoilerplateContent = `# (Required) A unique value that will be used to construct the Kubernetes API group for the resources defined in this OperatorCollection
-domain: {{ oc_domain }}
+export const operatorConfigBoilerplateContent = (name: string, domain: string, version: string) => {
+  return `# (Required) A unique value that will be used to construct the Kubernetes API group for the resources defined in this OperatorCollection
+domain: ${domain}
 
 # (Required) A unique value that will be prepended to the domain value to construct a full Kubernetes API Group for the resources defined in this OperatorCollection
-name: {{ oc_name }}
+name: ${name}
 
 # (Required) A semantic versioning compliant version number.
 # This value SHOULD be the same as the version value specified in an Ansible Collection's galaxy.yml file.
-version: {{ oc_version }}
+version: ${version}
 
 # (Required) A short name that will be displayed in OperatorHub for the generated OperatorCollection tile.
 displayName: Add Display Name Here
 
 # (Optional) A markdown formatted string that provides information regarding the OperatorCollection and it's functionality within the OCP cluster. The markdown content MUST provide a new line after headers for proper compatibility within OCP.
-description: {{ oc_description }}
+description: Add Description Here
 
 # (Optional) A base64-encoded icon unique to the Operator
 # icon:
@@ -94,21 +95,23 @@ resources:
         # This will enable a dynamically populated dropdown in the OCP UIs containing all previously created instances of the specified kind. Use this for running actions against previously created instances.
         # kindReference: AddReferencedKindHere
 `;
+};
 
-export const galaxyBoilerplateContent = `
+export const galaxyBoilerplateContent = (name: string, namespace: string, version: string) => {
+  return `
 # See https://docs.ansible.com/ansible/latest/dev_guide/collections_galaxy_meta.html
 
 ### REQUIRED
 # The namespace of the collection. This can be a company/brand/organization or product namespace under which all
 # content lives. May only contain alphanumeric lowercase characters and underscores. Namespaces cannot start with
 # underscores or numbers and cannot contain consecutive underscores
-namespace: 
+namespace: ${namespace}
 
 # The name of the collection. Has the same character restrictions as 'namespace'
-name: 
+name: ${name}
 
 # The version of the collection. Must be compatible with semantic versioning
-version: 
+version: ${version}
 
 # The path to the Markdown (.md) readme file. This path is relative to the root of the collection
 readme: README.md
@@ -165,3 +168,4 @@ build_ignore:
 # manifest: null
 
 `;
+};

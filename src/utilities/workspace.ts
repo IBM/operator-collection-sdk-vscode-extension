@@ -5,10 +5,11 @@
 
 import * as path from "path";
 import * as fs from "fs";
+import * as yaml from "js-yaml";
 import * as vscode from "vscode";
 
 /**
- * Retrieve the current workspace root directory if it exists
+ * Retrieves the current workspace root directory if it exists
  * @returns — The vscode.WorkspaceFolder interface, or undefined if a directory doesn't exists
  */
 export function getCurrentWorkspaceRootFolder(): string | undefined {
@@ -16,6 +17,27 @@ export function getCurrentWorkspaceRootFolder(): string | undefined {
     return vscode.workspace.workspaceFolders[0].uri.path;
   }
   return undefined;
+}
+
+/**
+ * Retrieves the values for keys specified in the given filepath
+ * @param filePath - A String representing path the the YAML file.
+ * @param keys - An array of Strings whose values are requested.
+ * @returns — A list of values where each element corresponds to a key in the paramter keys
+ */
+export function getValuesFromYamlFile(filePath: string, keys: string[]): Array<any> {
+  if (!/.ya?ml$/.test(filePath)) {
+    return [];
+  }
+
+  const values = [];
+  const content = fs.readFileSync(filePath, "utf8");
+  const data: any = yaml.load(content);
+  for (let i = 0; i < keys.length; i++) {
+    values.push(data?.[keys[i]]);
+  }
+
+  return values;
 }
 
 /**
@@ -66,7 +88,7 @@ export function getDirectoryContent(directory: string, recurse: boolean = false,
 /**
  * Returns paths to the decendants of directory that match a given target or empty if no matches are found.
  * @param directory - A String representing the directory to check for target from.
- * @param target - A Regular Expresion Array containing either the target file names or directory names as they are to be tested.
+ * @param targets - A Regular Expression Array containing either target files or target folders but not both.
  * @param checkRecursively - A optional Boolean specifiying whether to check for target in all decendants.
  * @param fileExtensions - An optional String Array containing the type of target file (i.e. [".yaml", ".yml"]). Can help prune the search.
  * @returns An empty String Array if no matches are found or an Array containing the paths of matched files.
@@ -145,7 +167,7 @@ export function pruneDirectoryStem(stem: string, paths: string[]) {
  * @param candidate - A String path.
  * @returns A boolean signaling whether the candidate path is an ancestor.
  */
-export function pathsIsAncestor(primary: string, candidate: string) {
+export function pathIsAncestor(primary: string, candidate: string) {
   return primary.includes(candidate);
 }
 
@@ -156,7 +178,7 @@ export function pathsIsAncestor(primary: string, candidate: string) {
  * @param candidate - A String path.
  * @returns A boolean signaling whether the candidate path is a decendant.
  */
-export function pathsIsDecendant(primary: string, candidate: string) {
+export function pathIsDecendant(primary: string, candidate: string) {
   return candidate.includes(primary);
 }
 
@@ -166,8 +188,8 @@ export function pathsIsDecendant(primary: string, candidate: string) {
  * @param candidate - A String path.
  * @returns A boolean signaling whether the candidate path is in the direct path "bloodline".
  */
-export function pathsIsAncestorOrDecendant(primary: string, candidate: string) {
-  return pathsIsAncestor(primary, candidate) || pathsIsDecendant(primary, candidate);
+export function pathIsAncestorOrDecendant(primary: string, candidate: string) {
+  return pathIsAncestor(primary, candidate) || pathIsDecendant(primary, candidate);
 }
 
 /**
@@ -183,8 +205,8 @@ export function findNearestCollectionRoot(directory: string): [string, boolean] 
   const workspaceFolder = getCurrentWorkspaceRootFolder();
   const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
 
-  let ambiguous = false;
-  let collectionDirectory = "";
+  let collectionPathIsAmbiguous = false;
+  let collectionPath = "";
   const fileRX = {
     // Regex makes it simpler to check for .yaml vs .yml files
     operatorConfigRX: /operator-config.ya?ml$/,
@@ -198,11 +220,12 @@ export function findNearestCollectionRoot(directory: string): [string, boolean] 
   const galaxyFiles = collectionFiles.filter(file => fileRX.galaxyRX.test(file));
 
   if (operatorConfigFiles.length > 1 || galaxyFiles.length > 1) {
-    return ["", true];
+    collectionPathIsAmbiguous = true;
+    return ["", collectionPathIsAmbiguous];
   } else if (galaxyFiles.length === 1) {
     // if there exists a galaxy file that is a decendant of the current
     // selected directory, then the new file should go in that collection
-    collectionDirectory = path.dirname(galaxyFiles[0]);
+    collectionPath = path.dirname(galaxyFiles[0]);
   } else {
     if (rootFolder) {
       const nearestGalaxyFile = findNearestFolderOrFile([directory], rootFolder, fileRX.galaxyRX);
@@ -211,16 +234,16 @@ export function findNearestCollectionRoot(directory: string): [string, boolean] 
       // the current selected directory, then the the new file should go in that collection
       // because we should not allow the user to create nested collections
       if (nearestGalaxyFile && path.dirname(directory).includes(path.dirname(nearestGalaxyFile))) {
-        collectionDirectory = path.dirname(nearestGalaxyFile);
+        collectionPath = path.dirname(nearestGalaxyFile);
       }
     }
   }
 
-  if (collectionDirectory === "") {
+  if (collectionPath === "") {
     if (operatorConfigFiles.length === 1) {
       // if there is a operator-config file that is a decendant of the current
       // selected directory, then the new file should go there instead
-      collectionDirectory = path.dirname(operatorConfigFiles[0]);
+      collectionPath = path.dirname(operatorConfigFiles[0]);
     } else {
       if (rootFolder) {
         const nearestOperatorConfigFile = findNearestFolderOrFile([directory], rootFolder, fileRX.operatorConfigRX);
@@ -229,11 +252,35 @@ export function findNearestCollectionRoot(directory: string): [string, boolean] 
         // the current selected directory, then the new file should go in that collection
         // because we should not allow the user to create nested collections
         if (nearestOperatorConfigFile && path.dirname(directory).includes(path.dirname(nearestOperatorConfigFile))) {
-          collectionDirectory = path.dirname(nearestOperatorConfigFile);
+          collectionPath = path.dirname(nearestOperatorConfigFile);
         }
       }
     }
   }
 
-  return [collectionDirectory, ambiguous];
+  return [collectionPath, collectionPathIsAmbiguous];
+}
+
+/**
+ * Searches parent directories recursively for target and returns first match found.
+ * @param directory - A String path to begin search parents from. Not a parent directory.
+ * @param workspaceRootFolderName - A String path containing the workspace Root Folder Name.
+ * @param targets - A Regular Expression Array containing either target files or target folders but not both.
+ * @param fileExtensions - An optional String Array containing the type of target file (i.e. [".yaml", ".yml"]). May help prune the search.
+ * @returns A String containing the path to the first target found or an empty string if no target was found.
+ */
+export function searchParents(directory: string, workspaceRootFolderName: string, targets: RegExp[], fileExtensions: string[] = []): string {
+  const parentDirectory = directory.substring(0, directory.lastIndexOf("/"));
+  if (!parentDirectory.includes(workspaceRootFolderName)) {
+    return ""; // path not found
+  }
+
+  // check decendants of parent directory for targets (non-recursively)
+  const matchingFiles = getMatchingDecendants(parentDirectory, targets, false, fileExtensions);
+  if (matchingFiles.length) {
+    return matchingFiles[0];
+  }
+
+  // keep searching parents
+  return searchParents(parentDirectory, workspaceRootFolderName, targets, fileExtensions);
 }

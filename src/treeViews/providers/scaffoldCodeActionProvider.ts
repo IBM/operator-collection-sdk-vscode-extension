@@ -17,13 +17,18 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
     const actions: vscode.CodeAction[] = [];
 
     // provide file scaffold options for operator-config.yaml/yml only
-    if (document && /^operator-config.ya?ml$/gm.test(path.basename(document.uri.fsPath))) {
+    if (document && /^operator-config.ya?ml$/.test(path.basename(document.uri.fsPath))) {
       for (const diagnostic of context.diagnostics) {
-        // if the error is ~"playbook is invalid" error, create codeAction
+        // if the error is ~"playbook/finalizer is invalid" error, create codeAction
         if (diagnostic.severity === vscode.DiagnosticSeverity.Error && (diagnostic.message.includes(VSCodeDiagnosticMessages.invalidPlaybookError) || diagnostic.message.includes(VSCodeDiagnosticMessages.invalidFinalizerError))) {
           // split on "-" to remove the diagnostic message, rejoin on "-" if the file name had "-"
           const filename = diagnostic.message.split("-").slice(1).join("-").trim();
           const directory = path.dirname(document.uri.fsPath);
+
+          // don't provide code actions to create galaxy or operator-config files here
+          if (/operator-config.ya?ml$/.test(filename) || /galaxy.ya?ml$/.test(filename)) {
+            continue;
+          }
 
           // get candidates, rank, and order based on the similarity of strings
           const playbooks = await this.gatherDirectoryPlaybooks(directory);
@@ -50,8 +55,6 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
             const replaceActions = similarPlaybooks.slice(0, 3).map(item => {
               return this.inlineReplaceWithAction(yamlKey, item.playbook, document, range);
             });
-
-            //
 
             actions.push.apply(actions, replaceActions); // extend actions array
           }
