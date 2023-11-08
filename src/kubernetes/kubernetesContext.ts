@@ -91,25 +91,23 @@ export class KubernetesContext {
    * @returns - A Promise containing the list of parameters to pass to the command
    */
   private async requestLogInInfo(): Promise<string[] | undefined> {
-    let args: Array<string> = [];
+    const validRegex: { [key: string]: RegExp } = {
+      "OC Command": /^(oc login)/,
+      "Auth Token": /([\s]+--token=sha256~[A-Za-z0-9-_]+)/,
+      "Server URL": /([\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/,
+    };
 
     const inputArgs = await vscode.window.showInputBox({
-      prompt: `Enter your oc login command: oc login --server=SERVER_URL --token=AUTH_TOKEN`,
+      prompt: `Enter your oc login command: oc login --token=AUTH_TOKEN --server=SERVER_URL`,
       ignoreFocusOut: true,
       validateInput: text => {
         const ocLoginArgs = text.trimStart();
 
         // validate arguments
-        const validRegex: { [key: string]: RegExp } = {
-          "OC Command": /^(oc login)/,
-          "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/,
-          "Server URL": /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/,
-        };
-
         for (const rx in validRegex) {
           const failedRegex = !validRegex[rx].test(ocLoginArgs);
           if (failedRegex) {
-            return "Format: oc login --server=SERVER_URL --token=AUTH_TOKEN (optionally --insecure-skip-tls-verify)";
+            return "Format: oc login --token=AUTH_TOKEN --server=SERVER_URL (optionally --insecure-skip-tls-verify)";
           }
         }
 
@@ -118,13 +116,11 @@ export class KubernetesContext {
     });
 
     if (inputArgs) {
-      args = inputArgs
-        .trimStart()
-        .split(" ")
-        ?.filter(item => {
-          return item.length;
-        })
-        ?.slice(2);
+      const args = [
+        inputArgs.match(validRegex["Auth Token"])![0]!.trim(), // add token
+        inputArgs.match(validRegex["Server URL"])![0]!.trim(), // add URL
+        inputArgs.match(/--insecure-skip-tls-verify/)?.[0] ?? "", // add skip flag if it exists
+      ];
 
       return args;
     } else {
