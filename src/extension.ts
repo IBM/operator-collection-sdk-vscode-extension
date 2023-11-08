@@ -245,18 +245,47 @@ function executeInlineReplaceWith(command: string) {
 function createFile(command: string): vscode.Disposable {
   return vscode.commands.registerCommand(command, async (filename: string, directory: string) => {
     let content: string = "";
+    let counterFile: string = "";
     const operatorConfigRX = /operator-config\.ya?ml$/;
     const galaxyRX = /galaxy\.ya?ml$/;
     const playbookRX = /\.ya?ml$/;
 
     if (operatorConfigRX.test(filename)) {
-      //TODO: get values from counter file
+      let name = "AddNameHere";
+      let domain = "AddDomainHere";
+      let version = "AddVersionHere";
+      // check if galaxy file exists in this collection
+      const galaxyFile = workspace.getMatchingDecendants(directory, [/galaxy.ya?ml$/], false);
+      if (galaxyFile.length) {
+        // if a galaxy file exists populate the operator-config file with shared values
+        const sharedValues = workspace.getValuesFromYamlFile(galaxyFile[0], ["name", "namespace", "version"]);
+        name = sharedValues[0] ?? name;
+        domain = sharedValues[1] ?? domain;
+        version = sharedValues[2] ?? version;
+      } else {
+        // note that the complimentary file doesn't exist
+        counterFile = "galaxy.yml";
+      }
 
-      content = BoilerplateContent.operatorConfigBoilerplateContent;
+      content = BoilerplateContent.operatorConfigBoilerplateContent(name, domain, version);
     } else if (galaxyRX.test(filename)) {
-      //TODO: get values from counter file
+      let name = "AddNameHere";
+      let namespace = "AddDomainHere";
+      let version = "AddVersionHere";
+      // check if an operator-config file exists in this collection
+      const operatorConfigFile = workspace.getMatchingDecendants(directory, [/operator-config.ya?ml$/], false);
+      if (operatorConfigFile.length) {
+        // if a operator-config exists populate the galaxy file with shared values
+        const sharedValues = workspace.getValuesFromYamlFile(operatorConfigFile[0], ["name", "domain", "version"]);
+        name = sharedValues[0] ?? name;
+        namespace = sharedValues[1] ?? namespace;
+        version = sharedValues[2] ?? version;
+      } else {
+        // note that the complimentary file doesn't exist
+        counterFile = "operator-config.yml";
+      }
 
-      content = BoilerplateContent.galaxyBoilerplateContent;
+      content = BoilerplateContent.galaxyBoilerplateContent(name, namespace, version);
     } else if (playbookRX.test(filename)) {
       content = BoilerplateContent.playbookBoilerplateContent;
     } else {
@@ -282,7 +311,7 @@ function createFile(command: string): vscode.Disposable {
 
     // if the file exists, ask user for permision to overwrite
     if (fileExists) {
-      const canProceed = await vscode.window.showInformationMessage(`${filename.replace(playbookRX, "")} file already exists in the collection: "${path.basename(path.dirname(filePath))}". Do you want to overwrite it?`, { modal: true }, "Yes");
+      const canProceed = await vscode.window.showInformationMessage(`A(n) ${filename.replace(playbookRX, "")} file already exists in the collection: "${path.basename(path.dirname(filePath))}". Do you want to overwrite it?`, { modal: true }, "Yes");
 
       if (!canProceed || canProceed !== "Yes") {
         return;
@@ -296,7 +325,26 @@ function createFile(command: string): vscode.Disposable {
         fs.mkdirSync(path.join(directory, additionalDirectories), { recursive: true });
       }
       fs.writeFileSync(filePath, content, "utf-8");
-      vscode.window.showInformationMessage(`Successfully created file ${filename}`);
+      vscode.window.showInformationMessage(`Successfully created file ${filename}.`);
+
+      // if the counter file doesn't exist ask if they want it to be created
+      if (counterFile) {
+        const createCounterFile = await vscode.window.showInformationMessage(
+          `
+          We noticed the collection "${path.basename(path.dirname(filePath))}" does not contain a(n) ${counterFile}. 
+
+          Would you like to create one now? (This file is required for operator collections)
+          `,
+          { modal: true },
+          "Yes"
+        );
+
+        if (!createCounterFile || createCounterFile !== "Yes") {
+          return;
+        }
+
+        vscode.commands.executeCommand(VSCodeCommands.createFile, counterFile, directory);
+      }
     } catch (e) {
       if (e) {
         const msg = `Error attempting to create file ${filename}: ${e}`;
@@ -389,12 +437,36 @@ function createPlaybookBoilerplateFile(command: string): vscode.Disposable {
   });
 }
 
-function convertToAirgapCollection(command: string, outputChannel?: vscode.OutputChannel, logPath?: string) {
-  return vscode.commands.registerCommand(command, async uri => {
+function initCollectionAtFolder(command: string, outputChannel?: vscode.OutputChannel) {
+  return vscode.commands.registerCommand(command, async (uri, logPath?: string) => {
     const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
     const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
-    const directory = uri.fsPath;
     if (rootFolder) {
+      const directory = uri.fsPath;
+
+      // if any decendants of this directory is a collection that means this directory
+      // is an "operator collection workspace". However if any parents are collections
+      // the user is attempting to create a nested collection, which is not allowed
+      const fileExtensions = [".yaml", ".yml"];
+      const targets = [/galaxy.ya?ml$/, /operator-config.ya?ml$/];
+      const parentCollectionPath = workspace.searchParents(directory, rootFolder, targets, fileExtensions);
+      if (parentCollectionPath !== "") {
+        vscode.window.showWarningMessage(`You are attempting to create a nested collection at "${path.basename(directory)}", which is not allowed.`);
+        return;
+      }
+
+      // TODO: Merge Mariandrea's changes
+    }
+  });
+}
+
+function convertToAirgapCollection(command: string, outputChannel?: vscode.OutputChannel) {
+  return vscode.commands.registerCommand(command, async (uri, logPath?: string) => {
+    const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
+    const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
+    if (rootFolder) {
+      const directory = uri.fsPath;
+
       // determine which collection to convert based on the uri clicked
       const [nearestCollection, collectionPathIsAmbiguous] = workspace.findNearestCollectionRoot(directory);
       if (nearestCollection === "") {
@@ -412,7 +484,7 @@ function convertToAirgapCollection(command: string, outputChannel?: vscode.Outpu
       }
 
       // ensure the nearest collection path is an ancestor path or decendant path
-      if (!workspace.pathsIsAncestorOrDecendant(directory, nearestCollection)) {
+      if (!workspace.pathIsAncestorOrDecendant(directory, nearestCollection)) {
         vscode.window.showWarningMessage(`This folder doesn't contain any collections. Did you mean to convert "${path.basename(nearestCollection)}" instead?`);
         return;
       }
