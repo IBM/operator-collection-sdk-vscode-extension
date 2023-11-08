@@ -435,16 +435,17 @@ export async function generateProjectDropDown(nslist?: Array<string>): Promise<s
  * @returns - A Promise containing the list of parameters to pass to the command
  */
 export async function requestLogInInfo(): Promise<string[] | undefined> {
+  const validRegex: { [key: string]: RegExp } = {
+    "OC Command": /^(oc login)/,
+    "Auth Token": /([\s]+--token=sha256~[A-Za-z0-9-_]+)/,
+    "Server URL": /([\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/,
+  };
+
   const inputArgs = await vscode.window.showInputBox({
     prompt: `Enter your oc login command: oc login --token=AUTH_TOKEN --server=SERVER_URL`,
     ignoreFocusOut: true,
     validateInput: text => {
       const ocLoginArgs = text.trimStart();
-      const validRegex: { [key: string]: RegExp } = {
-        "OC Command": /^(oc login)/gm,
-        "Auth Token": /([\s]+--token=sha256~[A-Za-z0-9-_]+)/gm,
-        "Server URL": /([\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
-      };
 
       // validate arguments
       for (const rx in validRegex) {
@@ -459,12 +460,10 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
   });
 
   if (inputArgs) {
-    // there is an issue vscode when moving the "validRegex" object outside the
-    // scope of the "validateInput" function above so regex is duplicated here
     const args = [
-      inputArgs.match(/([\s]+--token=sha256~[A-Za-z0-9-_]+)/gm)![0]!.trim(), // add token
-      inputArgs.match(/([\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm)![0]!.trim(), // add URL
-      inputArgs.match(/--insecure-skip-tls-verify/gm)?.[0] ?? "", // add skip flag if it exists
+      inputArgs.match(validRegex["Auth Token"])![0]!.trim(), // add token
+      inputArgs.match(validRegex["Server URL"])![0]!.trim(), // add URL
+      inputArgs.match(/--insecure-skip-tls-verify/)?.[0] ?? "", // add skip flag if it exists
     ];
 
     return args;

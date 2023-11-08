@@ -101,9 +101,9 @@ export class KubernetesContext {
 
         // validate arguments
         const validRegex: { [key: string]: RegExp } = {
-          "OC Command": /^(oc login)/gm,
-          "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/gm,
-          "Server URL": /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
+          "OC Command": /^(oc login)/,
+          "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/,
+          "Server URL": /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/,
         };
 
         for (const rx in validRegex) {
