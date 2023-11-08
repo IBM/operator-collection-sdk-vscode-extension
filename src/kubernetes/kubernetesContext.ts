@@ -92,10 +92,13 @@ export class KubernetesContext {
    */
   private async requestLogInInfo(): Promise<string[] | undefined> {
     const validRegex: { [key: string]: RegExp } = {
-      "OC Command": /^(oc login)/,
-      "Auth Token": /([\s]+--token=sha256~[A-Za-z0-9-_]+)/,
-      "Server URL": /([\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/,
+      "OC Command": /^oc login/,
+      "Auth Token": /[\s]+--token=sha256~[A-Za-z0-9-_]+/,
+      "Server URL": /[\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+/,
+      "Skip Flag": /([\s]+--insecure-skip-tls-verify(=?[\S]+){0,1})/,
+      Certificate: /([\s]+--certificate-authority=?[\S]+)/,
     };
+    const optionalArguments = ["Skip Flag", "Certificate"];
 
     const inputArgs = await vscode.window.showInputBox({
       prompt: `Enter your oc login command: oc login --token=AUTH_TOKEN --server=SERVER_URL`,
@@ -105,9 +108,16 @@ export class KubernetesContext {
 
         // validate arguments
         for (const rx in validRegex) {
+          if (optionalArguments.includes(rx)) {
+            continue;
+          }
+
           const failedRegex = !validRegex[rx].test(ocLoginArgs);
           if (failedRegex) {
-            return "Format: oc login --token=AUTH_TOKEN --server=SERVER_URL (optionally --insecure-skip-tls-verify)";
+            return `
+              Format: oc login --token=AUTH_TOKEN --server=SERVER_URL
+              (optionally --certificate-authority=..., --insecure-skip-tls-verify=...)
+            `;
           }
         }
 
@@ -119,7 +129,8 @@ export class KubernetesContext {
       const args = [
         inputArgs.match(validRegex["Auth Token"])![0]!.trim(), // add token
         inputArgs.match(validRegex["Server URL"])![0]!.trim(), // add URL
-        inputArgs.match(/--insecure-skip-tls-verify/)?.[0] ?? "", // add skip flag if it exists
+        inputArgs.match(validRegex["Skip Flag"])?.[0]?.trim() ?? "", // add skip flag if it exists
+        inputArgs.match(validRegex["Certificate"])?.[0]?.trim() ?? "", // add certificate authority if it exists
       ];
 
       return args;
