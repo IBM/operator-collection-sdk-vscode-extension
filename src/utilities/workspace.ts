@@ -20,6 +20,30 @@ export function getCurrentWorkspaceRootFolder(): string | undefined {
 }
 
 /**
+ * Retrieves  All playbooks within the directory
+ * @param directory - A directory to derive playbooks from
+ * @returns — All playbooks within the directory
+ */
+export async function gatherDirectoryPlaybooks(directory: string): Promise<string[]> {
+  const [files, _] = getDirectoryContent(directory, true, [".yaml", ".yml"]);
+
+  const filteredFiles = [];
+  for (let i = 0; i < files.length; i++) {
+    try {
+      // If the file contains the key "hosts", it is a playbook
+      const doc = await vscode.workspace.openTextDocument(files[i]);
+      if (doc.getText().includes("hosts:")) {
+        filteredFiles.push(files[i]);
+      }
+    } catch (e) {
+      console.log(`Can't open file ${files[i]}: ${e}`);
+    }
+  }
+
+  return pruneDirectoryStem(directory, filteredFiles);
+}
+
+/**
  * Retrieves the values for keys specified in the given filepath
  * @param filePath - A String representing path the the YAML file.
  * @param keys - An array of Strings whose values are requested.

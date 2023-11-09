@@ -15,12 +15,12 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
   public async provideCodeActions(document: vscode.TextDocument, range: vscode.Range, context: vscode.CodeActionContext): Promise<vscode.CodeAction[] | undefined> {
     const actions: vscode.CodeAction[] = [];
 
-    // provide file scaffold options for operator-config.yaml/yml only
+    // provide codeActions for operator-config.yaml/yml files only
     if (document && /^operator-config.ya?ml$/.test(path.basename(document.uri.fsPath))) {
       for (const diagnostic of context.diagnostics) {
         // if the error is ~"playbook/finalizer is invalid" error, create codeAction
         if (diagnostic.severity === vscode.DiagnosticSeverity.Error && (diagnostic.message.includes(VSCodeDiagnosticMessages.invalidPlaybookError) || diagnostic.message.includes(VSCodeDiagnosticMessages.invalidFinalizerError))) {
-          // split on "-" to remove the diagnostic message, rejoin on "-" if the file name had "-"
+          // split on "-" to remove the diagnostic message, rejoin on "-" incase the file name had "-"
           const filename = diagnostic.message.split("-").slice(1).join("-").trim();
           const directory = path.dirname(document.uri.fsPath);
 
@@ -29,8 +29,8 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
             continue;
           }
 
-          // get candidates, rank, and order based on the similarity of strings
-          const playbooks = await this.gatherDirectoryPlaybooks(directory);
+          // get playbook candidates, rank, and order based on the similarity of strings
+          const playbooks = await workspace.gatherDirectoryPlaybooks(directory);
           const similarPlaybooks = playbooks
             .map((playbook, index) => {
               return {
@@ -40,7 +40,7 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
               };
             })
             .sort((a, b) => b.score - a.score) // sort candidates based on score decending
-            .filter(item => item.score >= 0.5); // discard candidates with poor rankings
+            .filter(item => item.score >= 0.5); // discard candidates with < 50% match
 
           if (similarPlaybooks.length) {
             let yamlKey: string = "";
@@ -66,25 +66,9 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
     return actions;
   }
 
-  private async gatherDirectoryPlaybooks(directory: string): Promise<string[]> {
-    const [files, _] = workspace.getDirectoryContent(directory, true, [".yaml", ".yml"]);
-
-    const filteredFiles = [];
-    for (let i = 0; i < files.length; i++) {
-      try {
-        // If the file contains the key "hosts", it is a playbook
-        const doc = await vscode.workspace.openTextDocument(files[i]);
-        if (doc.getText().includes("hosts:")) {
-          filteredFiles.push(files[i]);
-        }
-      } catch (e) {
-        console.log(`Can't open file ${files[i]}: ${e}`);
-      }
-    }
-
-    return workspace.pruneDirectoryStem(directory, filteredFiles);
-  }
-
+  /**
+   * Returns a vscode.CodeAction
+   */
   private createBoilerplateFileAction(filename: string, directory: string, isPreferred: boolean = false): vscode.CodeAction {
     const actionTitle = `Create boilerplate file for "${filename}"?`;
     const action = new vscode.CodeAction(actionTitle, vscode.CodeActionKind.QuickFix);
@@ -99,9 +83,6 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
 
   /**
    * Returns a vscode.CodeAction
-   * @param stem - A String.
-   * @param paths - A String Array containing pathways.
-   * @returns A String Array containing pruned pathways.
    */
   private inlineReplaceWithAction(yamlKey: string, suggestion: string, document: vscode.TextDocument, range: vscode.Range, isPreferred: boolean = false): vscode.CodeAction {
     const actionTitle = `Did you mean "${suggestion}" instead?`;
