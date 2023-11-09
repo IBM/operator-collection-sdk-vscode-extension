@@ -577,8 +577,8 @@ export class KubernetesObj extends KubernetesContext {
         }
       })
       .catch(e => {
-        // Bypass 403 error messages since these will always occur when the user is logged out
-        if (e.statusCode !== 403) {
+        // Bypass 403 and 401 error messages since these will always occur when the user is logged out
+        if (e.statusCode !== 403 && e.statusCode !== 401) {
           const msg = `Failure retrieving Namespace list: ${JSON.stringify(e)}`;
           console.error(msg);
           vscode.window.showErrorMessage(msg);
