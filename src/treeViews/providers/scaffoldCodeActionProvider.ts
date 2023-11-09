@@ -3,12 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { VSCodeCommands, VSCodeDiagnosticMessages } from "../../utilities/commandConstants";
 import * as util from "../../utilities/util";
 import * as workspace from "../../utilities/workspace";
+import { VSCodeCommands, VSCodeDiagnosticMessages } from "../../utilities/commandConstants";
 
 export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
   public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix];
