@@ -289,7 +289,7 @@ function createFile(command: string): vscode.Disposable {
     } else if (playbookRX.test(filename)) {
       content = BoilerplateContent.playbookBoilerplateContent;
     } else {
-      vscode.window.showErrorMessage(`Cannot create scaffold for file ${filename}. Supported file types are: (.yaml/.yml)`);
+      vscode.window.showErrorMessage(`Cannot create scaffold for file ${filename}. Supported file types are: .yaml/.yml`);
       return;
     }
 
@@ -438,7 +438,7 @@ function createPlaybookBoilerplateFile(command: string): vscode.Disposable {
 }
 
 function initCollectionAtFolder(command: string, outputChannel?: vscode.OutputChannel) {
-  return vscode.commands.registerCommand(command, async (uri, logPath?: string) => {
+  return vscode.commands.registerCommand(command, async uri => {
     const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
     const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
     if (rootFolder) {
@@ -461,7 +461,7 @@ function initCollectionAtFolder(command: string, outputChannel?: vscode.OutputCh
 }
 
 function convertToAirgapCollection(command: string, outputChannel?: vscode.OutputChannel) {
-  return vscode.commands.registerCommand(command, async (uri, logPath?: string) => {
+  return vscode.commands.registerCommand(command, async uri => {
     const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
     const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
     if (rootFolder) {
@@ -505,7 +505,7 @@ function convertToAirgapCollection(command: string, outputChannel?: vscode.Outpu
       try {
         let ocSdkCommand = new OcSdkCommand(nearestCollection);
         outputChannel?.show();
-        await ocSdkCommand.runCreateOfflineRequirements(outputChannel, logPath).then(() => {
+        await ocSdkCommand.runCreateOfflineRequirements(outputChannel).then(() => {
           vscode.window.showInformationMessage(`Successfully converted \"${path.basename(nearestCollection)}\" to an airgap collection`);
         });
       } catch (e) {
