@@ -436,11 +436,11 @@ export async function generateProjectDropDown(nslist?: Array<string>): Promise<s
  */
 export async function requestLogInInfo(): Promise<string[] | undefined> {
   const validRegex: { [key: string]: RegExp } = {
-    "OC Command": /^oc login/,
-    "Auth Token": /[\s]+--token=sha256~[A-Za-z0-9-_]+/,
-    "Server URL": /[\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+/,
-    "Skip Flag": /([\s]+--insecure-skip-tls-verify(=?[\S]+){0,1})/,
-    Certificate: /([\s]+--certificate-authority=?[\S]+)/,
+    ocCommand: /^oc login/,
+    authToken: /[\s]+--token=sha256~[A-Za-z0-9-_]+/,
+    serverURL: /[\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+/,
+    skipFlag: /([\s]+--insecure-skip-tls-verify(=?[\S]+){0,1})/,
+    certAuth: /([\s]+--certificate-authority=?[\S]+)/,
   };
   const optionalArguments = ["Skip Flag", "Certificate"];
 
@@ -471,10 +471,10 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
 
   if (inputArgs) {
     const args = [
-      inputArgs.match(validRegex["Auth Token"])![0]!.trim(), // add token
-      inputArgs.match(validRegex["Server URL"])![0]!.trim(), // add URL
-      inputArgs.match(validRegex["Skip Flag"])?.[0]?.trim() ?? "", // add skip flag if it exists
-      inputArgs.match(validRegex["Certificate"])?.[0]?.trim() ?? "", // add certificate authority if it exists
+      inputArgs.match(validRegex["authToken"])![0]!.trim(), // add token
+      inputArgs.match(validRegex["serverURL"])![0]!.trim(), // add URL
+      inputArgs.match(validRegex["skipFlag"])?.[0]?.trim() ?? "", // add skip flag if it exists
+      inputArgs.match(validRegex["certAuth"])?.[0]?.trim() ?? "", // add certificate authority if it exists
     ];
 
     return args;
