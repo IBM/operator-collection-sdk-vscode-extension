@@ -116,9 +116,10 @@ export function getPendingIcons(): ThemeIcons {
 }
 
 export function getOperatorCollectionSdkIcons(): ThemeIcons {
+  const path = require("path");
   let icons: Icons = {
-    dark: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "dark", "operator-collection-sdk.svg"),
-    light: vscode.Uri.joinPath(_context.extensionUri, "resources", "icons", "light", "operator-collection-sdk.svg"),
+    dark: path.join(__filename, "..", "..", "resources", "icons", "dark", "operator-collection-sdk.svg"),
+    light: path.join(__filename, "..", "..", "resources", "icons", "light", "operator-collection-sdk.svg"),
   };
   return icons;
 }
