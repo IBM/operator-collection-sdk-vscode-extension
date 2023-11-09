@@ -442,7 +442,7 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
     skipFlag: /([\s]+--insecure-skip-tls-verify(=?[\S]+){0,1})/,
     certAuth: /([\s]+--certificate-authority=?[\S]+)/,
   };
-  const optionalArguments = ["Skip Flag", "Certificate"];
+  const optionalArguments = ["skipFlag", "certAuth"];
 
   const inputArgs = await vscode.window.showInputBox({
     prompt: `Enter your oc login command: oc login --token=AUTH_TOKEN --server=SERVER_URL`,
