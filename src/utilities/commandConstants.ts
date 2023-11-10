@@ -43,6 +43,7 @@ export enum VSCodeCommands {
 export enum VSCodeDiagnosticMessages {
   invalidPlaybookError = "Invalid Playbook for Kind",
   invalidFinalizerError = "Invalid Finalizer for Kind",
+  missingGalaxyFile = "Missing galaxy.yaml file.",
 }
 
 export enum VSCodeViewIds {
