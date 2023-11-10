@@ -297,8 +297,8 @@ function createFile(command: string): vscode.Disposable {
     const extension = filename.match(playbookRX)?.[0];
     let filePath = path.join(directory, filename).replace(playbookRX, "");
 
-    // we need to check if either "*.yaml" or "*.yml" versions exist
-    // if it does, use the file extension they prefer
+    // we need to check if either "*.yaml" or "*.yml" versions exist,
+    // and use the existing extension
     let fileExists: boolean = false;
     if (fs.existsSync(filePath + ".yaml")) {
       fileExists = true;
@@ -353,10 +353,7 @@ function createFile(command: string): vscode.Disposable {
         vscode.commands.executeCommand(VSCodeCommands.createFile, counterFile, directory);
       }
     } catch (e) {
-      if (e) {
-        const msg = `Error attempting to create file ${filename}: ${e}`;
-        vscode.window.showErrorMessage(msg);
-      }
+      vscode.window.showErrorMessage(`Error while attempting to create file ${filename}: ${e}`);
     }
   });
 }
@@ -433,7 +430,7 @@ function initCollectionAtFolder(command: string, outputChannel?: vscode.OutputCh
   return vscode.commands.registerCommand(command, async uri => {
     const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
     const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
-    if (rootFolder) {
+    if (rootFolder && uri) {
       const directory = uri.fsPath;
 
       // if any decendants of this directory is a collection that means this directory
