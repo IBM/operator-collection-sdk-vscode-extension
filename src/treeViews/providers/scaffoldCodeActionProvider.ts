@@ -17,12 +17,16 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
 
     // provide codeActions for operator-config.yaml/yml files only
     if (document && /^operator-config.ya?ml$/.test(path.basename(document.uri.fsPath))) {
+      const directory = path.dirname(document.uri.fsPath);
       for (const diagnostic of context.diagnostics) {
-        // if the error is ~"playbook/finalizer is invalid" error, create codeAction
-        if (diagnostic.severity === vscode.DiagnosticSeverity.Error && (diagnostic.message.includes(VSCodeDiagnosticMessages.invalidPlaybookError) || diagnostic.message.includes(VSCodeDiagnosticMessages.invalidFinalizerError))) {
+        if (diagnostic.severity === vscode.DiagnosticSeverity.Error && diagnostic.message === VSCodeDiagnosticMessages.missingGalaxyFile) {
+          // if the error is "Missing galaxy file error"
+          actions.push(this.createGalaxyBoilerplateFile(directory));
+        } else if (diagnostic.severity === vscode.DiagnosticSeverity.Error && (diagnostic.message.includes(VSCodeDiagnosticMessages.invalidPlaybookError) || diagnostic.message.includes(VSCodeDiagnosticMessages.invalidFinalizerError))) {
+          // if the error is ~"playbook/finalizer is invalid" error, create codeAction
+
           // split on "-" to remove the diagnostic message, rejoin on "-" incase the file name had "-"
           const filename = diagnostic.message.split("-").slice(1).join("-").trim();
-          const directory = path.dirname(document.uri.fsPath);
 
           // don't provide code actions to create galaxy or operator-config files here
           if (/operator-config.ya?ml$/.test(filename) || /galaxy.ya?ml$/.test(filename)) {
@@ -64,6 +68,21 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
     }
 
     return actions;
+  }
+
+  /**
+   * Returns a vscode.CodeAction
+   */
+  private createGalaxyBoilerplateFile(directory: string, isPreferred: boolean = true): vscode.CodeAction {
+    const actionTitle = `Create a galaxy file for ${path.basename(directory)}?`;
+    const action = new vscode.CodeAction(actionTitle, vscode.CodeActionKind.QuickFix);
+    action.command = {
+      command: VSCodeCommands.createGalaxyBoilerplateFile,
+      title: actionTitle,
+      arguments: [vscode.Uri.file(directory)],
+    };
+    action.isPreferred = isPreferred;
+    return action;
   }
 
   /**

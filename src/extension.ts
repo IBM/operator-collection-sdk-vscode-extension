@@ -314,9 +314,10 @@ function createFile(command: string): vscode.Disposable {
     if (fileExists) {
       const canProceed = await vscode.window.showInformationMessage(
         `
-        A(n) ${filename} file already exists in this location: "${path.basename(path.dirname(filePath))}". 
+        A(n) ${filename} file already exists in this location: "${path.basename(path.dirname(filePath))}"
+
         Do you want to overwrite it?
-        `,
+        `, // preserve whitespace
         { modal: true },
         "Yes"
       );
@@ -496,7 +497,7 @@ function convertToAirgapCollection(command: string, outputChannel?: vscode.Outpu
           vscode.window.showInformationMessage(`Successfully converted \"${path.basename(nearestCollection)}\" to an airgap collection`);
         });
       } catch (e) {
-        vscode.window.showErrorMessage(`Failed to convert collection: ${e}`);
+        vscode.window.showErrorMessage('The Operator Collection SDK command "create_offline_requirements" failed convert collection. Please see output for more details.');
       }
     }
   });
@@ -1011,7 +1012,9 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
       } catch (err) {
         diagnostics.push({
           range: new vscode.Range(document.positionAt(0), document.positionAt(0)),
-          message: "Missing galaxy.yaml file.",
+
+          // provideCodeActions in scaffoldCodeActionProvider.ts relies on this error string, change with CAUTION
+          message: VSCodeDiagnosticMessages.missingGalaxyFile,
           severity: vscode.DiagnosticSeverity.Error,
         });
       }
@@ -1137,7 +1140,6 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 
                   // provideCodeActions in scaffoldCodeActionProvider.ts relies on this error string, change with CAUTION
                   message: `${VSCodeDiagnosticMessages.invalidPlaybookError} ${resource.kind} - ${resource.playbook}`,
-
                   severity: vscode.DiagnosticSeverity.Error,
                 });
               }
@@ -1167,7 +1169,6 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
 
                   // provideCodeActions in scaffoldCodeActionProvider.ts relies on this error string, change with CAUTION
                   message: `${VSCodeDiagnosticMessages.invalidFinalizerError} ${resource.kind} - ${resource.finalizer}`,
-
                   severity: vscode.DiagnosticSeverity.Error,
                 });
               }
