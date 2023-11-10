@@ -273,7 +273,7 @@ export function findNearestCollectionRoot(directory: string): [string, boolean] 
 export function searchParents(directory: string, workspaceRootFolderName: string, targets: RegExp[], fileExtensions: string[] = []): string {
   const parentDirectory = directory.substring(0, directory.lastIndexOf("/"));
   if (!parentDirectory.includes(workspaceRootFolderName)) {
-    return ""; // path not found
+    return ""; // targets not found
   }
 
   // check decendants of parent directory for targets (non-recursively)
