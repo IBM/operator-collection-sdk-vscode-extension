@@ -235,7 +235,16 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     const operatorConfigData = fs.readFileSync(extraVarsFilePath);
     const operatorVars = yaml.load(operatorConfigData.toString()) as OperatorVariables;
 
-    if (operatorVars.passphrase === undefined) {
+    if (operatorVars.zosendpoint_type === "local"){
+      args.push(`-e "zosendpoint_host="`);
+      args.push(`-e "zosendpoint_port="`);
+      args.push(`-e "ssh_key="`);
+      args.push(`-e "username="`);
+      args.push(`-e "passphrase="`);
+      return args;
+    }
+
+    if (operatorVars.passphrase === undefined && operatorVars.zosendpoint_type === "remote") {
       const passphrase = await promptForPassphrase();
 
       if (passphrase) {
@@ -266,6 +275,16 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     vscode.window.showErrorMessage("Multiple ocsdk-extra-vars files in Operator Collection not allowed");
     return undefined;
   }
+
+  let operatorVariables: OperatorVariables = {
+    zosendpoint_type: "",
+    zosendpoint_name: "",
+    zosendpoint_host: "",
+    zosendpoint_port: "",
+    username: "",
+    passphrase: "",
+    ssh_key: "",
+  };
 
   const options: Array<string> = ["remote", "local"];
 
@@ -298,71 +317,90 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
 
   args.push(`-e "zosendpoint_name=${zosEndpointName}"`);
 
-  const zosEndpointHost = await vscode.window.showInputBox({
-    prompt: "Enter your ZosEndpoint host",
-    ignoreFocusOut: true,
-  });
+  // Skip endpoint fields if it's a local endpoint
+  if (zosEndpointType === "remote"){
+    const zosEndpointHost = await vscode.window.showInputBox({
+      prompt: "Enter your ZosEndpoint host",
+      ignoreFocusOut: true,
+    });
+    if (zosEndpointHost === undefined) {
+      return undefined;
+    } else if (zosEndpointHost === "") {
+      vscode.window.showErrorMessage("ZosEndpoint host is required");
+      return undefined;
+    }
+    args.push(`-e "zosendpoint_host=${zosEndpointHost}"`);
 
-  if (zosEndpointHost === undefined) {
-    return undefined;
-  } else if (zosEndpointHost === "") {
-    vscode.window.showErrorMessage("ZosEndpoint host is required");
-    return undefined;
-  }
+    const zosEndpointPort = await vscode.window.showInputBox({
+      prompt: "Enter your ZosEndpoint port",
+      value: "22",
+      ignoreFocusOut: true,
+    });
 
-  args.push(`-e "zosendpoint_host=${zosEndpointHost}"`);
+    if (zosEndpointPort === undefined) {
+      return undefined;
+    } else if (zosEndpointPort === "") {
+      vscode.window.showErrorMessage("ZosEndpoint port is required");
+      return undefined;
+    }
+    args.push(`-e "zosendpoint_port=${zosEndpointPort}"`);
 
-  const zosEndpointPort = await vscode.window.showInputBox({
-    prompt: "Enter your ZosEndpoint port",
-    value: "22",
-    ignoreFocusOut: true,
-  });
+    const zosEndpointUsername = await vscode.window.showInputBox({
+      prompt: "Enter you SSH Username for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
+      ignoreFocusOut: true,
+    });
+  
+    if (zosEndpointUsername === undefined) {
+      return undefined;
+    } else if (zosEndpointUsername === "") {
+      
+    } else {
+      args.push(`-e "username=${zosEndpointUsername}"`);
+    }
 
-  if (zosEndpointPort === undefined) {
-    return undefined;
-  } else if (zosEndpointPort === "") {
-    vscode.window.showErrorMessage("ZosEndpoint port is required");
-    return undefined;
-  }
+    const zosEndpointSSHKey = await vscode.window.showInputBox({
+      prompt: "Enter the path to your private SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
+      value: "~/.ssh/id_ed25519",
+      ignoreFocusOut: true,
+    });
+  
+    if (zosEndpointSSHKey === undefined) {
+      return undefined;
+    } else if (zosEndpointSSHKey === "") {
+      args.push(`-e "ssh_key="`);
+    } else {
+      args.push(`-e "ssh_key=${zosEndpointSSHKey}"`);
+    }
+  
+    const zosEndpointPassphrase = await promptForPassphrase();
+  
+    if (zosEndpointPassphrase === undefined) {
+      return undefined;
+    } else if (zosEndpointPassphrase === "") {
+      args.push(`-e "passphrase="`);
+    } else {
+      args.push(`-e "passphrase=${zosEndpointPassphrase}"`);
+    }
 
-  args.push(`-e "zosendpoint_port=${zosEndpointPort}"`);
+    operatorVariables.zosendpoint_type = zosEndpointType;
+    operatorVariables.zosendpoint_name = zosEndpointName
+    operatorVariables.zosendpoint_host = zosEndpointHost;
+    operatorVariables.zosendpoint_port = zosEndpointPort;
+    operatorVariables.username = zosEndpointUsername;
+    operatorVariables.passphrase = zosEndpointPassphrase;
+    operatorVariables.ssh_key = zosEndpointSSHKey;
 
-  const zosEndpointUsername = await vscode.window.showInputBox({
-    prompt: "Enter you SSH Username for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
-    ignoreFocusOut: true,
-  });
+  } else if (zosEndpointType === "local"){
 
-  if (zosEndpointUsername === undefined) {
-    return undefined;
-  } else if (zosEndpointUsername === "") {
-    args.push(`-e "username="`);
-  } else {
-    args.push(`-e "username=${zosEndpointUsername}"`);
-  }
+    operatorVariables.zosendpoint_type = zosEndpointType;
+    operatorVariables.zosendpoint_name = zosEndpointName
 
-  const zosEndpointSSHKey = await vscode.window.showInputBox({
-    prompt: "Enter the path to your private SSH Key for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
-    value: "~/.ssh/id_ed25519",
-    ignoreFocusOut: true,
-  });
-
-  if (zosEndpointSSHKey === undefined) {
-    return undefined;
-  } else if (zosEndpointSSHKey === "") {
+    args.push(`-e "zosendpoint_host="`);
+    args.push(`-e "zosendpoint_port="`);
     args.push(`-e "ssh_key="`);
-  } else {
-    args.push(`-e "ssh_key=${zosEndpointSSHKey}"`);
-  }
-
-  const zosEndpointPassphrase = await promptForPassphrase();
-
-  if (zosEndpointPassphrase === undefined) {
-    return undefined;
-  } else if (zosEndpointPassphrase === "") {
+    args.push(`-e "username="`);
     args.push(`-e "passphrase="`);
-  } else {
-    args.push(`-e "passphrase=${zosEndpointPassphrase}"`);
-  }
+  } 
 
   const saveToFile = await vscode.window.showQuickPick(yesNoOptions, {
     canPickMany: false,
@@ -374,21 +412,8 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
   if (saveToFile === undefined) {
     return undefined;
   }
-
-  let operatorVariables: OperatorVariables = {
-    zosendpoint_type: zosEndpointType,
-    zosendpoint_name: zosEndpointName,
-    zosendpoint_host: zosEndpointHost,
-    zosendpoint_port: zosEndpointPort,
-    username: zosEndpointUsername,
-    ssh_key: zosEndpointSSHKey,
-  };
   if (saveToFile.toLowerCase() === "yes") {
     extraVarsFilePath = path.join(workspacePath, "ocsdk-extra-vars.yml");
-    if (zosEndpointPassphrase === "") {
-      // only store passphrase variable if it's empty
-      operatorVariables.passphrase = "";
-    }
 
     const stringData = JSON.stringify(operatorVariables, null, 2);
     const varsYaml = yaml.dump(JSON.parse(stringData));
@@ -398,6 +423,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
       console.error("Failure storing variables to file");
     }
   }
+
   return args;
 }
 
