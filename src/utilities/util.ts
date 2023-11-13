@@ -377,7 +377,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     if (zosEndpointPassphrase === undefined) {
       return undefined;
     } else if (zosEndpointPassphrase === "") {
-      
+      args.push(`-e "passphrase="`);
     } else {
       args.push(`-e "passphrase=${zosEndpointPassphrase}"`);
     }
