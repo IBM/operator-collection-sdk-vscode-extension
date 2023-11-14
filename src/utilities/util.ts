@@ -246,7 +246,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     const operatorConfigData = fs.readFileSync(extraVarsFilePath);
     const operatorVars = yaml.load(operatorConfigData.toString()) as OperatorVariables;
 
-    if (operatorVars.zosendpoint_type === "local"){
+    if (operatorVars.zosendpoint_type === "local") {
       args.push(`-e "zosendpoint_host="`);
       args.push(`-e "zosendpoint_port="`);
       args.push(`-e "ssh_key="`);
@@ -329,7 +329,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
   args.push(`-e "zosendpoint_name=${zosEndpointName}"`);
 
   // Skip endpoint fields if it's a local endpoint
-  if (zosEndpointType === "remote"){
+  if (zosEndpointType === "remote") {
     const zosEndpointHost = await vscode.window.showInputBox({
       prompt: "Enter your ZosEndpoint host",
       ignoreFocusOut: true,
@@ -360,11 +360,10 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
       prompt: "Enter you SSH Username for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
       ignoreFocusOut: true,
     });
-  
+
     if (zosEndpointUsername === undefined) {
       return undefined;
     } else if (zosEndpointUsername === "") {
-      
     } else {
       args.push(`-e "username=${zosEndpointUsername}"`);
     }
@@ -374,7 +373,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
       value: "~/.ssh/id_ed25519",
       ignoreFocusOut: true,
     });
-  
+
     if (zosEndpointSSHKey === undefined) {
       return undefined;
     } else if (zosEndpointSSHKey === "") {
@@ -382,9 +381,9 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     } else {
       args.push(`-e "ssh_key=${zosEndpointSSHKey}"`);
     }
-  
+
     const zosEndpointPassphrase = await promptForPassphrase();
-  
+
     if (zosEndpointPassphrase === undefined) {
       return undefined;
     } else if (zosEndpointPassphrase === "") {
@@ -394,24 +393,22 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     }
 
     operatorVariables.zosendpoint_type = zosEndpointType;
-    operatorVariables.zosendpoint_name = zosEndpointName
+    operatorVariables.zosendpoint_name = zosEndpointName;
     operatorVariables.zosendpoint_host = zosEndpointHost;
     operatorVariables.zosendpoint_port = zosEndpointPort;
     operatorVariables.username = zosEndpointUsername;
     operatorVariables.passphrase = zosEndpointPassphrase;
     operatorVariables.ssh_key = zosEndpointSSHKey;
-
-  } else if (zosEndpointType === "local"){
-
+  } else if (zosEndpointType === "local") {
     operatorVariables.zosendpoint_type = zosEndpointType;
-    operatorVariables.zosendpoint_name = zosEndpointName
+    operatorVariables.zosendpoint_name = zosEndpointName;
 
     args.push(`-e "zosendpoint_host="`);
     args.push(`-e "zosendpoint_port="`);
     args.push(`-e "ssh_key="`);
     args.push(`-e "username="`);
     args.push(`-e "passphrase="`);
-  } 
+  }
 
   const saveToFile = await vscode.window.showQuickPick(yesNoOptions, {
     canPickMany: false,
@@ -529,16 +526,46 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
   const yesNoOptions: Array<string> = ["Yes", "No"];
   const offlineInstallTitle = "Will this collection be executed in an offline environment [y/n]?";
 
-  const ansibleGalaxyNamespace = await vscode.window.showInputBox({
-    prompt: `Enter your Ansible Galaxy namespace`,
+  const validateStringLettersAndNumberOnly = (text: string): boolean => {
+    const ocLoginArgs = text.trimStart();
+    const validValuesRegex = /^[a-zA-Z0-9]+$/;
+    const isvalid = !validValuesRegex.test(text?.trimStart());
+    return isvalid;
+  };
+
+  const collectionName = await vscode.window.showInputBox({
+    prompt: `Enter collection name.`,
     ignoreFocusOut: true,
     validateInput: text => {
-      const ocLoginArgs = text.trimStart();
-      const validValuesRegex = /^[a-zA-Z0-9]+$/;
-      const isvalid = !validValuesRegex.test(text?.trimStart());
-      return isvalid ? text : null;
+      return validateStringLettersAndNumberOnly(text) ? text : null;
     },
   });
+
+  if (collectionName === undefined) {
+    return undefined;
+  } else {
+    if (collectionName === "") {
+      vscode.window.showErrorMessage("Collection name is required");
+      return undefined;
+    }
+  }
+
+  const ansibleGalaxyNamespace = await vscode.window.showInputBox({
+    prompt: `Enter your Ansible Galaxy namespace.`,
+    ignoreFocusOut: true,
+    validateInput: text => {
+      return validateStringLettersAndNumberOnly(text) ? text : null;
+    },
+  });
+
+  if (ansibleGalaxyNamespace === undefined) {
+    return undefined;
+  } else {
+    if (ansibleGalaxyNamespace === "") {
+      vscode.window.showErrorMessage("Galaxy namespace is required");
+      return undefined;
+    }
+  }
 
   const offlineInstall = await vscode.window.showQuickPick(yesNoOptions, {
     canPickMany: false,
@@ -547,11 +574,15 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
     title: offlineInstallTitle,
   });
 
-  if (ansibleGalaxyNamespace === undefined || ansibleGalaxyNamespace === "" || offlineInstall === undefined || offlineInstall === "") {
+  if (offlineInstall === undefined) {
     return undefined;
+  } else {
+    if (offlineInstall === "") {
+      vscode.window.showErrorMessage("Couldn't determinate if the collection will be executed in an offline environment");
+      return undefined;
+    }
   }
-
-  args.push(`-e "collection_name=racf_operator"`);
+  args.push(`-e "collection_name=${collectionName}"`);
   args.push(`-e "collection_namespace=${ansibleGalaxyNamespace}"`);
   args.push(`-e "offline_install=${offlineInstall}"`);
   return args;
