@@ -278,7 +278,7 @@ function initOperatorCollection(command: string, session: Session, outputChannel
       vscode.window.showWarningMessage("Another Operation is processing");
     } else {
       const args = await util.requestInitOperatorCollectionInfo();
-      if (args && args.length > 1) {
+      if (args) {
         outputChannel?.show();
         session.operationPending = true;
         let pwd = util.getCurrentWorkspaceRootFolder();
@@ -289,8 +289,6 @@ function initOperatorCollection(command: string, session: Session, outputChannel
           vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
           vscode.commands.executeCommand(VSCodeCommands.refresh);
         });
-      } else {
-        vscode.window.showWarningMessage("Could not Initialize Operator Collection");
       }
     }
   });
