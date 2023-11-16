@@ -158,17 +158,17 @@
       },
       {
         "command": "operator-collection-sdk.createGalaxyBoilerplateFile",
-        "title": "New galaxy.yml file...",
+        "title": "New galaxy file...",
         "category": "OC-SDK"
       },
       {
         "command": "operator-collection-sdk.createOperatorConfigBoilerplateFile",
-        "title": "New operator-config.yml file...",
+        "title": "New operator-config file...",
         "category": "OC-SDK"
       },
       {
         "command": "operator-collection-sdk.createPlaybookBoilerplateFile",
-        "title": "New playbook.yml file...",
+        "title": "New playbook file...",
         "category": "OC-SDK"
       },
       {
