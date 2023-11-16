@@ -363,7 +363,7 @@ function createGalaxyBoilerplateFile(command: string): vscode.Disposable {
     const filename = "galaxy.yml";
     if (uri) {
       const candidateDirectory = uri.fsPath;
-      const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionRoot(candidateDirectory);
+      const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionInBloodline(candidateDirectory);
       if (collectionPathIsAmbiguous) {
         vscode.window.showWarningMessage(`
           The folder "${path.basename(candidateDirectory)}" contains multiple collections. 
@@ -391,7 +391,7 @@ function createOperatorConfigBoilerplateFile(command: string): vscode.Disposable
     const filename = "operator-config.yml";
     if (uri) {
       const candidateDirectory = uri.fsPath;
-      const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionRoot(candidateDirectory);
+      const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionInBloodline(candidateDirectory);
       if (collectionPathIsAmbiguous) {
         vscode.window.showWarningMessage(`
           The folder "${path.basename(candidateDirectory)}" contains multiple collections. 
@@ -457,7 +457,7 @@ function convertToAirgapCollection(command: string, outputChannel?: vscode.Outpu
       const directory = uri.fsPath;
 
       // determine which collection to convert based on the uri clicked
-      const [nearestCollection, collectionPathIsAmbiguous] = workspace.findNearestCollectionRoot(directory);
+      const [nearestCollection, collectionPathIsAmbiguous] = workspace.findNearestCollectionInBloodline(directory);
       if (nearestCollection === "") {
         if (collectionPathIsAmbiguous) {
           vscode.window.showWarningMessage(`

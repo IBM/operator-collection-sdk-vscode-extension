@@ -195,41 +195,41 @@ export function pathIsAncestorOrDecendant(primary: string, candidate: string) {
 }
 
 /**
- * Evaluates whether the directory path passed is a valid directory for a collection and returns it,
- * the nearest collection path, or an empty string.
+ * Returns a valid collection path of the collection nearest to the supplied directory and a boolean specifying
+ * whether that path is considered valid. A path in the "lineage" means its path is an ancestor or decendant of
+ * the supplied directory. If the path is not valid the String is empty.
  * @param directory - A candidate directory to evaluate.
- * @returns A String path to the nearest collection within the path's ancestors or decendants or empty String
- * if it could not be determined.
- * @returns A Boolean, ambiguous, specifying that the nearest collection could not be determined if true.
+ * @returns A String path to the nearest collection within the path's lineage or an empty String if it could not
+ * be determined.
+ * @returns A Boolean specifying that the nearest collection could not be determined if true.
  */
-export function findNearestCollectionRoot(directory: string): [string, boolean] {
+export function findNearestCollectionInLineage(directory: string): [string, boolean] {
   const workspaceFolder = getCurrentWorkspaceRootFolder();
   const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
 
-  let collectionPathIsAmbiguous = false;
   let collectionPath = "";
-  const fileRX = {
-    // Regex makes it simpler to check for .yaml vs .yml files
-    operatorConfigRX: /operator-config.ya?ml$/,
-    galaxyRX: /galaxy.ya?ml$/,
-  };
+  let collectionPathIsAmbiguous = false;
+
+  // Regex makes it simpler to check for .yaml vs .yml files
+  const operatorConfigRX = /operator-config.ya?ml$/;
+  const galaxyRX = /galaxy.ya?ml$/;
 
   // check if there are any operator-config/galaxy files in this directory or any of
   // its subdirectories, if there are, the collectionDirectory location is ambiguous
-  const collectionFiles = getMatchingDecendants(directory, [fileRX.operatorConfigRX, fileRX.galaxyRX], true, [".yaml", ".yml"]);
-  const operatorConfigFiles = collectionFiles.filter(file => fileRX.operatorConfigRX.test(file));
-  const galaxyFiles = collectionFiles.filter(file => fileRX.galaxyRX.test(file));
+  const collectionFiles = getMatchingDecendants(directory, [operatorConfigRX, galaxyRX], true, [".yaml", ".yml"]);
+  const operatorConfigFiles = collectionFiles.filter(file => operatorConfigRX.test(file));
+  const galaxyFiles = collectionFiles.filter(file => galaxyRX.test(file));
 
   if (operatorConfigFiles.length > 1 || galaxyFiles.length > 1) {
     collectionPathIsAmbiguous = true;
     return ["", collectionPathIsAmbiguous];
   } else if (galaxyFiles.length === 1) {
-    // if there exists a galaxy file that is a decendant of the current
+    // if there exists a galaxy file in a folder that is a decendant of the
     // selected directory, then the new file should go in that collection
     collectionPath = path.dirname(galaxyFiles[0]);
   } else {
     if (rootFolder) {
-      const nearestGalaxyFile = findNearestFolderOrFile([directory], rootFolder, fileRX.galaxyRX);
+      const nearestGalaxyFile = findNearestFolderOrFile([directory], rootFolder, galaxyRX);
 
       // if there is a galaxy file nearby and its path is an ancector of
       // the current selected directory, then the the new file should go in that collection
@@ -242,12 +242,12 @@ export function findNearestCollectionRoot(directory: string): [string, boolean] 
 
   if (collectionPath === "") {
     if (operatorConfigFiles.length === 1) {
-      // if there is a operator-config file that is a decendant of the current
-      // selected directory, then the new file should go there instead
+      // if there is a operator-config file in a folder that is a decendant
+      // of the selected directory, then the new file should go there instead
       collectionPath = path.dirname(operatorConfigFiles[0]);
     } else {
       if (rootFolder) {
-        const nearestOperatorConfigFile = findNearestFolderOrFile([directory], rootFolder, fileRX.operatorConfigRX);
+        const nearestOperatorConfigFile = findNearestFolderOrFile([directory], rootFolder, operatorConfigRX);
 
         // if there is a operator-config file nearby and its path is an ancector of
         // the current selected directory, then the new file should go in that collection
