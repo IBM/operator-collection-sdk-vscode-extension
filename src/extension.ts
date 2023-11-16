@@ -363,7 +363,7 @@ function createGalaxyBoilerplateFile(command: string): vscode.Disposable {
     const filename = "galaxy.yml";
     if (uri) {
       const candidateDirectory = uri.fsPath;
-      const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionInBloodline(candidateDirectory);
+      const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionInLineage(candidateDirectory);
       if (collectionPathIsAmbiguous) {
         vscode.window.showWarningMessage(`
           The folder "${path.basename(candidateDirectory)}" contains multiple collections. 
@@ -391,7 +391,7 @@ function createOperatorConfigBoilerplateFile(command: string): vscode.Disposable
     const filename = "operator-config.yml";
     if (uri) {
       const candidateDirectory = uri.fsPath;
-      const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionInBloodline(candidateDirectory);
+      const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionInLineage(candidateDirectory);
       if (collectionPathIsAmbiguous) {
         vscode.window.showWarningMessage(`
           The folder "${path.basename(candidateDirectory)}" contains multiple collections. 
@@ -433,11 +433,18 @@ function initCollectionAtFolder(command: string, outputChannel?: vscode.OutputCh
     if (rootFolder && uri) {
       const directory = uri.fsPath;
 
-      // if any decendants of this directory is a collection that means this directory
-      // is an "operator collection workspace". However if any parents are collections
-      // the user is attempting to create a nested collection, which is not allowed
+      // ensure the supplied directory is not itself a collection
       const fileExtensions = [".yaml", ".yml"];
       const targets = [/galaxy.ya?ml$/, /operator-config.ya?ml$/];
+      const matchingFiles = workspace.getMatchingDecendants(directory, targets, false, fileExtensions);
+      if (matchingFiles.length) {
+        vscode.window.showWarningMessage(`You are attempting to create a nested collection at "${path.basename(directory)}", which is not allowed.`);
+        return;
+      }
+
+      // if any decendant folders of this directory is a collection that means this directory
+      // is an "operator collection workspace" which is fine. However if any parents are
+      // collections the user is attempting to create a nested collection, which is not allowed
       const parentCollectionPath = workspace.searchParents(directory, rootFolder, targets, fileExtensions);
       if (parentCollectionPath !== "") {
         vscode.window.showWarningMessage(`You are attempting to create a nested collection at "${path.basename(directory)}", which is not allowed.`);
@@ -457,7 +464,7 @@ function convertToAirgapCollection(command: string, outputChannel?: vscode.Outpu
       const directory = uri.fsPath;
 
       // determine which collection to convert based on the uri clicked
-      const [nearestCollection, collectionPathIsAmbiguous] = workspace.findNearestCollectionInBloodline(directory);
+      const [nearestCollection, collectionPathIsAmbiguous] = workspace.findNearestCollectionInLineage(directory);
       if (nearestCollection === "") {
         if (collectionPathIsAmbiguous) {
           vscode.window.showWarningMessage(`
