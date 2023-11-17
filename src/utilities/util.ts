@@ -70,7 +70,7 @@ export function getCurrentWorkspaceRootFolder(): string | undefined {
  * Retrieve the list of Operator Collection names and workspace directories in the current workspace
  * @returns — A promise containing the WorkSpaceOperators object
  */
-export async function getOperatorsInWorkspace(workspace: string): Promise<WorkSpaceOperators> {
+export async function getOperatorsInWorkspace(): Promise<WorkSpaceOperators> {
   const wsOperators: WorkSpaceOperators = {};
   for (const file of await vscode.workspace.findFiles("**/operator-config.*ml")) {
     let data = await vscode.workspace.openTextDocument(file);
@@ -80,6 +80,17 @@ export async function getOperatorsInWorkspace(workspace: string): Promise<WorkSp
     }
   }
   return wsOperators;
+}
+
+/**
+ * Determinate is a collection exists in the current workspace
+ * @returns — A promise returning a boolean if the collection exists
+ */
+export async function isCollectionInWorkspace(initFlag: boolean): Promise<boolean> {
+  return await getOperatorsInWorkspace().then(operators => {
+    const totalOperators = Object.keys(operators)?.length;
+    return totalOperators >= 1 ? false : !initFlag;
+  });
 }
 
 /**
@@ -173,7 +184,7 @@ function getOperatorConfigUri(pwd: string): vscode.Uri {
  * @returns — A promise containing the WorkSpaceOperators object
  */
 export async function getOperatorNamesInWorkspace(workspace: string): Promise<string[]> {
-  let operatorsInWorkspace = await getOperatorsInWorkspace(workspace);
+  let operatorsInWorkspace = await getOperatorsInWorkspace();
   let operatorNames: Array<string> = [];
   for (const operatorName in operatorsInWorkspace) {
     operatorNames.push(operatorName);
@@ -187,7 +198,7 @@ export async function getOperatorNamesInWorkspace(workspace: string): Promise<st
  * @returns - A Promise containing the directory to the selected operator
  */
 export async function selectOperatorInWorkspace(workspace: string, operatorName?: string): Promise<string | undefined> {
-  let operatorsInWorkspace = await getOperatorsInWorkspace(workspace);
+  let operatorsInWorkspace = await getOperatorsInWorkspace();
   if (operatorName) {
     return operatorsInWorkspace[operatorName];
   }
@@ -235,7 +246,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     const operatorConfigData = fs.readFileSync(extraVarsFilePath);
     const operatorVars = yaml.load(operatorConfigData.toString()) as OperatorVariables;
 
-    if (operatorVars.zosendpoint_type === "local"){
+    if (operatorVars.zosendpoint_type === "local") {
       args.push(`-e "zosendpoint_host="`);
       args.push(`-e "zosendpoint_port="`);
       args.push(`-e "ssh_key="`);
@@ -318,7 +329,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
   args.push(`-e "zosendpoint_name=${zosEndpointName}"`);
 
   // Skip endpoint fields if it's a local endpoint
-  if (zosEndpointType === "remote"){
+  if (zosEndpointType === "remote") {
     const zosEndpointHost = await vscode.window.showInputBox({
       prompt: "Enter your ZosEndpoint host",
       ignoreFocusOut: true,
@@ -349,11 +360,10 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
       prompt: "Enter you SSH Username for this endpoint (Press Enter to skip if the zoscb-encrypt CLI isn't installed)",
       ignoreFocusOut: true,
     });
-  
+
     if (zosEndpointUsername === undefined) {
       return undefined;
     } else if (zosEndpointUsername === "") {
-      
     } else {
       args.push(`-e "username=${zosEndpointUsername}"`);
     }
@@ -363,7 +373,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
       value: "~/.ssh/id_ed25519",
       ignoreFocusOut: true,
     });
-  
+
     if (zosEndpointSSHKey === undefined) {
       return undefined;
     } else if (zosEndpointSSHKey === "") {
@@ -371,9 +381,9 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     } else {
       args.push(`-e "ssh_key=${zosEndpointSSHKey}"`);
     }
-  
+
     const zosEndpointPassphrase = await promptForPassphrase();
-  
+
     if (zosEndpointPassphrase === undefined) {
       return undefined;
     } else if (zosEndpointPassphrase === "") {
@@ -383,24 +393,22 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     }
 
     operatorVariables.zosendpoint_type = zosEndpointType;
-    operatorVariables.zosendpoint_name = zosEndpointName
+    operatorVariables.zosendpoint_name = zosEndpointName;
     operatorVariables.zosendpoint_host = zosEndpointHost;
     operatorVariables.zosendpoint_port = zosEndpointPort;
     operatorVariables.username = zosEndpointUsername;
     operatorVariables.passphrase = zosEndpointPassphrase;
     operatorVariables.ssh_key = zosEndpointSSHKey;
-
-  } else if (zosEndpointType === "local"){
-
+  } else if (zosEndpointType === "local") {
     operatorVariables.zosendpoint_type = zosEndpointType;
-    operatorVariables.zosendpoint_name = zosEndpointName
+    operatorVariables.zosendpoint_name = zosEndpointName;
 
     args.push(`-e "zosendpoint_host="`);
     args.push(`-e "zosendpoint_port="`);
     args.push(`-e "ssh_key="`);
     args.push(`-e "username="`);
     args.push(`-e "passphrase="`);
-  } 
+  }
 
   const saveToFile = await vscode.window.showQuickPick(yesNoOptions, {
     canPickMany: false,
@@ -507,6 +515,77 @@ export async function requestLogInInfo(): Promise<string[] | undefined> {
   } else {
     return undefined;
   }
+}
+
+/**
+ * Prompts the user for the necessary info to create an Operator Collection
+ * @returns - A Promise containing the list of parameters to pass to the command
+ */
+export async function requestInitOperatorCollectionInfo(): Promise<string[] | undefined> {
+  let args: Array<string> = [];
+  const yesNoOptions: Array<string> = ["Yes", "No"];
+  const offlineInstallTitle = "Will this collection be executed in an offline environment [y/n]?";
+
+  const validateStringLettersAndNumberOnly = (text: string): boolean => {
+    const ocLoginArgs = text.trimStart();
+    const validValuesRegex = /^[a-zA-Z0-9]+$/;
+    const isvalid = !validValuesRegex.test(text?.trimStart());
+    return isvalid;
+  };
+
+  const collectionName = await vscode.window.showInputBox({
+    prompt: `Enter collection name.`,
+    ignoreFocusOut: true,
+    validateInput: text => {
+      return validateStringLettersAndNumberOnly(text) ? text : null;
+    },
+  });
+
+  if (collectionName === undefined) {
+    return undefined;
+  } else {
+    if (collectionName === "") {
+      vscode.window.showErrorMessage("Collection name is required");
+      return undefined;
+    }
+  }
+
+  const ansibleGalaxyNamespace = await vscode.window.showInputBox({
+    prompt: `Enter your Ansible Galaxy namespace.`,
+    ignoreFocusOut: true,
+    validateInput: text => {
+      return validateStringLettersAndNumberOnly(text) ? text : null;
+    },
+  });
+
+  if (ansibleGalaxyNamespace === undefined) {
+    return undefined;
+  } else {
+    if (ansibleGalaxyNamespace === "") {
+      vscode.window.showErrorMessage("Galaxy namespace is required");
+      return undefined;
+    }
+  }
+
+  const offlineInstall = await vscode.window.showQuickPick(yesNoOptions, {
+    canPickMany: false,
+    ignoreFocusOut: true,
+    placeHolder: offlineInstallTitle,
+    title: offlineInstallTitle,
+  });
+
+  if (offlineInstall === undefined) {
+    return undefined;
+  } else {
+    if (offlineInstall === "") {
+      vscode.window.showErrorMessage("Couldn't determinate if the collection will be executed in an offline environment");
+      return undefined;
+    }
+  }
+  args.push(`-e "collection_name=${collectionName}"`);
+  args.push(`-e "collection_namespace=${ansibleGalaxyNamespace}"`);
+  args.push(`-e "offline_install=${offlineInstall}"`);
+  return args;
 }
 
 export function validateOperatorConfig(document: vscode.TextDocument): boolean {
