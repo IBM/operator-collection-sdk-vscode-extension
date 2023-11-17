@@ -36,7 +36,7 @@ async function go() {
     }
 
     // Custom setup of extension dependencies
-    cp.spawnSync(cliPath, [...args, "--install-extension", "redhat.vscode-yaml"], {
+    cp.spawnSync(cliPath, [...args, "--install-extension", "redhat.vscode-yaml", "--install-extension", "iliazeus.vscode-ansi"], {
       encoding: "utf-8",
       stdio: "inherit",
     });
