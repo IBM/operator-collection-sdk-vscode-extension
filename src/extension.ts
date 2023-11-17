@@ -103,10 +103,14 @@ export async function activate(context: vscode.ExtensionContext) {
   vscode.commands.executeCommand("setContext", VSCodeCommands.validNamespace, await session.validateNamespaceExist());
   vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, await session.determinateOcSdkIsOutdated());
   vscode.commands.executeCommand("setContext", VSCodeCommands.zosCloudBrokerInstalled, await session.validateZosCloudBrokerInstallation());
+  vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
+
   context.subscriptions.push(logIn(VSCodeCommands.login, ocCmd, session));
   context.subscriptions.push(logOut(VSCodeCommands.logout, ocCmd, session));
   context.subscriptions.push(installOcSdk(VSCodeCommands.install, ocSdkCmd, session, outputChannel));
   context.subscriptions.push(updateOcSdkVersion(VSCodeCommands.sdkUpgradeVersion, ocSdkCmd, session, outputChannel));
+  context.subscriptions.push(initOperatorCollection(VSCodeCommands.initCollection, session, outputChannel));
+  context.subscriptions.push(initOperatorCollectionSkip(VSCodeCommands.initCollectionSkip, ocSdkCmd, session, outputChannel));
   context.subscriptions.push(updateProject(VSCodeCommands.updateProject, ocCmd, session));
   context.subscriptions.push(executeSdkCommandWithUserInput(VSCodeCommands.createOperator, session, outputChannel));
   context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.deleteOperator, session, outputChannel));
@@ -265,6 +269,37 @@ function updateOcSdkVersion(command: string, ocSdkCmd: OcSdkCommand, session: Se
       vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, await session.determinateOcSdkIsOutdated());
       vscode.commands.executeCommand(VSCodeCommands.refresh);
     }
+  });
+}
+
+function initOperatorCollection(command: string, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
+  return vscode.commands.registerCommand(command, async (logPath?: string) => {
+    if (session.operationPending) {
+      vscode.window.showWarningMessage("Another Operation is processing");
+    } else {
+      const args = await util.requestInitOperatorCollectionInfo();
+      if (args) {
+        outputChannel?.show();
+        session.operationPending = true;
+        let pwd = util.getCurrentWorkspaceRootFolder();
+        let ocSdkCommand = new OcSdkCommand(pwd);
+        ocSdkCommand.runInitOperatorCollection(args, outputChannel, logPath).then(async () => {
+          session.operationPending = false;
+          vscode.window.showInformationMessage(`Initialization of Operator Collection ${args[1]} executed successfully`);
+          vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
+          vscode.commands.executeCommand(VSCodeCommands.refresh);
+        });
+      }
+    }
+  });
+}
+
+function initOperatorCollectionSkip(command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
+  return vscode.commands.registerCommand(command, async (logPath?: string) => {
+    session.setSkipOCinitFlag().then(async initFlag => {
+      vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, initFlag);
+      vscode.commands.executeCommand(VSCodeCommands.refresh);
+    });
   });
 }
 
