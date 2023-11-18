@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
-import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
+import { getAnsibleGalaxySettings, AnsibleGalaxySettings, isCollectionInWorkspace } from "../utilities/util";
 
 export class Session {
   public ocSdkInstalled: boolean = false;
@@ -15,6 +15,7 @@ export class Session {
   public validNamespace: boolean = false;
   public ocSdkOutdated: boolean = false;
   public skipSdkUpdated: boolean = false;
+  public skipOCinit: boolean = false;
   public operationPending: boolean = false;
   public zosCloudBrokerInstalled: boolean = false;
 
@@ -92,6 +93,15 @@ export class Session {
   async setSkipOcSdkVersionUpdateFlag(): Promise<boolean> {
     this.skipSdkUpdated = !this.skipSdkUpdated;
     return new Promise<boolean>((resolve: any) => resolve(this.skipSdkUpdated));
+  }
+
+  /**
+   * Set skip OC init flag
+   * @returns - A promise containing a boolean, returning the skip the oc init
+   */
+  async setSkipOCinitFlag(): Promise<boolean> {
+    this.skipOCinit = !this.skipOCinit;
+    return new Promise<boolean>((resolve: any) => resolve(this.skipOCinit));
   }
 
   /**
@@ -192,7 +202,7 @@ async function setContext(loggedIntoOpenShift: boolean, zosCloudBrokerInstalled:
   }
 
   if (ocSdkOutdated !== undefined) {
-    return vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, ocSdkOutdated).then(() => {
+    return vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, ocSdkOutdated, vscode.commands.executeCommand("setContext", VSCodeCommands.zosCloudBrokerInstalled, zosCloudBrokerInstalled)).then(() => {
       if (!skipRefresh) {
         vscode.commands.executeCommand(VSCodeCommands.refreshAll);
       }

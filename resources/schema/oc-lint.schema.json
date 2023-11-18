@@ -1,0 +1,75 @@
+{
+    "$schema": "http://json-schema.org/draft-06/schema#",
+    "$ref": "#/definitions/OcLinterConfig",
+    "definitions": {
+        "Rule": {
+            "type": "string",
+            "oneOf": [
+              {"const":"missing-galaxy",
+              "markdownDescription": "#### Description\r\nMissing `galaxy.yaml` file errors."
+              },
+              {"const":"match-domain",
+              "markdownDescription": "#### Description\r\n`galaxy.yml` file domain mismatch"
+              },
+              {"const":"match-name",
+              "markdownDescription": "#### Description\r\n`galaxy.yml` file name mismatch"
+              },
+              {"const":"match-version",
+              "markdownDescription": "#### Description\r\n`galaxy.yml` file version mismatch"
+              },
+              {"const":"ansible-config",
+              "markdownDescription": "#### Description\r\nBuild includes `ansible.cfg` error"
+              },
+              {"const":"playbook-path",
+              "markdownDescription": "#### Description\r\nPlaybook relative path validation error"
+              },
+              {"const":"hosts-all",
+              "markdownDescription": "#### Description\r\nPlaybook hosts validation"
+              },
+              {"const":"finalizer-path",
+              "markdownDescription": "#### Description\r\nFinalizer relative path validation error"
+              },
+              {"const":"missing-finalizer",
+              "markdownDescription": "#### Description\r\nValidate Finalizer existence"
+              },
+              {"const":"missing-playbook",
+              "markdownDescription": "#### Description\r\nValidate Playbook existence"
+              }
+            ]
+        },
+        "OcLinterConfig": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "exclude_paths": {
+                    "markdownDescription": "#### Description\r\nList of files for the linter to ignore.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "use_default_rules": {
+                    "markdownDescription": "#### Description\r\nUse all the default linter rules.",
+                    "type": "boolean"
+                },
+                "skip_list": {
+                    "markdownDescription": "#### Description\r\nList of rules to skip linting.",
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "$ref": "#/definitions/Rule"
+                    }
+                },
+                "enable_list": {
+                    "markdownDescription": "#### Description\r\nList of additional rules to enable.",
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "$ref": "#/definitions/Rule"
+                    }
+                }
+            },
+            "required": []
+        }
+    }
+}
