@@ -240,6 +240,19 @@ export class OcSdkCommand {
   }
 
   /**
+   * Executes the Operator Collection SDK init Operator command
+   * @param args - The arguments to pass to the command
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async runInitOperatorCollection(args: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
+    const cmd: string = "ansible-playbook";
+    args = args.concat("ibm.operator_collection_sdk.init_collection.yml ");
+    return this.run(cmd, args, outputChannel, logPath);
+  }
+
+  /**
    * Executes the Operator Collection SDK Create Operator command
    * @param args - The arguments to pass to the command
    * @param outputChannel - The VS Code output channel to display command output

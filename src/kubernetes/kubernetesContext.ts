@@ -91,25 +91,33 @@ export class KubernetesContext {
    * @returns - A Promise containing the list of parameters to pass to the command
    */
   private async requestLogInInfo(): Promise<string[] | undefined> {
-    let args: Array<string> = [];
+    const validRegex: { [key: string]: RegExp } = {
+      ocCommand: /^oc login/,
+      authToken: /[\s]+--token=sha256~[A-Za-z0-9-_]+/,
+      serverURL: /[\s]+--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+/,
+      skipFlag: /([\s]+--insecure-skip-tls-verify(=?[\S]+){0,1})/,
+      certAuth: /([\s]+--certificate-authority=?[\S]+)/,
+    };
+    const optionalArguments = ["skipFlag", "certAuth"];
 
     const inputArgs = await vscode.window.showInputBox({
-      prompt: `Enter your oc login command: oc login --server=SERVER_URL --token=AUTH_TOKEN`,
+      prompt: `Enter your oc login command: oc login --token=AUTH_TOKEN --server=SERVER_URL`,
       ignoreFocusOut: true,
       validateInput: text => {
         const ocLoginArgs = text.trimStart();
 
         // validate arguments
-        const validRegex: { [key: string]: RegExp } = {
-          "OC Command": /^(oc login)/gm,
-          "Auth Token": /(--token=sha256~[A-Za-z0-9]+)/gm,
-          "Server URL": /(--server=[A-Za-z0-9-\\\/\._~:\?\#\[\]@!\$&'\(\)\*\+,:;%=]+)/gm,
-        };
-
         for (const rx in validRegex) {
+          if (optionalArguments.includes(rx)) {
+            continue;
+          }
+
           const failedRegex = !validRegex[rx].test(ocLoginArgs);
           if (failedRegex) {
-            return "Format: oc login --server=SERVER_URL --token=AUTH_TOKEN (optionally --insecure-skip-tls-verify)";
+            return `
+              Format: oc login --token=AUTH_TOKEN --server=SERVER_URL
+              (optionally --certificate-authority=..., --insecure-skip-tls-verify=...)
+            `;
           }
         }
 
@@ -118,13 +126,12 @@ export class KubernetesContext {
     });
 
     if (inputArgs) {
-      args = inputArgs
-        .trimStart()
-        .split(" ")
-        ?.filter(item => {
-          return item.length;
-        })
-        ?.slice(2);
+      const args = [
+        inputArgs.match(validRegex["authToken"])![0]!.trim(), // add token
+        inputArgs.match(validRegex["serverURL"])![0]!.trim(), // add URL
+        inputArgs.match(validRegex["skipFlag"])?.[0]?.trim() ?? "", // add skip flag if it exists
+        inputArgs.match(validRegex["certAuth"])?.[0]?.trim() ?? "", // add certificate authority if it exists
+      ];
 
       return args;
     } else {

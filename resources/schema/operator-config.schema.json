@@ -100,13 +100,13 @@
 				"domain": {
 					"type": "string",
 					"maxLength": 253,
-					"pattern": "^(?![0-9]+$)(?!.*-$)(?!-)[a-zA-Z0-9-]{1,253}$",
+					"pattern": "^(?![0-9]+$)(?!.*-$)(?!-)[a-zA-Z0-9-]{1,253}$|^{{\\s*.+\\s*}}$",
 					"markdownDescription": "#### Description\r\nA unique value that will be used to construct the Kubernetes API group for the `resources` defined in this `OperatorCollection`.\r\nThis value MUST conform to the Kubernetes DNS Subdomain naming scheme as defined in RFC 1123.\r\nThis value SHOULD be the same as the `namespace` value specified in an Ansible Collection's `galaxy.yml` file. In scenarios where forks/clones of an official Ansible Collection are desired, the `domain` value MAY be set to another unique, conforming"
 				},
 				"name": {
 					"type": "string",
 					"maxLength": 253,
-					"pattern": "^(?![0-9]+$)(?!.*-$)(?!-)[a-zA-Z0-9-]{1,253}$",
+					"pattern": "^(?![0-9]+$)(?!.*-$)(?!-)[a-zA-Z0-9-]{1,253}$|^{{\\s*.+\\s*}}$",
 					"markdownDescription": "#### Description\r\nA unique value that will be prepended to the `domain` value to construct a full Kubernetes API Group for the `resources` defined in this `OperatorCollection`.\r\nThis value MUST conform to the Kubernetes DNS Subdomain naming scheme as defined in RFC 1123.\r\nThis value SHOULD be the same as the `name` value specified in an Ansible Collection's `galaxy.yml` file. In scenarios where forks/clones of an official Ansible Collection are desired, the `name` value MAY be set to another unique, conforming, value."
 				},
 				"provider": {
@@ -124,7 +124,7 @@
 				},
 				"version": {
 					"type": "string",
-					"pattern": "^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:[.](?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:[+]([0-9a-zA-Z-]+(?:[.][0-9a-zA-Z-]+)*))?$",
+					"pattern": "^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(?:[.](?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:[+]([0-9a-zA-Z-]+(?:[.][0-9a-zA-Z-]+)*))?$|^{{\\s*.+\\s*}}$",
 					"markdownDescription": "#### Description\r\nA semantic versioning compliant version number.\r\nThis value SHOULD be the same as the `version` value specified in an Ansible Collection's `galaxy.yml` file."
 				},
 				"icon": {
