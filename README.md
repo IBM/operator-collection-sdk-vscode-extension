@@ -28,6 +28,14 @@ Configure your OpenShift server URL, and select your OpenShift Project directly 
 
 ![OpenShift configuration](./resources/docs/media/oc-cluster-login-url-and-token.gif)
 
+## Quickly generate operator collections and files from scratch using the sub-menu
+
+- Initialize new operator collections in seconds
+- Scaffold `operator-config`, `galaxy`, and `playbook` boilerplate files.
+- Convert a collection to air-gapped collection using single-click actions
+
+![Scaffold collection](./resources/docs/media/oc-sdk-scaffold-collection.gif)
+
 ## Trouble Shooting
 
 If you experience issues with `urlopen error [SSL: CERTIFICATE_VERIFY_FAILED]`, or similar issues, you may need to install and use SSL Certificates before running this extension.

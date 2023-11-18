@@ -175,6 +175,11 @@
         "command": "operator-collection-sdk.convertToAirgapCollection",
         "title": "Convert to Airgap Collection",
         "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.initCollection",
+        "title": "New Operator Collection...",
+        "category": "OC-SDK"
       }
     ],
     "configuration": [
@@ -264,7 +269,7 @@
       },
       {
         "view": "operator-collection-sdk.operators",
-        "contents": "Operator Collection isn’t detected in current workspace \n[Initialize Operator Collection](command:operator-collection-sdk.initCollection)\n[Skip](command:operator-collection-sdk.initCollectionSkip)",
+        "contents": "Operator Collection isn’t detected in current workspace \n[Initialize Operator Collection](command:operator-collection-sdk.initCollectionAtRoot)\n[Skip](command:operator-collection-sdk.initCollectionSkip)",
         "when": "operator-collection-sdk.sdkInstalled && !operator-collection-sdk.sdkOutdatedVersion && operator-collection-sdk.isCollectionInWorkspace && workspaceFolderCount!=0"
       },
       {
@@ -338,6 +343,10 @@
         {
           "command": "operator-collection-sdk.convertToAirgapCollection",
           "group": "ocsdk-submenu@3"
+        },
+        {
+          "command": "operator-collection-sdk.initCollection",
+          "group": "ocsdk-submenu@4"
         }
       ],
       "view/title": [

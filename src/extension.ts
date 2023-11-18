@@ -119,6 +119,14 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(installOcSdk(VSCodeCommands.install, ocSdkCmd, session, outputChannel));
   context.subscriptions.push(updateOcSdkVersion(VSCodeCommands.sdkUpgradeVersion, ocSdkCmd, session, outputChannel));
   context.subscriptions.push(initOperatorCollection(VSCodeCommands.initCollection, session, outputChannel));
+  context.subscriptions.push(
+    vscode.commands.registerCommand(VSCodeCommands.initCollectionAtRoot, (logPath?: string) => {
+      const rootFolder = workspace.getCurrentWorkspaceRootFolder();
+      if (rootFolder) {
+        vscode.commands.executeCommand(VSCodeCommands.initCollection, vscode.Uri.file(rootFolder), logPath);
+      }
+    })
+  );
   context.subscriptions.push(initOperatorCollectionSkip(VSCodeCommands.initCollectionSkip, ocSdkCmd, session, outputChannel));
   context.subscriptions.push(updateProject(VSCodeCommands.updateProject, ocCmd, session));
   context.subscriptions.push(executeSdkCommandWithUserInput(VSCodeCommands.createOperator, session, outputChannel));
@@ -431,36 +439,6 @@ function createPlaybookBoilerplateFile(command: string): vscode.Disposable {
   });
 }
 
-function initCollectionAtFolder(command: string, outputChannel?: vscode.OutputChannel) {
-  return vscode.commands.registerCommand(command, async uri => {
-    const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
-    const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
-    if (rootFolder && uri) {
-      const directory = uri.fsPath;
-
-      // ensure the supplied directory is not itself a collection
-      const fileExtensions = [".yaml", ".yml"];
-      const targets = [/galaxy.ya?ml$/, /operator-config.ya?ml$/];
-      const matchingFiles = workspace.getMatchingDecendants(directory, targets, false, fileExtensions);
-      if (matchingFiles.length) {
-        vscode.window.showWarningMessage(`You are attempting to create a nested collection at "${path.basename(directory)}", which is not allowed.`);
-        return;
-      }
-
-      // if any decendant folders of this directory is a collection that means this directory
-      // is an "operator collection workspace" which is fine. However if any parents are
-      // collections the user is attempting to create a nested collection, which is not allowed
-      const parentCollectionPath = workspace.searchParents(directory, rootFolder, targets, fileExtensions);
-      if (parentCollectionPath !== "") {
-        vscode.window.showWarningMessage(`You are attempting to create a nested collection at "${path.basename(directory)}", which is not allowed.`);
-        return;
-      }
-
-      // TODO: Merge Mariandrea's changes
-    }
-  });
-}
-
 function convertToAirgapCollection(command: string, outputChannel?: vscode.OutputChannel) {
   return vscode.commands.registerCommand(command, async uri => {
     const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
@@ -565,22 +543,53 @@ function updateOcSdkVersion(command: string, ocSdkCmd: OcSdkCommand, session: Se
 }
 
 function initOperatorCollection(command: string, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
-  return vscode.commands.registerCommand(command, async (logPath?: string) => {
+  return vscode.commands.registerCommand(command, async uri => {
     if (session.operationPending) {
-      vscode.window.showWarningMessage("Another Operation is processing");
-    } else {
+      vscode.window.showWarningMessage("Another operation is processing.");
+      return;
+    }
+
+    const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
+    const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
+    if (rootFolder && uri) {
+      const directory = uri.fsPath;
+
+      // ensure the supplied directory is not itself a collection
+      const fileExtensions = [".yaml", ".yml"];
+      const targets = [/galaxy.ya?ml$/, /operator-config.ya?ml$/];
+      const matchingFiles = workspace.getMatchingDecendants(directory, targets, false, fileExtensions);
+      if (matchingFiles.length) {
+        vscode.window.showWarningMessage(`You are attempting to create a nested collection within the collection "${path.basename(path.dirname(matchingFiles[0]))}" or its subfolders, which is not allowed.`);
+        return;
+      }
+
+      // if any decendant folders of this directory is a collection that means this directory
+      // is an "operator collection workspace" which is fine. However if any parents are
+      // collections, the user is attempting to create a nested collection, which is not allowed
+      const parentCollectionPath = workspace.searchParents(directory, rootFolder, targets, fileExtensions);
+      if (parentCollectionPath !== "") {
+        vscode.window.showWarningMessage(`You are attempting to create a nested collection within the collection "${path.basename(path.dirname(parentCollectionPath))}" or its subfolders, which is not allowed.`);
+        return;
+      }
+
       const args = await util.requestInitOperatorCollectionInfo();
       if (args) {
         outputChannel?.show();
         session.operationPending = true;
-        let pwd = workspace.getCurrentWorkspaceRootFolder();
-        let ocSdkCommand = new OcSdkCommand(pwd);
-        ocSdkCommand.runInitOperatorCollection(args, outputChannel, logPath).then(async () => {
-          session.operationPending = false;
-          vscode.window.showInformationMessage(`Initialization of Operator Collection ${args[1]} executed successfully`);
-          vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
-          vscode.commands.executeCommand(VSCodeCommands.refresh);
-        });
+        const ocSdkCommand = new OcSdkCommand(directory); // directory is desired cwd of command
+        ocSdkCommand
+          .runInitOperatorCollection(args, outputChannel)
+          .then(async () => {
+            session.operationPending = false;
+            const namespace = args[0].split("=")[1].replace(/"/, "");
+            vscode.window.showInformationMessage(`Initialization of Operator Collection "${namespace}" executed successfully`);
+            vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
+            vscode.commands.executeCommand(VSCodeCommands.refresh);
+          })
+          .catch(e => {
+            session.operationPending = false;
+            vscode.window.showErrorMessage(`The collection initialization has unexpectedly failed. Please review the output logs for details. ${e}`);
+          });
       }
     }
   });

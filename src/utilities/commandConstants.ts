@@ -8,6 +8,7 @@ export enum VSCodeCommands {
   sdkOutdatedVersion = "operator-collection-sdk.sdkOutdatedVersion",
   isCollectionInWorkspace = "operator-collection-sdk.isCollectionInWorkspace",
   initCollection = "operator-collection-sdk.initCollection",
+  initCollectionAtRoot = "operator-collection-sdk.initCollectionAtRoot",
   initCollectionSkip = "operator-collection-sdk.initCollectionSkip",
   zosCloudBrokerInstalled = "operator-collection-sdk.zosCloudBrokerInstalled",
   sdkUpgradeVersion = "operator-collection-sdk.sdkUpgradeVersion",
