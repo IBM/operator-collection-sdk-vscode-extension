@@ -11,8 +11,6 @@ import * as yaml from "js-yaml";
 import { setInterval } from "timers";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
-import { match } from "assert";
-import { type } from "os";
 
 type WorkSpaceOperators = { [key: string]: string };
 
