@@ -430,6 +430,10 @@
       {
         "fileMatch": "operator-config.yml",
         "url": "./resources/schema/operator-config.schema.json"
+      },
+      {
+        "fileMatch": ".oc-lint",
+        "url": "./resources/schema/oc-lint.schema.json"
       }
     ]
   },
