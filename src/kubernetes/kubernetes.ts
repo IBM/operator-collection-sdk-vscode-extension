@@ -22,6 +22,21 @@ export interface ObjectInstance {
   status?: ObjectStatus;
 }
 
+interface OperatorCollectionInstance {
+  apiVersion: string;
+  kind: string;
+  metadata: ObjectMetadata;
+  spec?: OperatorCollectionSpec;
+  status?: ObjectStatus;
+}
+
+interface OperatorCollectionSpec {
+  collectionURL: string;
+  collectionURLToken: string;
+  signatureSecret: string;
+  skipSignatureVerification: boolean;
+}
+
 export interface ObjectMetadata {
   name: string;
   namespace: string;
@@ -600,6 +615,46 @@ export class KubernetesObj extends KubernetesContext {
       .catch(() => {
         console.log("Failure retrieving Namespace " + this.namespace);
         return false;
+      });
+  }
+
+  public async signatureValidationRequiredForOperator(operatorName: string, version: string): Promise<boolean | undefined> {
+    const labelSelector = `operator-name=${operatorName},operator-version=${version}`;
+    return this.customObjectsApi
+      ?.listNamespacedCustomObject(
+        util.zosCloudBrokerGroup,
+        util.operatorCollectionApiVersion,
+        this.namespace,
+        "operatorcollections",
+        undefined, // pretty
+        undefined, // allowWatchBookmarks
+        undefined, // continue
+        undefined, // fieldSelector
+        labelSelector
+      )
+      .then(res => {
+        const objsString = JSON.stringify(res.body);
+        const objsList: ObjectList = JSON.parse(objsString);
+        if (objsList.items.length === 0) {
+          vscode.window.showErrorMessage("OperatorCollection resource not detected in namespace");
+          return undefined;
+        } else if (objsList.items.length > 1) {
+          vscode.window.showErrorMessage("Duplicate OperatorCollection resources detected in namespace");
+          return undefined;
+        } else {
+          const operatorCollection: OperatorCollectionInstance = objsList.items[0];
+          if (operatorCollection.spec?.signatureSecret === undefined || operatorCollection.spec?.signatureSecret === "") {
+            return false;
+          } else {
+            return true;
+          }
+        }
+      })
+      .catch(e => {
+        const msg = `Failure retrieving OperatorCollections list. ${JSON.stringify(e)}`;
+        console.error(msg);
+        vscode.window.showErrorMessage(msg);
+        return undefined;
       });
   }
 }
