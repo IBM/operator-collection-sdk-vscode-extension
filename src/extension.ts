@@ -594,6 +594,23 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                   break;
                 }
                 case VSCodeCommands.redeployCollection: {
+                  const k8s = new KubernetesObj();
+                  const operatorName = operatorItemArg.operatorName;
+                  const operatorVersion = await util.getOperatorConfigVersion(workspacePath);
+                  if (operatorVersion === undefined) {
+                    session.operationPending = false;
+                    vscode.window.showErrorMessage(`Failure retrieve version from operator config`);
+                    return;
+                  }
+                  const signatureValidationRequired = await k8s.signatureValidationRequiredForOperator(operatorName, operatorVersion);
+                  if (signatureValidationRequired === undefined) {
+                    session.operationPending = false;
+                    return;
+                  } else if (signatureValidationRequired) {
+                    session.operationPending = false;
+                    vscode.window.showErrorMessage(`Unable to redeploy collection when signature validation is required. Execute the Redeploy Operator action to reconfigure the operator and disable signature validation`);
+                    return;
+                  }
                   vscode.window.showInformationMessage("Redeploy Collection request in progress");
                   const poll = util.pollRun(30);
                   const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel, logPath).then(() => {
@@ -742,45 +759,45 @@ function deleteCustomResource(command: string, session: Session) {
 }
 
 const ocLinterRules = ["missing-galaxy", "match-domain", "match-name", "match-version", "ansible-config", "playbook-path", "hosts-all", "missing-playbook", "finalizer-path", "missing-finalizer"];
-var linterConfigured: ocLintConfig;
+var linterConfigured: OcLintConfig;
 var filteredRules: string[];
-interface ocLintConfig {
+interface OcLintConfig {
   //ignores
-  exclude_paths?: string[];
+  excludePaths?: string[];
   //rules
-  skip_list?: string[];
-  enable_list?: string[];
-  use_default_rules?: boolean;
+  skipList?: string[];
+  enableList?: string[];
+  useDefaultRules?: boolean;
 }
 
-function configureLinter(oc_lint_path: string) {
+function configureLinter(ocLintPath: string) {
   linterConfigured = {
-    exclude_paths: [],
-    skip_list: [],
-    enable_list: [],
-    use_default_rules: true,
+    excludePaths: [],
+    skipList: [],
+    enableList: [],
+    useDefaultRules: true,
   };
 
   try {
-    let ocLintFile = fs.readFileSync(oc_lint_path, "utf8");
-    let ocConfig = yaml.load(ocLintFile) as ocLintConfig;
+    let ocLintFile = fs.readFileSync(ocLintPath, "utf8");
+    let ocConfig = yaml.load(ocLintFile) as OcLintConfig;
 
     //Process useDefaultRules
-    if (ocConfig.use_default_rules) {
+    if (ocConfig.useDefaultRules) {
       filteredRules = ocLinterRules;
     } else {
       filteredRules = [];
     }
     //Process enable_list
-    if (ocConfig.enable_list !== undefined) {
-      let includeRules = ocConfig.enable_list.filter(rule => ocLinterRules.includes(rule));
+    if (ocConfig.enableList !== undefined) {
+      let includeRules = ocConfig.enableList.filter(rule => ocLinterRules.includes(rule));
       includeRules.forEach(rule => {
         !filteredRules.includes(rule) && filteredRules.push(rule);
       });
     }
     //Process skip_list
-    if (ocConfig.skip_list !== undefined) {
-      let excludeRules = ocConfig.skip_list.filter(rule => ocLinterRules.includes(rule));
+    if (ocConfig.skipList !== undefined) {
+      let excludeRules = ocConfig.skipList.filter(rule => ocLinterRules.includes(rule));
       excludeRules.forEach(rule => {
         if (filteredRules.includes(rule)) {
           filteredRules = filteredRules.filter(r => r !== rule);
@@ -788,7 +805,7 @@ function configureLinter(oc_lint_path: string) {
       });
     }
     //Process exclude_paths
-    linterConfigured.exclude_paths = ocConfig.exclude_paths;
+    linterConfigured.excludePaths = ocConfig.excludePaths;
   } catch (err) {
     console.log(err);
   }
@@ -801,7 +818,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
     }
     //Handle excludePaths
     if (
-      linterConfigured.exclude_paths?.some(path => {
+      linterConfigured.excludePaths?.some(path => {
         const minimatch = new Minimatch(path);
         return minimatch.match(document.uri.fsPath);
       })
