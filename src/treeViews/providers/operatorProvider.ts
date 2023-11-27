@@ -9,6 +9,7 @@ import { OperatorPodItem, getOperatorPodItems } from "../operatorItems/operatorP
 import { getOperatorContainerItems } from "../operatorItems/operatorContainerItem";
 import { OperatorTreeItem } from "../operatorItems/operatorTreeItems";
 import { Session } from "../../utilities/session";
+import { showErrorMessage } from "../../utilities/toastModifiers";
 
 type TreeItem = OperatorTreeItem | undefined | void;
 
@@ -39,7 +40,7 @@ export class OperatorsTreeProvider implements vscode.TreeDataProvider<OperatorTr
               return operatorPodItems;
             })
             .catch(e => {
-              vscode.window.showErrorMessage(`Failure retrieving pods list: ${e}`);
+              showErrorMessage(`Failure retrieving pods list: ${e}`);
               return [];
             });
         } else if (element instanceof OperatorPodItem) {
