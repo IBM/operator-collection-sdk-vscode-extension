@@ -1060,7 +1060,7 @@ function deleteCustomResource(command: string, session: Session) {
 
 const ocLinterRules = ["missing-galaxy", "match-domain", "match-name", "match-version", "ansible-config", "playbook-path", "hosts-all", "missing-playbook", "finalizer-path", "missing-finalizer"];
 var linterConfigured: OcLintConfig;
-var filteredRules: string[] = ocLinterRules;
+var filteredRules: string[];
 interface OcLintConfig {
   //ignores
   excludePaths?: string[];
