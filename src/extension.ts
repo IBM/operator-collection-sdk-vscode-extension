@@ -372,7 +372,7 @@ function createFile(command: string): vscode.Disposable {
 }
 
 function createGalaxyBoilerplateFile(command: string): vscode.Disposable {
-  return vscode.commands.registerCommand(command, async uri => {
+  return vscode.commands.registerCommand(command, async (uri, _) => {
     const filename = "galaxy.yml";
     if (uri) {
       const candidateDirectory = uri.fsPath;
@@ -400,7 +400,7 @@ function createGalaxyBoilerplateFile(command: string): vscode.Disposable {
 }
 
 function createOperatorConfigBoilerplateFile(command: string): vscode.Disposable {
-  return vscode.commands.registerCommand(command, async uri => {
+  return vscode.commands.registerCommand(command, async (uri, _) => {
     const filename = "operator-config.yml";
     if (uri) {
       const candidateDirectory = uri.fsPath;
@@ -428,7 +428,7 @@ function createOperatorConfigBoilerplateFile(command: string): vscode.Disposable
 }
 
 function createPlaybookBoilerplateFile(command: string): vscode.Disposable {
-  return vscode.commands.registerCommand(command, async uri => {
+  return vscode.commands.registerCommand(command, async (uri, _) => {
     const filename = "playbook.yml";
     if (uri) {
       const directory = uri.fsPath;
@@ -440,7 +440,7 @@ function createPlaybookBoilerplateFile(command: string): vscode.Disposable {
 }
 
 function convertToAirgapCollection(command: string, outputChannel?: vscode.OutputChannel) {
-  return vscode.commands.registerCommand(command, async uri => {
+  return vscode.commands.registerCommand(command, async (uri, _) => {
     const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
     const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
     if (rootFolder && uri) {
@@ -543,7 +543,7 @@ function updateOcSdkVersion(command: string, ocSdkCmd: OcSdkCommand, session: Se
 }
 
 function initOperatorCollection(command: string, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
-  return vscode.commands.registerCommand(command, async (uri, logPath?: string) => {
+  return vscode.commands.registerCommand(command, async (uri, _, logPath?: string) => {
     if (session.operationPending) {
       vscode.window.showWarningMessage("Another operation is processing.");
       return;
