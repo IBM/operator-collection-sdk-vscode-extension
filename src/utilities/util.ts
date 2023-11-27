@@ -11,6 +11,7 @@ import * as yaml from "js-yaml";
 import { setInterval } from "timers";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
+import { showErrorMessage } from "./toastModifiers";
 
 type WorkSpaceOperators = { [key: string]: string };
 
@@ -174,7 +175,7 @@ function getOperatorConfigUri(pwd: string): vscode.Uri {
   } else if (fs.existsSync(path.join(pwd, "operator-config.yaml"))) {
     operatorConfigFilePath = path.join(pwd, "operator-config.yaml");
   } else {
-    vscode.window.showErrorMessage("operator-config file doesn't exist in workspace");
+    showErrorMessage("operator-config file doesn't exist in workspace");
   }
   return vscode.Uri.parse(operatorConfigFilePath);
 }
@@ -283,7 +284,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     args.push(`--extra-vars "@${extraVarsFilePath}"`);
     return args;
   } else if (ocsdkVarsFile.length > 1) {
-    vscode.window.showErrorMessage("Multiple ocsdk-extra-vars files in Operator Collection not allowed");
+    showErrorMessage("Multiple ocsdk-extra-vars files in Operator Collection not allowed");
     return undefined;
   }
 
@@ -309,7 +310,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
   if (zosEndpointType === undefined) {
     return undefined;
   } else if (zosEndpointType === "") {
-    vscode.window.showErrorMessage("Endpoint type is required");
+    showErrorMessage("Endpoint type is required");
     return undefined;
   }
   args.push(`-e "zosendpoint_type=${zosEndpointType}"`);
@@ -322,7 +323,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
   if (zosEndpointName === undefined) {
     return undefined;
   } else if (zosEndpointName === "") {
-    vscode.window.showErrorMessage("ZosEndpoint Name is required");
+    showErrorMessage("ZosEndpoint Name is required");
     return undefined;
   }
 
@@ -337,7 +338,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     if (zosEndpointHost === undefined) {
       return undefined;
     } else if (zosEndpointHost === "") {
-      vscode.window.showErrorMessage("ZosEndpoint host is required");
+      showErrorMessage("ZosEndpoint host is required");
       return undefined;
     }
     args.push(`-e "zosendpoint_host=${zosEndpointHost}"`);
@@ -351,7 +352,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     if (zosEndpointPort === undefined) {
       return undefined;
     } else if (zosEndpointPort === "") {
-      vscode.window.showErrorMessage("ZosEndpoint port is required");
+      showErrorMessage("ZosEndpoint port is required");
       return undefined;
     }
     args.push(`-e "zosendpoint_port=${zosEndpointPort}"`);
@@ -545,7 +546,7 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
     return undefined;
   } else {
     if (collectionName === "") {
-      vscode.window.showErrorMessage("Collection name is required");
+      showErrorMessage("Collection name is required");
       return undefined;
     }
   }
@@ -562,7 +563,7 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
     return undefined;
   } else {
     if (ansibleGalaxyNamespace === "") {
-      vscode.window.showErrorMessage("Galaxy namespace is required");
+      showErrorMessage("Galaxy namespace is required");
       return undefined;
     }
   }
@@ -578,7 +579,7 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
     return undefined;
   } else {
     if (offlineInstall === "") {
-      vscode.window.showErrorMessage("Couldn't determinate if the collection will be executed in an offline environment");
+      showErrorMessage("Couldn't determinate if the collection will be executed in an offline environment");
       return undefined;
     }
   }

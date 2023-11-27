@@ -8,7 +8,8 @@ import * as k8s from "@kubernetes/client-node";
 import * as util from "../utilities/util";
 import { OcCommand } from "../shellCommands/ocCommand";
 import { KubernetesContext } from "./kubernetesContext";
-import { VSCodeCommands, CustomResourcePhases } from "../utilities/commandConstants";
+import { CustomResourcePhases } from "../utilities/commandConstants";
+import { showErrorMessage } from "../utilities/toastModifiers";
 
 export interface ObjectList {
   apiVersion: string;
@@ -99,7 +100,7 @@ export class KubernetesObj extends KubernetesContext {
       .catch(e => {
         const msg = `Failure retrieving Pods in namespace. ${JSON.stringify(e)}`;
         console.error(msg);
-        vscode.window.showErrorMessage(msg);
+        showErrorMessage(msg);
         return undefined;
       });
   }
@@ -190,7 +191,7 @@ export class KubernetesObj extends KubernetesContext {
         }
         const msg = `Failure retrieving Pod logs. ${JSON.stringify(e)}`;
         console.error(msg);
-        vscode.window.showErrorMessage(msg);
+        showErrorMessage(msg);
         return undefined;
       });
   }
@@ -220,7 +221,7 @@ export class KubernetesObj extends KubernetesContext {
           vscode.window.showWarningMessage("Ansible-Runner task logs not yet generated for Custom Resource instance");
           return undefined;
         } else {
-          vscode.window.showErrorMessage(msg);
+          showErrorMessage(msg);
           return undefined;
         }
       });
@@ -247,7 +248,7 @@ export class KubernetesObj extends KubernetesContext {
         } else {
           const msg = `Failure retrieving Custom Resource list. ${e.response.statusMessage}`;
           console.error(msg);
-          vscode.window.showErrorMessage(msg);
+          showErrorMessage(msg);
           return undefined;
         }
       });
@@ -273,7 +274,7 @@ export class KubernetesObj extends KubernetesContext {
           } else {
             const msg = `Failure deleting Custom Resource object. ${e.response.statusMessage}`;
             console.error(msg);
-            vscode.window.showErrorMessage(msg);
+            showErrorMessage(msg);
             return false;
           }
         });
@@ -337,7 +338,7 @@ export class KubernetesObj extends KubernetesContext {
           } else {
             const msg = `Failure retrieving Broker object list. ${JSON.stringify(e)}`;
             console.error(msg);
-            vscode.window.showErrorMessage(msg);
+            showErrorMessage(msg);
             return undefined;
           }
         });
@@ -356,7 +357,7 @@ export class KubernetesObj extends KubernetesContext {
           } else {
             const msg = `Failure retrieving Broker object list. ${JSON.stringify(e)}`;
             console.error(msg);
-            vscode.window.showErrorMessage(msg);
+            showErrorMessage(msg);
             return undefined;
           }
         });
@@ -380,7 +381,7 @@ export class KubernetesObj extends KubernetesContext {
       .catch(e => {
         const msg = `Failure retrieving custom resource object. ${JSON.stringify(e)}`;
         console.error(msg);
-        vscode.window.showErrorMessage(msg);
+        showErrorMessage(msg);
         return undefined;
       });
   }
@@ -415,7 +416,7 @@ export class KubernetesObj extends KubernetesContext {
         } else {
           const msg = `Failure retrieving Custom Resource instance names. ${JSON.stringify(e)}`;
           console.error(msg);
-          vscode.window.showErrorMessage(msg);
+          showErrorMessage(msg);
           return undefined;
         }
       });
@@ -465,7 +466,7 @@ export class KubernetesObj extends KubernetesContext {
       .catch(e => {
         const msg: any = `Failure retrieving ClusterServiceVersion. ${e}`;
         console.error(msg);
-        vscode.window.showErrorMessage(msg.toString());
+        showErrorMessage(msg.toString());
         throw new Error(msg);
       });
   }
@@ -596,7 +597,7 @@ export class KubernetesObj extends KubernetesContext {
         if (e.statusCode !== 403 && e.statusCode !== 401) {
           const msg = `Failure retrieving Namespace list: ${JSON.stringify(e)}`;
           console.error(msg);
-          vscode.window.showErrorMessage(msg);
+          showErrorMessage(msg);
         }
         return undefined;
       });
@@ -636,10 +637,10 @@ export class KubernetesObj extends KubernetesContext {
         const objsString = JSON.stringify(res.body);
         const objsList: ObjectList = JSON.parse(objsString);
         if (objsList.items.length === 0) {
-          vscode.window.showErrorMessage("OperatorCollection resource not detected in namespace");
+          showErrorMessage("OperatorCollection resource not detected in namespace");
           return undefined;
         } else if (objsList.items.length > 1) {
-          vscode.window.showErrorMessage("Duplicate OperatorCollection resources detected in namespace");
+          showErrorMessage("Duplicate OperatorCollection resources detected in namespace");
           return undefined;
         } else {
           const operatorCollection: OperatorCollectionInstance = objsList.items[0];
@@ -653,7 +654,7 @@ export class KubernetesObj extends KubernetesContext {
       .catch(e => {
         const msg = `Failure retrieving OperatorCollections list. ${JSON.stringify(e)}`;
         console.error(msg);
-        vscode.window.showErrorMessage(msg);
+        showErrorMessage(msg);
         return undefined;
       });
   }
