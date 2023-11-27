@@ -274,7 +274,6 @@ export class OcSdkCommand {
    * @returns - A Promise container the return code of the command being executed
    */
   async runCreateOfflineRequirements(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
-    process.env.ANSIBLE_JINJA2_NATIVE = "true";
     const cmd: string = "ansible-playbook";
     const args = ["ibm.operator_collection_sdk.create_offline_requirements"];
     return this.run(cmd, args, outputChannel, logPath);

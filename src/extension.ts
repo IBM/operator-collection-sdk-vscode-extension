@@ -127,7 +127,7 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     })
   );
-  context.subscriptions.push(initOperatorCollectionSkip(VSCodeCommands.initCollectionSkip, ocSdkCmd, session, outputChannel));
+  context.subscriptions.push(initOperatorCollectionSkip(VSCodeCommands.initCollectionSkip, session));
   context.subscriptions.push(updateProject(VSCodeCommands.updateProject, ocCmd, session));
   context.subscriptions.push(executeSdkCommandWithUserInput(VSCodeCommands.createOperator, session, outputChannel));
   context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.deleteOperator, session, outputChannel));
@@ -543,7 +543,7 @@ function updateOcSdkVersion(command: string, ocSdkCmd: OcSdkCommand, session: Se
 }
 
 function initOperatorCollection(command: string, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
-  return vscode.commands.registerCommand(command, async uri => {
+  return vscode.commands.registerCommand(command, async (uri, logPath?: string) => {
     if (session.operationPending) {
       vscode.window.showWarningMessage("Another operation is processing.");
       return;
@@ -578,7 +578,7 @@ function initOperatorCollection(command: string, session: Session, outputChannel
         session.operationPending = true;
         const ocSdkCommand = new OcSdkCommand(directory); // directory is desired cwd of command
         ocSdkCommand
-          .runInitOperatorCollection(args, outputChannel)
+          .runInitOperatorCollection(args, outputChannel, logPath)
           .then(async () => {
             session.operationPending = false;
             const namespace = args[0].split("=")[1].replace(/"/, "");
@@ -595,8 +595,8 @@ function initOperatorCollection(command: string, session: Session, outputChannel
   });
 }
 
-function initOperatorCollectionSkip(command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
-  return vscode.commands.registerCommand(command, async (logPath?: string) => {
+function initOperatorCollectionSkip(command: string, session: Session): vscode.Disposable {
+  return vscode.commands.registerCommand(command, async () => {
     session.setSkipOCinitFlag().then(async initFlag => {
       vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, initFlag);
       vscode.commands.executeCommand(VSCodeCommands.refresh);
@@ -1060,7 +1060,7 @@ function deleteCustomResource(command: string, session: Session) {
 
 const ocLinterRules = ["missing-galaxy", "match-domain", "match-name", "match-version", "ansible-config", "playbook-path", "hosts-all", "missing-playbook", "finalizer-path", "missing-finalizer"];
 var linterConfigured: OcLintConfig;
-var filteredRules: string[];
+var filteredRules: string[] = ocLinterRules;
 interface OcLintConfig {
   //ignores
   excludePaths?: string[];
@@ -1077,6 +1077,10 @@ function configureLinter(ocLintPath: string) {
     enableList: [],
     useDefaultRules: true,
   };
+
+  // initialize filteredRules with a default value
+  // in case the ".oc-lint" file doesn't exist
+  filteredRules = ocLinterRules;
 
   try {
     let ocLintFile = fs.readFileSync(ocLintPath, "utf8");
