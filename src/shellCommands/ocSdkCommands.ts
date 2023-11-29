@@ -9,6 +9,7 @@ import * as fs from "fs-extra";
 import * as https from "https";
 import * as http from "http";
 import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
+import { showErrorMessage } from "../utilities/toastModifiers";
 
 type HTTP = typeof http;
 type HTTPS = typeof https;
@@ -137,7 +138,7 @@ export class OcSdkCommand {
       if (pipVersion) {
         moduleStatusCode = await this.run(pipVersion, ["install", "kubernetes"], outputChannel, logPath);
       } else {
-        vscode.window.showErrorMessage('Failed to install python module "kubernetes": pip/pip3 is not installed');
+        showErrorMessage('Failed to install python module "kubernetes": pip/pip3 is not installed');
       }
 
       const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
@@ -207,7 +208,7 @@ export class OcSdkCommand {
     try {
       jsonData = await getJsonData(galaxyUrl, galaxyNamespace);
     } catch (e) {
-      vscode.window.showErrorMessage(`Failure retrieving data from Ansible Galaxy: ${e}`);
+      showErrorMessage(`Failure retrieving data from Ansible Galaxy: ${e}`);
     }
 
     const latestVersion = getLatestCollectionVersion(jsonData);
