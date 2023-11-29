@@ -9,6 +9,7 @@ import * as fs from "fs-extra";
 import * as https from "https";
 import * as http from "http";
 import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
+import { showErrorMessage } from "../utilities/toastModifiers";
 
 type HTTP = typeof http;
 type HTTPS = typeof https;
@@ -137,7 +138,7 @@ export class OcSdkCommand {
       if (pipVersion) {
         moduleStatusCode = await this.run(pipVersion, ["install", "kubernetes"], outputChannel, logPath);
       } else {
-        vscode.window.showErrorMessage('Failed to install python module "kubernetes": pip/pip3 is not installed');
+        showErrorMessage('Failed to install python module "kubernetes": pip/pip3 is not installed');
       }
 
       const galaxyUrl = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyURL) as string;
@@ -207,7 +208,7 @@ export class OcSdkCommand {
     try {
       jsonData = await getJsonData(galaxyUrl, galaxyNamespace);
     } catch (e) {
-      vscode.window.showErrorMessage(`Failure retrieving data from Ansible Galaxy: ${e}`);
+      showErrorMessage(`Failure retrieving data from Ansible Galaxy: ${e}`);
     }
 
     const latestVersion = getLatestCollectionVersion(jsonData);
@@ -236,6 +237,19 @@ export class OcSdkCommand {
     const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
     const cmd: string = "ansible-galaxy";
     let args: Array<string> = ["collection", "install", "--pre", "--upgrade", "-f", "-s", galaxyUrl, `${galaxyNamespace}.operator_collection_sdk`];
+    return this.run(cmd, args, outputChannel, logPath);
+  }
+
+  /**
+   * Executes the Operator Collection SDK init Operator command
+   * @param args - The arguments to pass to the command
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async runInitOperatorCollection(args: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
+    const cmd: string = "ansible-playbook";
+    args = args.concat("ibm.operator_collection_sdk.init_collection.yml ");
     return this.run(cmd, args, outputChannel, logPath);
   }
 
