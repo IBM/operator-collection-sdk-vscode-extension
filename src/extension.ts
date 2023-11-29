@@ -11,6 +11,7 @@ import * as fs from "fs";
 import * as yaml from "js-yaml";
 import { VSCodeCommands, VSCodeViewIds, VSCodeDiagnosticMessages } from "./utilities/commandConstants";
 import { ScaffoldCodeActionProvider } from "./treeViews/providers/scaffoldCodeActionProvider";
+import { showErrorMessage } from "./utilities/toastModifiers";
 import { OperatorsTreeProvider } from "./treeViews/providers/operatorProvider";
 import { OperatorItem } from "./treeViews/operatorItems/operatorItem";
 import { OpenShiftItem } from "./treeViews/openshiftItems/openshiftItem";
@@ -156,7 +157,7 @@ export async function activate(context: vscode.ExtensionContext) {
           aboutProvider.refresh();
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -170,7 +171,7 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -185,7 +186,7 @@ export async function activate(context: vscode.ExtensionContext) {
           aboutProvider.refresh();
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -199,7 +200,7 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -213,7 +214,7 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -227,7 +228,7 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -513,7 +514,7 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
           vscode.commands.executeCommand(VSCodeCommands.refresh);
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure installing the IBM Operator Collection SDK: ${e}`);
+          showErrorMessage(`Failure installing the IBM Operator Collection SDK: ${e}`);
         });
     }
   });
@@ -532,10 +533,10 @@ function updateOcSdkVersion(command: string, ocSdkCmd: OcSdkCommand, session: Se
           vscode.commands.executeCommand(VSCodeCommands.refreshAll);
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure upgrading to the latest IBM Operator Collection SDK: ${e}`);
+          showErrorMessage(`Failure upgrading to the latest IBM Operator Collection SDK: ${e}`);
         });
     } catch (e) {
-      vscode.window.showErrorMessage(`Failure upgrading the IBM Operator Collection SDK: ${e}`);
+      showErrorMessage(`Failure upgrading the IBM Operator Collection SDK: ${e}`);
       vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, await session.determinateOcSdkIsOutdated());
       vscode.commands.executeCommand(VSCodeCommands.refresh);
     }
@@ -633,13 +634,13 @@ function updateProject(command: string, ocCmd: OcCommand, session: Session, outp
                 vscode.commands.executeCommand(VSCodeCommands.refreshAll);
               })
               .catch(e => {
-                vscode.window.showErrorMessage(`Failure updating Project on OpenShift cluster: ${e}`);
+                showErrorMessage(`Failure updating Project on OpenShift cluster: ${e}`);
               });
           }
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
@@ -662,7 +663,7 @@ function logIn(command: string, ocCmd: OcCommand, session: Session, outputChanne
         })
         .catch(e => {
           session.loggedIntoOpenShift = false;
-          vscode.window.showErrorMessage(`Failure logging into OpenShift cluster: ${e}`);
+          showErrorMessage(`Failure logging into OpenShift cluster: ${e}`);
         });
     }
   });
@@ -684,7 +685,7 @@ function logOut(command: string, ocCmd: OcCommand, session: Session): vscode.Dis
           vscode.commands.executeCommand(VSCodeCommands.refreshAll);
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure logging out of OpenShift cluster: ${e}`);
+          showErrorMessage(`Failure logging out of OpenShift cluster: ${e}`);
         });
     }
   });
@@ -698,7 +699,7 @@ function executeOpenLinkCommand(command: string): vscode.Disposable {
       try {
         await vscode.env.openExternal(linkUri);
       } catch (e) {
-        vscode.window.showErrorMessage(`Failure opening external link: ${e}`);
+        showErrorMessage(`Failure opening external link: ${e}`);
       }
     } else {
       vscode.window.showWarningMessage("Unable to open link while tree view is refreshing. Please try again in a few seconds.");
@@ -749,7 +750,7 @@ function viewResourceCommand(command: string, session: Session): vscode.Disposab
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
@@ -774,7 +775,7 @@ function executeContainerViewLogCommand(command: string, session: Session): vsco
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
@@ -790,7 +791,7 @@ function executeCustomResourceViewLogCommand(command: string, session: Session):
           let podName: string = "";
           let containerName: string = "";
           if (operatorItem?.podItems.length === 0) {
-            vscode.window.showErrorMessage("Failure retrieving logs because operator pod doesn't exist");
+            showErrorMessage("Failure retrieving logs because operator pod doesn't exist");
             return;
           }
           const podItem = operatorItem?.podItems.find(item => {
@@ -815,10 +816,10 @@ function executeCustomResourceViewLogCommand(command: string, session: Session):
               }
             }
             if (podName === "") {
-              vscode.window.showErrorMessage("Unabled to determine Pod name for corresponding instance");
+              showErrorMessage("Unabled to determine Pod name for corresponding instance");
               return;
             } else if (containerName === "") {
-              vscode.window.showErrorMessage("Unabled to determine container name for corresponding instance");
+              showErrorMessage("Unabled to determine container name for corresponding instance");
               return;
             } else {
               const logUri = util.buildVerboseContainerLogUri(podName, containerName, customResourcesItemArgs.customResourceObj.apiVersion.split("/")[1], customResourcesItemArgs.customResourceObj.kind, customResourcesItemArgs.customResourceObj.metadata.name);
@@ -839,7 +840,7 @@ function executeCustomResourceViewLogCommand(command: string, session: Session):
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
@@ -889,7 +890,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                     })
                     .catch(e => {
                       session.operationPending = false;
-                      vscode.window.showErrorMessage(`Failure executing Delete Operator command: RC ${e}`);
+                      showErrorMessage(`Failure executing Delete Operator command: RC ${e}`);
                     });
                   break;
                 }
@@ -899,7 +900,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                   const operatorVersion = await util.getOperatorConfigVersion(workspacePath);
                   if (operatorVersion === undefined) {
                     session.operationPending = false;
-                    vscode.window.showErrorMessage(`Failure retrieve version from operator config`);
+                    showErrorMessage(`Failure retrieve version from operator config`);
                     return;
                   }
                   const signatureValidationRequired = await k8s.signatureValidationRequiredForOperator(operatorName, operatorVersion);
@@ -908,7 +909,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                     return;
                   } else if (signatureValidationRequired) {
                     session.operationPending = false;
-                    vscode.window.showErrorMessage(`Unable to redeploy collection when signature validation is required. Execute the Redeploy Operator action to reconfigure the operator and disable signature validation`);
+                    showErrorMessage(`Unable to redeploy collection when signature validation is required. Execute the Redeploy Operator action to reconfigure the operator and disable signature validation`);
                     return;
                   }
                   vscode.window.showInformationMessage("Redeploy Collection request in progress");
@@ -924,7 +925,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                     })
                     .catch(e => {
                       session.operationPending = false;
-                      vscode.window.showErrorMessage(`Failure executing Redeploy Collection command: RC ${e}`);
+                      showErrorMessage(`Failure executing Redeploy Collection command: RC ${e}`);
                     });
                   break;
                 }
@@ -942,7 +943,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                     })
                     .catch(e => {
                       session.operationPending = false;
-                      vscode.window.showErrorMessage(`Failure executing Redeploy Operator command: RC ${e}`);
+                      showErrorMessage(`Failure executing Redeploy Operator command: RC ${e}`);
                     });
                   break;
                 }
@@ -952,7 +953,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
@@ -1007,7 +1008,7 @@ function executeSdkCommandWithUserInput(command: string, session: Session, outpu
                   })
                   .catch(e => {
                     session.operationPending = false;
-                    vscode.window.showErrorMessage(`Failure executing Create Operator command: RC ${e}`);
+                    showErrorMessage(`Failure executing Create Operator command: RC ${e}`);
                   });
               }
             }
@@ -1040,20 +1041,20 @@ function deleteCustomResource(command: string, session: Session) {
                     vscode.window.showInformationMessage(`Successfully deleted ${kind} resource`);
                     vscode.commands.executeCommand(VSCodeCommands.resourceRefresh);
                   } else {
-                    vscode.window.showErrorMessage(`Failed to delete ${kind} resource`);
+                    showErrorMessage(`Failed to delete ${kind} resource`);
                   }
                 })
                 .catch(e => {
-                  vscode.window.showErrorMessage(`Failed to delete ${kind} resource: ${e}`);
+                  showErrorMessage(`Failed to delete ${kind} resource: ${e}`);
                 });
             }
           } else {
-            vscode.window.showErrorMessage("Failed to delete custom resource. Please try again.");
+            showErrorMessage("Failed to delete custom resource. Please try again.");
           }
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
