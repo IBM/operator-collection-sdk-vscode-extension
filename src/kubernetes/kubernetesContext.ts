@@ -4,6 +4,7 @@ import * as k8s from "@kubernetes/client-node";
 import * as fs from "fs";
 import { VSCodeCommands } from "../utilities/commandConstants";
 import { OcCommand } from "../shellCommands/ocCommand";
+import { showErrorMessage } from "../utilities/toastModifiers";
 
 export class KubernetesContext {
   public coreV1Api: k8s.CoreV1Api | undefined = undefined;
@@ -54,7 +55,7 @@ export class KubernetesContext {
         this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
         this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
       } catch (error) {
-        vscode.window.showErrorMessage(`Failed to validate KubeConfig file. ${error}`);
+        showErrorMessage(`Failed to validate KubeConfig file. ${error}`);
         vscode.window.showInformationMessage("Please log into the OpenShift cluster again.");
       }
     }
@@ -76,7 +77,7 @@ export class KubernetesContext {
           vscode.commands.executeCommand(VSCodeCommands.refreshAll);
           resolve(true);
         } catch (error) {
-          vscode.window.showErrorMessage(`Failure logging in to OpenShift cluster: ${error}`);
+          showErrorMessage(`Failure logging in to OpenShift cluster: ${error}`);
           reject(false);
         }
       } else {
