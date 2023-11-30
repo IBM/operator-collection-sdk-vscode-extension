@@ -269,7 +269,6 @@ export class OcSdkCommand {
 
   /**
    * Executes the Operator Collection SDK Create Offline Requirements command
-   * @param args - The arguments to pass to the command
    * @param outputChannel - The VS Code output channel to display command output
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed

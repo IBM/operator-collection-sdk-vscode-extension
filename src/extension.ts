@@ -39,6 +39,7 @@ import { getLinterSettings, LinterSettings } from "./utilities/util";
 import { Minimatch } from "minimatch";
 import { AboutTreeProvider } from "./treeViews/providers/aboutProvider";
 import * as BoilerplateContent from "./utilities/Boilerplate/Boilerplate";
+import { log } from "console";
 
 export async function activate(context: vscode.ExtensionContext) {
   // Set context as a global as some tests depend on it
@@ -447,7 +448,7 @@ function createPlaybookBoilerplateFile(command: string): vscode.Disposable {
 }
 
 function convertToAirgapCollection(command: string, outputChannel?: vscode.OutputChannel) {
-  return vscode.commands.registerCommand(command, async (uri, _) => {
+  return vscode.commands.registerCommand(command, async (uri, _, logPath?: string) => {
     const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
     const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
     if (rootFolder && uri) {
@@ -487,7 +488,7 @@ function convertToAirgapCollection(command: string, outputChannel?: vscode.Outpu
       try {
         let ocSdkCommand = new OcSdkCommand(nearestCollection);
         outputChannel?.show();
-        await ocSdkCommand.runCreateOfflineRequirements(outputChannel).then(() => {
+        await ocSdkCommand.runCreateOfflineRequirements(outputChannel, logPath).then(() => {
           vscode.window.showInformationMessage(`Successfully converted \"${path.basename(nearestCollection)}\" to an airgap collection`);
         });
       } catch (e) {
