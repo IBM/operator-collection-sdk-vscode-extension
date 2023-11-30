@@ -7,6 +7,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
 import * as vscode from "vscode";
+import { showErrorMessage } from "./toastModifiers";
 
 /**
  * Retrieves the current workspace root directory if it exists
@@ -284,4 +285,24 @@ export function searchParents(directory: string, workspaceRootFolderName: string
 
   // keep searching parents
   return searchParents(parentDirectory, workspaceRootFolderName, targets, fileExtensions);
+}
+
+/**
+ * Creates a file at specified location in workspace.
+ * @param filePath - A String path for the file to be created.
+ * @param fileContent - String data to populate the file with.
+ */
+export function createWorkspaceFile(filePath: string, fileContent: string) {
+  const rootFolder = getCurrentWorkspaceRootFolder();
+  if (rootFolder && filePath.includes(rootFolder)) {
+    try {
+      const directory = path.dirname(filePath);
+      if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory, { recursive: true });
+      }
+      fs.writeFileSync(filePath, fileContent, "utf-8");
+    } catch (e) {
+      showErrorMessage(`Failed to create ${path.basename(filePath)}: ${e}`);
+    }
+  }
 }
