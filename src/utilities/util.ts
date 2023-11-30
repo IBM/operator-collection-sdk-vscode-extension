@@ -11,6 +11,7 @@ import * as yaml from "js-yaml";
 import { setInterval } from "timers";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
+import { showErrorMessage } from "./toastModifiers";
 
 type WorkSpaceOperators = { [key: string]: string };
 
@@ -54,17 +55,6 @@ export const zosCloudBrokerApiVersion: string = "v2beta1";
 export const logScheme: string = "containerLogs";
 export const verboseLogScheme: string = "verboseContainerLogs";
 export const customResourceScheme: string = "customResource";
-
-/**
- * Retrieve the current workspace root directory if it exists
- * @returns — The vscode.WorkspaceFolder interface, or undefined if a directory doesn't exists
- */
-export function getCurrentWorkspaceRootFolder(): string | undefined {
-  if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders?.length > 0) {
-    return vscode.workspace.workspaceFolders[0].uri.path;
-  }
-  return undefined;
-}
 
 /**
  * Retrieve the list of Operator Collection names and workspace directories in the current workspace
@@ -174,7 +164,7 @@ function getOperatorConfigUri(pwd: string): vscode.Uri {
   } else if (fs.existsSync(path.join(pwd, "operator-config.yaml"))) {
     operatorConfigFilePath = path.join(pwd, "operator-config.yaml");
   } else {
-    vscode.window.showErrorMessage("operator-config file doesn't exist in workspace");
+    showErrorMessage("operator-config file doesn't exist in workspace");
   }
   return vscode.Uri.parse(operatorConfigFilePath);
 }
@@ -283,7 +273,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     args.push(`--extra-vars "@${extraVarsFilePath}"`);
     return args;
   } else if (ocsdkVarsFile.length > 1) {
-    vscode.window.showErrorMessage("Multiple ocsdk-extra-vars files in Operator Collection not allowed");
+    showErrorMessage("Multiple ocsdk-extra-vars files in Operator Collection not allowed");
     return undefined;
   }
 
@@ -309,7 +299,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
   if (zosEndpointType === undefined) {
     return undefined;
   } else if (zosEndpointType === "") {
-    vscode.window.showErrorMessage("Endpoint type is required");
+    showErrorMessage("Endpoint type is required");
     return undefined;
   }
   args.push(`-e "zosendpoint_type=${zosEndpointType}"`);
@@ -322,7 +312,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
   if (zosEndpointName === undefined) {
     return undefined;
   } else if (zosEndpointName === "") {
-    vscode.window.showErrorMessage("ZosEndpoint Name is required");
+    showErrorMessage("ZosEndpoint Name is required");
     return undefined;
   }
 
@@ -337,7 +327,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     if (zosEndpointHost === undefined) {
       return undefined;
     } else if (zosEndpointHost === "") {
-      vscode.window.showErrorMessage("ZosEndpoint host is required");
+      showErrorMessage("ZosEndpoint host is required");
       return undefined;
     }
     args.push(`-e "zosendpoint_host=${zosEndpointHost}"`);
@@ -351,7 +341,7 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
     if (zosEndpointPort === undefined) {
       return undefined;
     } else if (zosEndpointPort === "") {
-      vscode.window.showErrorMessage("ZosEndpoint port is required");
+      showErrorMessage("ZosEndpoint port is required");
       return undefined;
     }
     args.push(`-e "zosendpoint_port=${zosEndpointPort}"`);
@@ -545,7 +535,7 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
     return undefined;
   } else {
     if (collectionName === "") {
-      vscode.window.showErrorMessage("Collection name is required");
+      showErrorMessage("Collection name is required");
       return undefined;
     }
   }
@@ -562,7 +552,7 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
     return undefined;
   } else {
     if (ansibleGalaxyNamespace === "") {
-      vscode.window.showErrorMessage("Galaxy namespace is required");
+      showErrorMessage("Galaxy namespace is required");
       return undefined;
     }
   }
@@ -578,7 +568,7 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
     return undefined;
   } else {
     if (offlineInstall === "") {
-      vscode.window.showErrorMessage("Couldn't determinate if the collection will be executed in an offline environment");
+      showErrorMessage("Couldn't determinate if the collection will be executed in an offline environment");
       return undefined;
     }
   }
@@ -698,4 +688,58 @@ export function getAnsibleGalaxySettings(property: string): any {
 export function getLinterSettings(property: string): any {
   const configuration = vscode.workspace.getConfiguration("operatorCollectionSdk.linter");
   return configuration.get(property);
+}
+
+/**
+ * Implements the Jaro string similarity algorithm.
+ * @param s1 - A String.
+ * @param s2 - A String.
+ * @returns A similarty score between the two strings.
+ */
+export function calcuateStringSimilarty(s1: string, s2: string) {
+  if (s1 === s2) {
+    return 1.0;
+  }
+
+  const mask1 = new Array(s1.length).fill(0);
+  const mask2 = new Array(s2.length).fill(0);
+  const matchDistance = Math.floor(Math.max(s1.length, s2.length) / 2) - 1;
+
+  // calculate matches (characters which match within a specified distance)
+  for (let i = 0; i < s1.length; i++) {
+    for (let j = 0; j < s2.length; j++) {
+      let l = i; // points to left of index
+      let r = i; // points to right of index
+      for (let m = 0; m <= matchDistance; m++) {
+        if (s2[l] === s1[i] || s2[r] === s1[i]) {
+          mask1[i] = 1;
+          mask2[j] = 1;
+        }
+        l = Math.max(0, l - m);
+        r = Math.min(s2.length, r + m);
+      }
+    }
+  }
+
+  // distance is bidirectional so the sum will be the same for both masks
+  const matches = mask1.reduce((acc, currVal) => acc + currVal, 0);
+  if (matches === 0) {
+    return 0;
+  }
+
+  // calculate transpositions (# of non matching characters per index)
+  let nonMatching = 0;
+  const matches1 = s1.split("").filter((_, index) => mask1[index]);
+  const matches2 = s2.split("").filter((_, index) => mask2[index]);
+  for (let i = 0; i < matches1.length; i++) {
+    if (matches1[i] !== matches2[i]) {
+      nonMatching++;
+    }
+  }
+  const transpositions = nonMatching / 2;
+
+  // calulate similarity score
+  const similarity = (1 / 3) * (matches / s1.length + matches / s2.length + (matches - transpositions) / matches);
+
+  return similarity;
 }

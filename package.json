@@ -145,6 +145,41 @@
         "title": "Delete Custom Resource",
         "category": "OC-SDK",
         "icon": "$(trash)"
+      },
+      {
+        "command": "operator-collection-sdk.refactorInline",
+        "title": "Refactor YAML file inline",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createFile",
+        "title": "Create boilerplate YAML file",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createGalaxyBoilerplateFile",
+        "title": "New galaxy file...",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createOperatorConfigBoilerplateFile",
+        "title": "New operator-config file...",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createPlaybookBoilerplateFile",
+        "title": "New playbook file...",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.convertToAirgapCollection",
+        "title": "Convert to Airgap Collection",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.initCollection",
+        "title": "New Operator Collection...",
+        "category": "OC-SDK"
       }
     ],
     "configuration": [
@@ -234,7 +269,7 @@
       },
       {
         "view": "operator-collection-sdk.operators",
-        "contents": "Operator Collection isn’t detected in current workspace \n[Initialize Operator Collection](command:operator-collection-sdk.initCollection)\n[Skip](command:operator-collection-sdk.initCollectionSkip)",
+        "contents": "Operator Collection isn’t detected in current workspace \n[Initialize Operator Collection](command:operator-collection-sdk.initCollectionAtRoot)\n[Skip](command:operator-collection-sdk.initCollectionSkip)",
         "when": "operator-collection-sdk.sdkInstalled && !operator-collection-sdk.sdkOutdatedVersion && operator-collection-sdk.isCollectionInWorkspace && workspaceFolderCount!=0"
       },
       {
@@ -277,7 +312,43 @@
         }
       ]
     },
+    "submenus": [
+      {
+        "id": "operator-collection-sdk.submenu",
+        "label": "Operator Collection SDK",
+        "group": "submenu"
+      }
+    ],
     "menus": {
+      "explorer/context": [
+        {
+          "submenu": "operator-collection-sdk.submenu",
+          "group": "navigation@100",
+          "when": "explorerResourceIsFolder"
+        }
+      ],
+      "operator-collection-sdk.submenu": [
+        {
+          "command": "operator-collection-sdk.createGalaxyBoilerplateFile",
+          "group": "ocsdk-submenu@0"
+        },
+        {
+          "command": "operator-collection-sdk.createPlaybookBoilerplateFile",
+          "group": "ocsdk-submenu@1"
+        },
+        {
+          "command": "operator-collection-sdk.createOperatorConfigBoilerplateFile",
+          "group": "ocsdk-submenu@2"
+        },
+        {
+          "command": "operator-collection-sdk.convertToAirgapCollection",
+          "group": "ocsdk-submenu@3"
+        },
+        {
+          "command": "operator-collection-sdk.initCollection",
+          "group": "ocsdk-submenu@4"
+        }
+      ],
       "view/title": [
         {
           "command": "operator-collection-sdk.refreshAll",

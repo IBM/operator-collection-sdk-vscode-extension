@@ -5,9 +5,13 @@
 
 import * as vscode from "vscode";
 import * as util from "./utilities/util";
+import * as workspace from "./utilities/workspace";
 import * as path from "path";
 import * as fs from "fs";
-import { VSCodeCommands, VSCodeViewIds } from "./utilities/commandConstants";
+import * as yaml from "js-yaml";
+import { VSCodeCommands, VSCodeViewIds, VSCodeDiagnosticMessages } from "./utilities/commandConstants";
+import { ScaffoldCodeActionProvider } from "./treeViews/providers/scaffoldCodeActionProvider";
+import { showErrorMessage } from "./utilities/toastModifiers";
 import { OperatorsTreeProvider } from "./treeViews/providers/operatorProvider";
 import { OperatorItem } from "./treeViews/operatorItems/operatorItem";
 import { OpenShiftItem } from "./treeViews/openshiftItems/openshiftItem";
@@ -32,9 +36,9 @@ import { Session } from "./utilities/session";
 import { OperatorConfig } from "./linter/models";
 import { AnsibleGalaxyYmlSchema } from "./linter/galaxy";
 import { getLinterSettings, LinterSettings } from "./utilities/util";
-import * as yaml from "js-yaml";
 import { Minimatch } from "minimatch";
 import { AboutTreeProvider } from "./treeViews/providers/aboutProvider";
+import * as BoilerplateContent from "./utilities/Boilerplate/Boilerplate";
 
 export async function activate(context: vscode.ExtensionContext) {
   // Set context as a global as some tests depend on it
@@ -65,6 +69,11 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
       vscode.workspace.onDidChangeTextDocument(textDocumentChangeEvent => {
         updateDiagnostics(textDocumentChangeEvent.document, collection);
+      })
+    );
+    context.subscriptions.push(
+      vscode.languages.registerCodeActionsProvider("yaml", new ScaffoldCodeActionProvider(), {
+        providedCodeActionKinds: ScaffoldCodeActionProvider.providedCodeActionKinds,
       })
     );
   }
@@ -111,7 +120,15 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(installOcSdk(VSCodeCommands.install, ocSdkCmd, session, outputChannel));
   context.subscriptions.push(updateOcSdkVersion(VSCodeCommands.sdkUpgradeVersion, ocSdkCmd, session, outputChannel));
   context.subscriptions.push(initOperatorCollection(VSCodeCommands.initCollection, session, outputChannel));
-  context.subscriptions.push(initOperatorCollectionSkip(VSCodeCommands.initCollectionSkip, ocSdkCmd, session, outputChannel));
+  context.subscriptions.push(
+    vscode.commands.registerCommand(VSCodeCommands.initCollectionAtRoot, (logPath?: string) => {
+      const rootFolder = workspace.getCurrentWorkspaceRootFolder();
+      if (rootFolder) {
+        vscode.commands.executeCommand(VSCodeCommands.initCollection, vscode.Uri.file(rootFolder), logPath);
+      }
+    })
+  );
+  context.subscriptions.push(initOperatorCollectionSkip(VSCodeCommands.initCollectionSkip, session));
   context.subscriptions.push(updateProject(VSCodeCommands.updateProject, ocCmd, session));
   context.subscriptions.push(executeSdkCommandWithUserInput(VSCodeCommands.createOperator, session, outputChannel));
   context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.deleteOperator, session, outputChannel));
@@ -124,6 +141,12 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openAddLink));
   context.subscriptions.push(executeOpenLinkCommand(VSCodeCommands.openLink));
   context.subscriptions.push(viewResourceCommand(VSCodeCommands.viewResource, session));
+  context.subscriptions.push(executeInlineReplaceWith(VSCodeCommands.inlineReplaceWith));
+  context.subscriptions.push(createFile(VSCodeCommands.createFile));
+  context.subscriptions.push(convertToAirgapCollection(VSCodeCommands.convertToAirgapCollection, outputChannel));
+  context.subscriptions.push(createGalaxyBoilerplateFile(VSCodeCommands.createGalaxyBoilerplateFile));
+  context.subscriptions.push(createOperatorConfigBoilerplateFile(VSCodeCommands.createOperatorConfigBoilerplateFile));
+  context.subscriptions.push(createPlaybookBoilerplateFile(VSCodeCommands.createPlaybookBoilerplateFile));
   context.subscriptions.push(
     vscode.commands.registerCommand(VSCodeCommands.refresh, () => {
       session
@@ -134,7 +157,7 @@ export async function activate(context: vscode.ExtensionContext) {
           aboutProvider.refresh();
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -148,7 +171,7 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -163,7 +186,7 @@ export async function activate(context: vscode.ExtensionContext) {
           aboutProvider.refresh();
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -177,7 +200,7 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -191,7 +214,7 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -205,7 +228,7 @@ export async function activate(context: vscode.ExtensionContext) {
           }
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+          showErrorMessage(`Failure updating session: ${e}`);
         });
     })
   );
@@ -219,6 +242,259 @@ export async function activate(context: vscode.ExtensionContext) {
       });
     })
   );
+}
+
+function executeInlineReplaceWith(command: string) {
+  return vscode.commands.registerCommand(command, async (refactorText: string, document: vscode.TextDocument, range: vscode.Range) => {
+    try {
+      const edit = new vscode.WorkspaceEdit();
+      edit.replace(document.uri, range, refactorText);
+      vscode.workspace.applyEdit(edit);
+    } catch (e) {
+      vscode.window.showErrorMessage(`Failed to edit "${path.basename(document.uri.fsPath)}": ${e}`);
+    }
+  });
+}
+
+function createFile(command: string): vscode.Disposable {
+  return vscode.commands.registerCommand(command, async (filename: string, directory: string, callBack?: () => void) => {
+    let content: string = "";
+    let counterFile: string = "";
+    const operatorConfigRX = /operator-config\.ya?ml$/;
+    const galaxyRX = /galaxy\.ya?ml$/;
+    const playbookRX = /\.ya?ml$/;
+
+    if (operatorConfigRX.test(filename)) {
+      let name = "AddNameHere";
+      let domain = "AddDomainHere";
+      let version = "AddVersionHere";
+      // check if galaxy file exists in this collection
+      const galaxyFile = workspace.getMatchingDecendants(directory, [/galaxy.ya?ml$/], false);
+      if (galaxyFile.length) {
+        // if a galaxy file exists, populate the operator-config file with shared values
+        const sharedValues = workspace.getValuesFromYamlFile(galaxyFile[0], ["name", "namespace", "version"]);
+        name = sharedValues[0] ?? name;
+        domain = sharedValues[1] ?? domain;
+        version = sharedValues[2] ?? version;
+      } else {
+        // note that the galaxy file doesn't exist
+        counterFile = "galaxy.yml";
+      }
+
+      content = BoilerplateContent.operatorConfigBoilerplateContent(name, domain, version);
+    } else if (galaxyRX.test(filename)) {
+      let name = "AddNameHere";
+      let namespace = "AddDomainHere";
+      let version = "AddVersionHere";
+      // check if an operator-config file exists in this collection
+      const operatorConfigFile = workspace.getMatchingDecendants(directory, [/operator-config.ya?ml$/], false);
+      if (operatorConfigFile.length) {
+        // if an operator-config exists, populate the galaxy file with shared values
+        const sharedValues = workspace.getValuesFromYamlFile(operatorConfigFile[0], ["name", "domain", "version"]);
+        name = sharedValues[0] ?? name;
+        namespace = sharedValues[1] ?? namespace;
+        version = sharedValues[2] ?? version;
+      } else {
+        // note that the operator-config file doesn't exist
+        counterFile = "operator-config.yml";
+      }
+
+      content = BoilerplateContent.galaxyBoilerplateContent(name, namespace, version);
+    } else if (playbookRX.test(filename)) {
+      content = BoilerplateContent.playbookBoilerplateContent;
+    } else {
+      vscode.window.showErrorMessage(`Cannot create scaffold for file ${filename}. Supported file types are: .yaml/.yml`);
+      return;
+    }
+
+    // save fileName extension and strip filePath of extension
+    const extension = filename.match(playbookRX)?.[0];
+    const alternativeExtension = extension === ".yaml" ? ".yml" : ".yaml";
+    let filePath = path.join(directory, filename).replace(playbookRX, "");
+
+    // we need to check if either "*.yaml" or "*.yml" versions exist,
+    // and use the existing extension
+    let fileExists: boolean = false;
+    if (fs.existsSync(filePath + extension)) {
+      fileExists = true;
+      filePath = filePath + extension;
+    } else if (fs.existsSync(filePath + alternativeExtension)) {
+      fileExists = true;
+      filePath = filePath + alternativeExtension;
+    } else {
+      filePath = filePath + extension;
+    }
+    const newFileName = workspace.pruneDirectoryStem(directory, [filePath])[0];
+
+    // if the file exists, ask user for permision to overwrite
+    if (fileExists) {
+      const canProceed = await vscode.window.showInformationMessage(
+        `
+        A(n) ${newFileName} file already exists in this location: "${path.basename(path.dirname(filePath))}"
+
+        Do you want to overwrite it?
+        `, // preserve whitespace
+        { modal: true },
+        "Yes"
+      );
+      if (!canProceed || canProceed !== "Yes") {
+        return;
+      }
+    }
+
+    try {
+      // if filename contains additional directories that don't exist, create them
+      const additionalDirectories = path.dirname(filename);
+      if (!fs.existsSync(path.join(directory, additionalDirectories))) {
+        fs.mkdirSync(path.join(directory, additionalDirectories), { recursive: true });
+      }
+      fs.writeFileSync(filePath, content, "utf-8");
+      vscode.window.showInformationMessage(`Successfully created file ${newFileName}.`);
+
+      // if the counter file doesn't exist, ask the user if they want to create one
+      if (counterFile) {
+        const createCounterFile = await vscode.window.showInformationMessage(
+          `
+          We noticed the operator collection "${path.basename(path.dirname(filePath))}" is missing a required file: ${counterFile}. 
+          
+          Would you like to create one now?
+          `, // preserve whitespace
+          { modal: true },
+          "Yes"
+        );
+
+        if (!createCounterFile || createCounterFile !== "Yes") {
+          return;
+        }
+        vscode.commands.executeCommand(VSCodeCommands.createFile, counterFile, directory);
+      }
+
+      if (callBack !== undefined) {
+        callBack();
+      }
+    } catch (e) {
+      vscode.window.showErrorMessage(`Error while attempting to create file ${filename}: ${e}`);
+    }
+  });
+}
+
+function createGalaxyBoilerplateFile(command: string): vscode.Disposable {
+  return vscode.commands.registerCommand(command, async (uri, _) => {
+    const filename = "galaxy.yml";
+    if (uri) {
+      const candidateDirectory = uri.fsPath;
+      const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionInLineage(candidateDirectory);
+      if (collectionPathIsAmbiguous) {
+        vscode.window.showWarningMessage(`
+          The folder "${path.basename(candidateDirectory)}" contains multiple collections. 
+          Select a specific collection to create a ${filename} file.
+        `);
+        return;
+      }
+
+      const destinationDirectory = collectionDirectory ? collectionDirectory : candidateDirectory;
+      if (destinationDirectory !== candidateDirectory) {
+        vscode.window.showWarningMessage(`
+          Attempting to create file at "${path.basename(destinationDirectory)}" instead of "${path.basename(candidateDirectory)}"; 
+          Each collection should contain exactly one ${filename} file, and collections cannot be nested.
+        `);
+      }
+      vscode.commands.executeCommand(VSCodeCommands.createFile, filename, destinationDirectory);
+    } else {
+      vscode.window.showErrorMessage(`Failed to create ${filename} file, please try again.`);
+    }
+  });
+}
+
+function createOperatorConfigBoilerplateFile(command: string): vscode.Disposable {
+  return vscode.commands.registerCommand(command, async (uri, _) => {
+    const filename = "operator-config.yml";
+    if (uri) {
+      const candidateDirectory = uri.fsPath;
+      const [collectionDirectory, collectionPathIsAmbiguous] = workspace.findNearestCollectionInLineage(candidateDirectory);
+      if (collectionPathIsAmbiguous) {
+        vscode.window.showWarningMessage(`
+          The folder "${path.basename(candidateDirectory)}" contains multiple collections. 
+          Select a specific collection to create a ${filename} file.
+        `);
+        return;
+      }
+
+      const destinationDirectory = collectionDirectory ? collectionDirectory : candidateDirectory;
+      if (destinationDirectory !== candidateDirectory) {
+        vscode.window.showWarningMessage(`
+          Attempting to create file at "${path.basename(destinationDirectory)}" instead of "${path.basename(candidateDirectory)}"; 
+          Each collection should contain exactly one ${filename} file, and collections cannot be nested.
+        `);
+      }
+      vscode.commands.executeCommand(VSCodeCommands.createFile, filename, destinationDirectory);
+    } else {
+      vscode.window.showErrorMessage(`Failed to create ${filename} file, please try again.`);
+    }
+  });
+}
+
+function createPlaybookBoilerplateFile(command: string): vscode.Disposable {
+  return vscode.commands.registerCommand(command, async (uri, _) => {
+    const filename = "playbook.yml";
+    if (uri) {
+      const directory = uri.fsPath;
+      vscode.commands.executeCommand(VSCodeCommands.createFile, filename, directory);
+    } else {
+      vscode.window.showErrorMessage(`Failed to create ${filename} file, please try again.`);
+    }
+  });
+}
+
+function convertToAirgapCollection(command: string, outputChannel?: vscode.OutputChannel) {
+  return vscode.commands.registerCommand(command, async (uri, _) => {
+    const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
+    const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
+    if (rootFolder && uri) {
+      const directory = uri.fsPath;
+
+      // determine which collection to convert based on the uri clicked
+      const [nearestCollection, collectionPathIsAmbiguous] = workspace.findNearestCollectionInLineage(directory);
+      if (nearestCollection === "") {
+        if (collectionPathIsAmbiguous) {
+          vscode.window.showWarningMessage(`
+            The folder "${path.basename(directory)}" contains multiple collections. 
+            Select a specific collection to create convert to an airgap collection.
+          `);
+        } else {
+          vscode.window.showWarningMessage(`The folder "${path.basename(directory)}" does not contain any collections.`);
+        }
+        return;
+      }
+
+      // ensure the nearest collection path is an ancestor path or decendant path
+      if (!workspace.pathIsAncestorOrDecendant(directory, nearestCollection)) {
+        vscode.window.showWarningMessage(`This folder doesn't contain any collections. Did you mean to convert "${path.basename(nearestCollection)}" instead?`);
+        return;
+      }
+
+      // validate the requirements file exists
+      const collectionRequirements = workspace.getMatchingDecendants(nearestCollection, [/requirements.ya?ml/], true, [".yaml", ".yml"]);
+      if (collectionRequirements.length === 0) {
+        vscode.window.showWarningMessage(`
+          No requirements.yml file detected within the collection "${path.basename(nearestCollection)}". 
+          Airgap conversion requires a "collections/requirements.yml" file.
+        `);
+        return;
+      }
+
+      vscode.window.showInformationMessage(`Converting \"${path.basename(nearestCollection)}\" to an airgap collection...`);
+      try {
+        let ocSdkCommand = new OcSdkCommand(nearestCollection);
+        outputChannel?.show();
+        await ocSdkCommand.runCreateOfflineRequirements(outputChannel).then(() => {
+          vscode.window.showInformationMessage(`Successfully converted \"${path.basename(nearestCollection)}\" to an airgap collection`);
+        });
+      } catch (e) {
+        vscode.window.showErrorMessage('The Operator Collection SDK command "create_offline_requirements" failed convert collection. Please see output for more details.');
+      }
+    }
+  });
 }
 
 function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
@@ -244,7 +520,7 @@ function installOcSdk(command: string, ocSdkCmd: OcSdkCommand, session: Session,
           vscode.commands.executeCommand(VSCodeCommands.refresh);
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure installing the IBM Operator Collection SDK: ${e}`);
+          showErrorMessage(`Failure installing the IBM Operator Collection SDK: ${e}`);
         });
     }
   });
@@ -263,10 +539,10 @@ function updateOcSdkVersion(command: string, ocSdkCmd: OcSdkCommand, session: Se
           vscode.commands.executeCommand(VSCodeCommands.refreshAll);
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure upgrading to the latest IBM Operator Collection SDK: ${e}`);
+          showErrorMessage(`Failure upgrading to the latest IBM Operator Collection SDK: ${e}`);
         });
     } catch (e) {
-      vscode.window.showErrorMessage(`Failure upgrading the IBM Operator Collection SDK: ${e}`);
+      showErrorMessage(`Failure upgrading the IBM Operator Collection SDK: ${e}`);
       vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, await session.determinateOcSdkIsOutdated());
       vscode.commands.executeCommand(VSCodeCommands.refresh);
     }
@@ -274,29 +550,60 @@ function updateOcSdkVersion(command: string, ocSdkCmd: OcSdkCommand, session: Se
 }
 
 function initOperatorCollection(command: string, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
-  return vscode.commands.registerCommand(command, async (logPath?: string) => {
+  return vscode.commands.registerCommand(command, async (uri, _, logPath?: string) => {
     if (session.operationPending) {
-      vscode.window.showWarningMessage("Another Operation is processing");
-    } else {
+      vscode.window.showWarningMessage("Another operation is processing.");
+      return;
+    }
+
+    const workspaceFolder = workspace.getCurrentWorkspaceRootFolder();
+    const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
+    if (rootFolder && uri) {
+      const directory = uri.fsPath;
+
+      // ensure the supplied directory is not itself a collection
+      const fileExtensions = [".yaml", ".yml"];
+      const targets = [/galaxy.ya?ml$/, /operator-config.ya?ml$/];
+      const matchingFiles = workspace.getMatchingDecendants(directory, targets, false, fileExtensions);
+      if (matchingFiles.length) {
+        vscode.window.showWarningMessage(`You are attempting to create a nested collection within the collection "${path.basename(path.dirname(matchingFiles[0]))}" or its subfolders, which is not allowed.`);
+        return;
+      }
+
+      // if any decendant folders of this directory is a collection that means this directory
+      // is an "operator collection workspace" which is fine. However if any parents are
+      // collections, the user is attempting to create a nested collection, which is not allowed
+      const parentCollectionPath = workspace.searchParents(directory, rootFolder, targets, fileExtensions);
+      if (parentCollectionPath !== "") {
+        vscode.window.showWarningMessage(`You are attempting to create a nested collection within the collection "${path.basename(path.dirname(parentCollectionPath))}" or its subfolders, which is not allowed.`);
+        return;
+      }
+
       const args = await util.requestInitOperatorCollectionInfo();
       if (args) {
         outputChannel?.show();
         session.operationPending = true;
-        let pwd = util.getCurrentWorkspaceRootFolder();
-        let ocSdkCommand = new OcSdkCommand(pwd);
-        ocSdkCommand.runInitOperatorCollection(args, outputChannel, logPath).then(async () => {
-          session.operationPending = false;
-          vscode.window.showInformationMessage(`Initialization of Operator Collection ${args[1]} executed successfully`);
-          vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
-          vscode.commands.executeCommand(VSCodeCommands.refresh);
-        });
+        const ocSdkCommand = new OcSdkCommand(directory); // directory is desired cwd of command
+        ocSdkCommand
+          .runInitOperatorCollection(args, outputChannel, logPath)
+          .then(async () => {
+            session.operationPending = false;
+            const namespace = args[0].split("=")[1].replace(/"/, "");
+            vscode.window.showInformationMessage(`Initialization of Operator Collection "${namespace}" executed successfully`);
+            vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
+            vscode.commands.executeCommand(VSCodeCommands.refresh);
+          })
+          .catch(e => {
+            session.operationPending = false;
+            vscode.window.showErrorMessage(`The collection initialization has unexpectedly failed. Please review the output logs for details. ${e}`);
+          });
       }
     }
   });
 }
 
-function initOperatorCollectionSkip(command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
-  return vscode.commands.registerCommand(command, async (logPath?: string) => {
+function initOperatorCollectionSkip(command: string, session: Session): vscode.Disposable {
+  return vscode.commands.registerCommand(command, async () => {
     session.setSkipOCinitFlag().then(async initFlag => {
       vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, initFlag);
       vscode.commands.executeCommand(VSCodeCommands.refresh);
@@ -333,13 +640,13 @@ function updateProject(command: string, ocCmd: OcCommand, session: Session, outp
                 vscode.commands.executeCommand(VSCodeCommands.refreshAll);
               })
               .catch(e => {
-                vscode.window.showErrorMessage(`Failure updating Project on OpenShift cluster: ${e}`);
+                showErrorMessage(`Failure updating Project on OpenShift cluster: ${e}`);
               });
           }
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
@@ -362,7 +669,7 @@ function logIn(command: string, ocCmd: OcCommand, session: Session, outputChanne
         })
         .catch(e => {
           session.loggedIntoOpenShift = false;
-          vscode.window.showErrorMessage(`Failure logging into OpenShift cluster: ${e}`);
+          showErrorMessage(`Failure logging into OpenShift cluster: ${e}`);
         });
     }
   });
@@ -384,7 +691,7 @@ function logOut(command: string, ocCmd: OcCommand, session: Session): vscode.Dis
           vscode.commands.executeCommand(VSCodeCommands.refreshAll);
         })
         .catch(e => {
-          vscode.window.showErrorMessage(`Failure logging out of OpenShift cluster: ${e}`);
+          showErrorMessage(`Failure logging out of OpenShift cluster: ${e}`);
         });
     }
   });
@@ -398,7 +705,7 @@ function executeOpenLinkCommand(command: string): vscode.Disposable {
       try {
         await vscode.env.openExternal(linkUri);
       } catch (e) {
-        vscode.window.showErrorMessage(`Failure opening external link: ${e}`);
+        showErrorMessage(`Failure opening external link: ${e}`);
       }
     } else {
       vscode.window.showWarningMessage("Unable to open link while tree view is refreshing. Please try again in a few seconds.");
@@ -449,7 +756,7 @@ function viewResourceCommand(command: string, session: Session): vscode.Disposab
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
@@ -474,7 +781,7 @@ function executeContainerViewLogCommand(command: string, session: Session): vsco
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
@@ -490,7 +797,7 @@ function executeCustomResourceViewLogCommand(command: string, session: Session):
           let podName: string = "";
           let containerName: string = "";
           if (operatorItem?.podItems.length === 0) {
-            vscode.window.showErrorMessage("Failure retrieving logs because operator pod doesn't exist");
+            showErrorMessage("Failure retrieving logs because operator pod doesn't exist");
             return;
           }
           const podItem = operatorItem?.podItems.find(item => {
@@ -515,10 +822,10 @@ function executeCustomResourceViewLogCommand(command: string, session: Session):
               }
             }
             if (podName === "") {
-              vscode.window.showErrorMessage("Unabled to determine Pod name for corresponding instance");
+              showErrorMessage("Unabled to determine Pod name for corresponding instance");
               return;
             } else if (containerName === "") {
-              vscode.window.showErrorMessage("Unabled to determine container name for corresponding instance");
+              showErrorMessage("Unabled to determine container name for corresponding instance");
               return;
             } else {
               const logUri = util.buildVerboseContainerLogUri(podName, containerName, customResourcesItemArgs.customResourceObj.apiVersion.split("/")[1], customResourcesItemArgs.customResourceObj.kind, customResourcesItemArgs.customResourceObj.metadata.name);
@@ -539,7 +846,7 @@ function executeCustomResourceViewLogCommand(command: string, session: Session):
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
@@ -564,7 +871,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
           if (operatorItemArg) {
             workspacePath = operatorItemArg.workspacePath;
           } else {
-            let pwd = util.getCurrentWorkspaceRootFolder();
+            let pwd = workspace.getCurrentWorkspaceRootFolder();
             if (pwd) {
               workspacePath = await util.selectOperatorInWorkspace(pwd);
               workspacePath = path.parse(workspacePath!).dir;
@@ -589,11 +896,28 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                     })
                     .catch(e => {
                       session.operationPending = false;
-                      vscode.window.showErrorMessage(`Failure executing Delete Operator command: RC ${e}`);
+                      showErrorMessage(`Failure executing Delete Operator command: RC ${e}`);
                     });
                   break;
                 }
                 case VSCodeCommands.redeployCollection: {
+                  const k8s = new KubernetesObj();
+                  const operatorName = operatorItemArg.operatorName;
+                  const operatorVersion = await util.getOperatorConfigVersion(workspacePath);
+                  if (operatorVersion === undefined) {
+                    session.operationPending = false;
+                    showErrorMessage(`Failure retrieve version from operator config`);
+                    return;
+                  }
+                  const signatureValidationRequired = await k8s.signatureValidationRequiredForOperator(operatorName, operatorVersion);
+                  if (signatureValidationRequired === undefined) {
+                    session.operationPending = false;
+                    return;
+                  } else if (signatureValidationRequired) {
+                    session.operationPending = false;
+                    showErrorMessage(`Unable to redeploy collection when signature validation is required. Execute the Redeploy Operator action to reconfigure the operator and disable signature validation`);
+                    return;
+                  }
                   vscode.window.showInformationMessage("Redeploy Collection request in progress");
                   const poll = util.pollRun(30);
                   const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel, logPath).then(() => {
@@ -607,7 +931,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                     })
                     .catch(e => {
                       session.operationPending = false;
-                      vscode.window.showErrorMessage(`Failure executing Redeploy Collection command: RC ${e}`);
+                      showErrorMessage(`Failure executing Redeploy Collection command: RC ${e}`);
                     });
                   break;
                 }
@@ -625,7 +949,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                     })
                     .catch(e => {
                       session.operationPending = false;
-                      vscode.window.showErrorMessage(`Failure executing Redeploy Operator command: RC ${e}`);
+                      showErrorMessage(`Failure executing Redeploy Operator command: RC ${e}`);
                     });
                   break;
                 }
@@ -635,7 +959,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
@@ -657,7 +981,7 @@ function executeSdkCommandWithUserInput(command: string, session: Session, outpu
         if (operatorItemArg) {
           workspacePath = operatorItemArg.workspacePath;
         } else {
-          let pwd = util.getCurrentWorkspaceRootFolder();
+          let pwd = workspace.getCurrentWorkspaceRootFolder();
           if (pwd) {
             workspacePath = await util.selectOperatorInWorkspace(pwd);
             workspacePath = path.parse(workspacePath!).dir;
@@ -690,7 +1014,7 @@ function executeSdkCommandWithUserInput(command: string, session: Session, outpu
                   })
                   .catch(e => {
                     session.operationPending = false;
-                    vscode.window.showErrorMessage(`Failure executing Create Operator command: RC ${e}`);
+                    showErrorMessage(`Failure executing Create Operator command: RC ${e}`);
                   });
               }
             }
@@ -723,64 +1047,68 @@ function deleteCustomResource(command: string, session: Session) {
                     vscode.window.showInformationMessage(`Successfully deleted ${kind} resource`);
                     vscode.commands.executeCommand(VSCodeCommands.resourceRefresh);
                   } else {
-                    vscode.window.showErrorMessage(`Failed to delete ${kind} resource`);
+                    showErrorMessage(`Failed to delete ${kind} resource`);
                   }
                 })
                 .catch(e => {
-                  vscode.window.showErrorMessage(`Failed to delete ${kind} resource: ${e}`);
+                  showErrorMessage(`Failed to delete ${kind} resource: ${e}`);
                 });
             }
           } else {
-            vscode.window.showErrorMessage("Failed to delete custom resource. Please try again.");
+            showErrorMessage("Failed to delete custom resource. Please try again.");
           }
         }
       })
       .catch(e => {
-        vscode.window.showErrorMessage(`Failure updating session: ${e}`);
+        showErrorMessage(`Failure updating session: ${e}`);
       });
   });
 }
 
 const ocLinterRules = ["missing-galaxy", "match-domain", "match-name", "match-version", "ansible-config", "playbook-path", "hosts-all", "missing-playbook", "finalizer-path", "missing-finalizer"];
-var linterConfigured: ocLintConfig;
+var linterConfigured: OcLintConfig;
 var filteredRules: string[];
-interface ocLintConfig {
+interface OcLintConfig {
   //ignores
-  exclude_paths?: string[];
+  excludePaths?: string[];
   //rules
-  skip_list?: string[];
-  enable_list?: string[];
-  use_default_rules?: boolean;
+  skipList?: string[];
+  enableList?: string[];
+  useDefaultRules?: boolean;
 }
 
-function configureLinter(oc_lint_path: string) {
+function configureLinter(ocLintPath: string) {
   linterConfigured = {
-    exclude_paths: [],
-    skip_list: [],
-    enable_list: [],
-    use_default_rules: true,
+    excludePaths: [],
+    skipList: [],
+    enableList: [],
+    useDefaultRules: true,
   };
 
+  // initialize filteredRules with a default value
+  // in case the ".oc-lint" file doesn't exist
+  filteredRules = ocLinterRules;
+
   try {
-    let ocLintFile = fs.readFileSync(oc_lint_path, "utf8");
-    let ocConfig = yaml.load(ocLintFile) as ocLintConfig;
+    let ocLintFile = fs.readFileSync(ocLintPath, "utf8");
+    let ocConfig = yaml.load(ocLintFile) as OcLintConfig;
 
     //Process useDefaultRules
-    if (ocConfig.use_default_rules) {
+    if (ocConfig.useDefaultRules) {
       filteredRules = ocLinterRules;
     } else {
       filteredRules = [];
     }
     //Process enable_list
-    if (ocConfig.enable_list !== undefined) {
-      let includeRules = ocConfig.enable_list.filter(rule => ocLinterRules.includes(rule));
+    if (ocConfig.enableList !== undefined) {
+      let includeRules = ocConfig.enableList.filter(rule => ocLinterRules.includes(rule));
       includeRules.forEach(rule => {
         !filteredRules.includes(rule) && filteredRules.push(rule);
       });
     }
     //Process skip_list
-    if (ocConfig.skip_list !== undefined) {
-      let excludeRules = ocConfig.skip_list.filter(rule => ocLinterRules.includes(rule));
+    if (ocConfig.skipList !== undefined) {
+      let excludeRules = ocConfig.skipList.filter(rule => ocLinterRules.includes(rule));
       excludeRules.forEach(rule => {
         if (filteredRules.includes(rule)) {
           filteredRules = filteredRules.filter(r => r !== rule);
@@ -788,7 +1116,7 @@ function configureLinter(oc_lint_path: string) {
       });
     }
     //Process exclude_paths
-    linterConfigured.exclude_paths = ocConfig.exclude_paths;
+    linterConfigured.excludePaths = ocConfig.excludePaths;
   } catch (err) {
     console.log(err);
   }
@@ -801,7 +1129,7 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
     }
     //Handle excludePaths
     if (
-      linterConfigured.exclude_paths?.some(path => {
+      linterConfigured.excludePaths?.some(path => {
         const minimatch = new Minimatch(path);
         return minimatch.match(document.uri.fsPath);
       })
@@ -970,7 +1298,9 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
                 if (resourcePlaybookSymbol) {
                   diagnostics.push({
                     range: resourcePlaybookSymbol.range,
-                    message: `Invalid Playbook for Kind ${resource.kind} - ${resource.playbook}`,
+
+                    // provideCodeActions in scaffoldCodeActionProvider.ts relies on this error string, change with CAUTION
+                    message: `${VSCodeDiagnosticMessages.invalidPlaybookError} ${resource.kind} - ${resource.playbook}`,
                     severity: vscode.DiagnosticSeverity.Error,
                   });
                 }
@@ -1001,7 +1331,9 @@ async function updateDiagnostics(document: vscode.TextDocument, collection: vsco
                 if (resourceFinalizerymbol) {
                   diagnostics.push({
                     range: resourceFinalizerymbol.range,
-                    message: `Invalid Finalizer for Kind ${resource.kind} - ${resource.playbook}`,
+
+                    // provideCodeActions in scaffoldCodeActionProvider.ts relies on this error string, change with CAUTION
+                    message: `${VSCodeDiagnosticMessages.invalidFinalizerError} ${resource.kind} - ${resource.finalizer}`,
                     severity: vscode.DiagnosticSeverity.Error,
                   });
                 }
