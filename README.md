@@ -38,6 +38,15 @@ Configure your OpenShift server URL, and select your OpenShift Project directly 
 
 ![Scaffold collection](./resources/docs/media/oc-sdk-scaffold-collection.gif)
 
+## Dynamic linting and code completion
+
+- Instant `operator-config` validation and code completion
+- Display `operator-config` property descriptions
+
+![Operator Collection Linter](./resources/docs/media/oc-sdk-vs-code-linter.gif)
+
+
+
 ## Trouble Shooting
 
 If you experience issues with `urlopen error [SSL: CERTIFICATE_VERIFY_FAILED]`, or similar issues, you may need to install and use SSL Certificates before running this extension.
