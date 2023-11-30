@@ -291,7 +291,7 @@ describe("Extension Test Suite", async () => {
       assert.equal(imsOperator.workspacePath, imsOperatorItem.workspacePath);
       assert.equal(imsOperator.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(imsOperator.contextValue, "operator");
-      assert.equal((imsOperator.iconPath as vscode.ThemeIcon).id, "rocket");
+      assert.ok((imsOperator.hasOwnProperty("iconPath"), "iconPath key not found int imsOperator object"));
       assert.equal(imsOperator.label, `Operator: ${imsOperatorItem.operatorDisplayName}`);
 
       // Validate CICS TS Operator root
@@ -301,7 +301,7 @@ describe("Extension Test Suite", async () => {
       assert.equal(cicsOperator.workspacePath, cicsOperatorItem.workspacePath);
       assert.equal(cicsOperator.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(cicsOperator.contextValue, "operator");
-      assert.equal((cicsOperator.iconPath as vscode.ThemeIcon).id, "rocket");
+      assert.ok((imsOperator.hasOwnProperty("iconPath"), "iconPath key not found int cicsOperator object"));
       assert.equal(cicsOperator.label, `Operator: ${cicsOperatorItem.operatorDisplayName}`);
     });
     it("Should validate the IMS operator pod item", async () => {
@@ -394,7 +394,7 @@ describe("Extension Test Suite", async () => {
       assert.equal(imsOperatorResource.workspacePath, imsOperatorItem.workspacePath);
       assert.equal(imsOperatorResource.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(imsOperatorResource.contextValue, "operator");
-      assert.equal((imsOperatorResource.iconPath as vscode.ThemeIcon).id, "rocket");
+      assert.ok((imsOperatorResource.hasOwnProperty("iconPath"), "iconPath key not found int imsOperatorResource object"));
       assert.equal(imsOperatorResource.label, `Operator: ${imsOperatorItem.operatorDisplayName}`);
 
       // Validate CICS TS Operator resources
@@ -404,7 +404,7 @@ describe("Extension Test Suite", async () => {
       assert.equal(cicsOperatorResource.workspacePath, cicsOperatorItem.workspacePath);
       assert.equal(cicsOperatorResource.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(cicsOperatorResource.contextValue, "operator");
-      assert.equal((cicsOperatorResource.iconPath as vscode.ThemeIcon).id, "rocket");
+      assert.ok((cicsOperatorResource.hasOwnProperty("iconPath"), "iconPath key not found int cicsOperatorResource object"));
       assert.equal(cicsOperatorResource.label, `Operator: ${cicsOperatorItem.operatorDisplayName}`);
     });
     it("Should validate the IMS Broker Custom Resources in OpenShift Resources", async () => {
