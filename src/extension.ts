@@ -39,7 +39,6 @@ import { getLinterSettings, LinterSettings } from "./utilities/util";
 import { Minimatch } from "minimatch";
 import { AboutTreeProvider } from "./treeViews/providers/aboutProvider";
 import * as BoilerplateContent from "./utilities/Boilerplate/Boilerplate";
-import { log } from "console";
 
 export async function activate(context: vscode.ExtensionContext) {
   // Set context as a global as some tests depend on it
