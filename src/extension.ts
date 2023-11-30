@@ -257,7 +257,7 @@ function executeInlineReplaceWith(command: string) {
 }
 
 function createFile(command: string): vscode.Disposable {
-  return vscode.commands.registerCommand(command, async (filename: string, directory: string) => {
+  return vscode.commands.registerCommand(command, async (filename: string, directory: string, callBack?: () => void) => {
     let content: string = "";
     let counterFile: string = "";
     const operatorConfigRX = /operator-config\.ya?ml$/;
@@ -309,26 +309,28 @@ function createFile(command: string): vscode.Disposable {
 
     // save fileName extension and strip filePath of extension
     const extension = filename.match(playbookRX)?.[0];
+    const alternativeExtension = extension === ".yaml" ? ".yml" : ".yaml";
     let filePath = path.join(directory, filename).replace(playbookRX, "");
 
     // we need to check if either "*.yaml" or "*.yml" versions exist,
     // and use the existing extension
     let fileExists: boolean = false;
-    if (fs.existsSync(filePath + ".yaml")) {
+    if (fs.existsSync(filePath + extension)) {
       fileExists = true;
-      filePath = filePath + ".yaml";
-    } else if (fs.existsSync(filePath + ".yml")) {
+      filePath = filePath + extension;
+    } else if (fs.existsSync(filePath + alternativeExtension)) {
       fileExists = true;
-      filePath = filePath + ".yml";
+      filePath = filePath + alternativeExtension;
     } else {
       filePath = filePath + extension;
     }
+    const newFileName = workspace.pruneDirectoryStem(directory, [filePath])[0];
 
     // if the file exists, ask user for permision to overwrite
     if (fileExists) {
       const canProceed = await vscode.window.showInformationMessage(
         `
-        A(n) ${filename} file already exists in this location: "${path.basename(path.dirname(filePath))}"
+        A(n) ${newFileName} file already exists in this location: "${path.basename(path.dirname(filePath))}"
 
         Do you want to overwrite it?
         `, // preserve whitespace
@@ -347,9 +349,9 @@ function createFile(command: string): vscode.Disposable {
         fs.mkdirSync(path.join(directory, additionalDirectories), { recursive: true });
       }
       fs.writeFileSync(filePath, content, "utf-8");
-      vscode.window.showInformationMessage(`Successfully created file ${filename}.`);
+      vscode.window.showInformationMessage(`Successfully created file ${newFileName}.`);
 
-      // if the counter file doesn't exist ask the user if they want to create one
+      // if the counter file doesn't exist, ask the user if they want to create one
       if (counterFile) {
         const createCounterFile = await vscode.window.showInformationMessage(
           `
@@ -365,6 +367,10 @@ function createFile(command: string): vscode.Disposable {
           return;
         }
         vscode.commands.executeCommand(VSCodeCommands.createFile, counterFile, directory);
+      }
+
+      if (callBack !== undefined) {
+        callBack();
       }
     } catch (e) {
       vscode.window.showErrorMessage(`Error while attempting to create file ${filename}: ${e}`);

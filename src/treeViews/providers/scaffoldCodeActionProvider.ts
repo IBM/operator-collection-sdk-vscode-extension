@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import * as util from "../../utilities/util";
@@ -46,14 +47,14 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
             .sort((a, b) => b.score - a.score) // sort candidates based on score decending
             .filter(item => item.score >= 0.5); // discard candidates with < 50% match
 
-          if (similarPlaybooks.length) {
-            let yamlKey: string = "";
-            if (diagnostic.message.includes(VSCodeDiagnosticMessages.invalidFinalizerError)) {
-              yamlKey = "finalizer: ";
-            } else {
-              yamlKey = "playbook: ";
-            }
+          let yamlKey: string = "";
+          if (diagnostic.message.includes(VSCodeDiagnosticMessages.invalidFinalizerError)) {
+            yamlKey = "finalizer: ";
+          } else {
+            yamlKey = "playbook: ";
+          }
 
+          if (similarPlaybooks.length) {
             // create actions for the top three playbooks in rank order
             const replaceActions = similarPlaybooks.slice(0, 3).map(item => {
               return this.inlineReplaceWithAction(yamlKey, item.playbook, document, range);
@@ -62,7 +63,18 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
             actions.push.apply(actions, replaceActions); // extend actions array
           }
 
-          actions.push(this.createBoilerplateFileAction(filename, directory));
+          actions.push(
+            this.createBoilerplateFileAction(filename, directory, () => {
+              // if we create the file with the alternate extension, but the supplied file doesn't exist,
+              // update the operator-config file with the appropriate alternate extension name
+              const alternativeExtension = filename.match(/.ya?ml/)?.[0] === ".yaml" ? ".yml" : ".yaml";
+              const alternativeExtensionPath = path.join(directory, filename).replace(/.ya?ml/, alternativeExtension);
+              if (fs.existsSync(alternativeExtensionPath) && !fs.existsSync(path.join(directory, filename))) {
+                const newFileName = workspace.pruneDirectoryStem(directory, [alternativeExtensionPath])[0];
+                vscode.commands.executeCommand(VSCodeCommands.inlineReplaceWith, yamlKey + newFileName, document, range);
+              }
+            })
+          );
         }
       }
     }
@@ -74,7 +86,7 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
    * Returns a vscode.CodeAction
    */
   private createGalaxyBoilerplateFile(directory: string, isPreferred: boolean = true): vscode.CodeAction {
-    const actionTitle = `Create a galaxy file for ${path.basename(directory)}?`;
+    const actionTitle = `Create a galaxy file for \"${path.basename(directory)}\"?`;
     const action = new vscode.CodeAction(actionTitle, vscode.CodeActionKind.QuickFix);
     action.command = {
       command: VSCodeCommands.createGalaxyBoilerplateFile,
@@ -88,13 +100,13 @@ export class ScaffoldCodeActionProvider implements vscode.CodeActionProvider {
   /**
    * Returns a vscode.CodeAction
    */
-  private createBoilerplateFileAction(filename: string, directory: string, isPreferred: boolean = false): vscode.CodeAction {
+  private createBoilerplateFileAction(filename: string, directory: string, callBack?: () => void, isPreferred: boolean = false): vscode.CodeAction {
     const actionTitle = `Create boilerplate file for "${filename}"?`;
     const action = new vscode.CodeAction(actionTitle, vscode.CodeActionKind.QuickFix);
     action.command = {
       command: VSCodeCommands.createFile,
       title: actionTitle,
-      arguments: [filename, directory],
+      arguments: [filename, directory, callBack],
     };
     action.isPreferred = isPreferred;
     return action;
