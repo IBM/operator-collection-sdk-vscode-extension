@@ -294,15 +294,18 @@ export function searchParents(directory: string, workspaceRootFolderName: string
  */
 export function createWorkspaceFile(filePath: string, fileContent: string) {
   const rootFolder = getCurrentWorkspaceRootFolder();
-  if (rootFolder && filePath.includes(rootFolder)) {
-    try {
-      const directory = path.dirname(filePath);
-      if (!fs.existsSync(directory)) {
-        fs.mkdirSync(directory, { recursive: true });
-      }
-      fs.writeFileSync(filePath, fileContent, "utf-8");
-    } catch (e) {
-      showErrorMessage(`Failed to create ${path.basename(filePath)}: ${e}`);
+  // if (rootFolder && filePath.includes(rootFolder)) {
+  vscode.window.showInformationMessage(`ROOT FOLDER: ${rootFolder}`);
+  try {
+    const directory = path.dirname(filePath);
+    if (!fs.existsSync(directory)) {
+      fs.mkdirSync(directory, { recursive: true });
     }
+    fs.writeFileSync(filePath, fileContent, "utf-8");
+  } catch (e) {
+    showErrorMessage(`Failed to create ${path.basename(filePath)}: ${e}`);
   }
+  // } else {
+  //   showErrorMessage(`Error creating ${path.basename(filePath)}: Specified path does not belong to current workspace.`);
+  // }
 }
