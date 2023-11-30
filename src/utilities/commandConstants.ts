@@ -8,6 +8,7 @@ export enum VSCodeCommands {
   sdkOutdatedVersion = "operator-collection-sdk.sdkOutdatedVersion",
   isCollectionInWorkspace = "operator-collection-sdk.isCollectionInWorkspace",
   initCollection = "operator-collection-sdk.initCollection",
+  initCollectionAtRoot = "operator-collection-sdk.initCollectionAtRoot",
   initCollectionSkip = "operator-collection-sdk.initCollectionSkip",
   zosCloudBrokerInstalled = "operator-collection-sdk.zosCloudBrokerInstalled",
   sdkUpgradeVersion = "operator-collection-sdk.sdkUpgradeVersion",
@@ -35,6 +36,18 @@ export enum VSCodeCommands {
   refreshOpenShiftInfo = "operator-collection-sdk.refreshOpenShiftInfo",
   refreshContainerLog = "operator-collection-sdk.refreshContainerLog",
   refreshVerboseContainerLog = "operator-collection-sdk.refreshVerboseContainerLog",
+  createFile = "operator-collection-sdk.createFile",
+  createGalaxyBoilerplateFile = "operator-collection-sdk.createGalaxyBoilerplateFile",
+  createOperatorConfigBoilerplateFile = "operator-collection-sdk.createOperatorConfigBoilerplateFile",
+  createPlaybookBoilerplateFile = "operator-collection-sdk.createPlaybookBoilerplateFile",
+  convertToAirgapCollection = "operator-collection-sdk.convertToAirgapCollection",
+  inlineReplaceWith = "operator-collection-sdk.refactorInline",
+}
+
+export enum VSCodeDiagnosticMessages {
+  invalidPlaybookError = "Invalid Playbook for Kind",
+  invalidFinalizerError = "Invalid Finalizer for Kind",
+  missingGalaxyFile = "Missing galaxy.yaml file.",
 }
 
 export enum VSCodeViewIds {
