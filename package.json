@@ -7,7 +7,7 @@
   },
   "icon": "resources/icons/operator-collection-sdk.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension"
