@@ -45,8 +45,6 @@ export async function activate(context: vscode.ExtensionContext) {
   (global as any).testExtensionContext = context;
   initResources(context);
 
-  let playbooks = await workspace.gatherDirectoryPlaybooks(workspace.getCurrentWorkspaceRootFolder()!);
-
   //Setup Linter
   const linterEnabled = getLinterSettings(LinterSettings.lintingEnabled) as string;
   if (linterEnabled) {
