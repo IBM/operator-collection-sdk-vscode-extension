@@ -200,13 +200,19 @@ export function pathIsAncestorOrDecendant(primary: string, candidate: string) {
  * whether that path is considered valid. A path in the "lineage" means its path is an ancestor or decendant of
  * the supplied directory. If the path is not valid the String is empty.
  * @param directory - A candidate directory to evaluate.
+ * @param workspaceRootFolderName - The root vscode workspace folder. Will be derived if not supplied.
  * @returns A String path to the nearest collection within the path's lineage or an empty String if it could not
  * be determined.
  * @returns A Boolean specifying that the nearest collection could not be determined if true.
  */
-export function findNearestCollectionInLineage(directory: string): [string, boolean] {
-  const workspaceFolder = getCurrentWorkspaceRootFolder();
-  const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
+export function findNearestCollectionInLineage(directory: string, workspaceRootFolderName?: string): [string, boolean] {
+  let rootFolder: string | undefined = "";
+  if (workspaceRootFolderName) {
+    rootFolder = workspaceRootFolderName;
+  } else {
+    const workspaceFolder = getCurrentWorkspaceRootFolder();
+    rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
+  }
 
   let collectionPath = "";
   let collectionPathIsAmbiguous = false;
@@ -285,27 +291,4 @@ export function searchParents(directory: string, workspaceRootFolderName: string
 
   // keep searching parents
   return searchParents(parentDirectory, workspaceRootFolderName, targets, fileExtensions);
-}
-
-/**
- * Creates a file at specified location in workspace.
- * @param filePath - A String path for the file to be created.
- * @param fileContent - String data to populate the file with.
- */
-export function createWorkspaceFile(filePath: string, fileContent: string) {
-  const rootFolder = getCurrentWorkspaceRootFolder();
-  // if (rootFolder && filePath.includes(rootFolder)) {
-  vscode.window.showInformationMessage(`ROOT FOLDER: ${rootFolder}`);
-  try {
-    const directory = path.dirname(filePath);
-    if (!fs.existsSync(directory)) {
-      fs.mkdirSync(directory, { recursive: true });
-    }
-    fs.writeFileSync(filePath, fileContent, "utf-8");
-  } catch (e) {
-    showErrorMessage(`Failed to create ${path.basename(filePath)}: ${e}`);
-  }
-  // } else {
-  //   showErrorMessage(`Error creating ${path.basename(filePath)}: Specified path does not belong to current workspace.`);
-  // }
 }

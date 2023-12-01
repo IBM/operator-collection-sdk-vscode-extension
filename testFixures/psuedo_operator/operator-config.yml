@@ -1,0 +1,15 @@
+domain: domain
+name: name
+version: 1.2.3
+displayName: displayName
+description: description
+resources:
+  - kind: kind
+    displayName: displayName
+    description: description
+    playbook: playbooks/playbook.yml
+    vars:
+      - name: name
+        displayName: displayName
+        description: description
+        type: string
