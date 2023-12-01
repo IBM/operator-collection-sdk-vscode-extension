@@ -31,9 +31,11 @@ export async function gatherDirectoryPlaybooks(directory: string): Promise<strin
   const filteredFiles = [];
   for (let i = 0; i < files.length; i++) {
     try {
-      // If the file contains the key "hosts", it is a playbook
-      const doc = await vscode.workspace.openTextDocument(files[i]);
-      if (doc.getText().includes("hosts:")) {
+      // if the file contains the key "hosts", it is a playbook
+      const content = getValuesFromYamlFile(files[i], [""])[0];
+      if (content?.[0]?.hosts !== undefined) {
+        // playbooks must use hosts: all i.e. content?.[0]?.hosts === "all"
+        // but check is ommitted to accommodate user input error
         filteredFiles.push(files[i]);
       }
     } catch (e) {
@@ -47,7 +49,7 @@ export async function gatherDirectoryPlaybooks(directory: string): Promise<strin
 /**
  * Retrieves the values for keys specified in the given filepath
  * @param filePath - A String representing path the the YAML file.
- * @param keys - An array of Strings whose values are requested.
+ * @param keys - An array of Strings whose values are requested. Supply keys = [""] to return all data.
  * @returns — A list of values where each element corresponds to a key in the paramter keys
  */
 export function getValuesFromYamlFile(filePath: string, keys: string[]): Array<any> {
@@ -58,8 +60,12 @@ export function getValuesFromYamlFile(filePath: string, keys: string[]): Array<a
   const values = [];
   const content = fs.readFileSync(filePath, "utf8");
   const data: any = yaml.load(content);
-  for (let i = 0; i < keys.length; i++) {
-    values.push(data?.[keys[i]]);
+  if (keys.length === 1 && keys[0] === "") {
+    values.push(data);
+  } else {
+    for (let i = 0; i < keys.length; i++) {
+      values.push(data?.[keys[i]]);
+    }
   }
 
   return values;
