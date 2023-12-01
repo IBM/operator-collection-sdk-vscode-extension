@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as path from "path";
 import * as vscode from "vscode";
 import * as k8s from "@kubernetes/client-node";
 import { CustomResourcePhases } from "../utilities/commandConstants";
@@ -117,6 +116,7 @@ export function getPendingIcons(): ThemeIcons {
 }
 
 export function getOperatorCollectionSdkIcons(): ThemeIcons {
+  const path = require("path");
   let icons: Icons = {
     dark: vscode.Uri.file(path.join(__filename, "..", "..", "resources", "icons", "dark", "operator-collection-sdk.svg")),
     light: vscode.Uri.file(path.join(__filename, "..", "..", "resources", "icons", "light", "operator-collection-sdk.svg")),

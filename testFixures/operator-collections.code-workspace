@@ -5,6 +5,12 @@
 		},
 		{
 			"path": "zos_cics_operator"
+		},
+		{
+			"path": "custom_operator"
+		},
+		{
+			"path": "psuedo_operator"
 		}
 	],
 	"settings": {}
