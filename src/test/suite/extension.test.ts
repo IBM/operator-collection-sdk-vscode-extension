@@ -25,6 +25,7 @@ import * as util from "../../utilities/util";
 import * as k8sClient from "@kubernetes/client-node";
 import { OcSdkCommand } from "../../shellCommands/ocSdkCommands";
 import * as workspace from "../../utilities/workspace";
+import { Console } from "console";
 
 describe("Extension Test Suite", async () => {
   vscode.window.showInformationMessage("Start all tests.");
@@ -122,7 +123,10 @@ describe("Extension Test Suite", async () => {
     try {
       await k8s.installZosCloudBroker();
     } catch (e) {
-      assert.fail(`Failure installing ZosCloudBroker: ${e}`);
+      if (testClusterInfo instanceof Error) {
+        assert.fail(testClusterInfo);
+      }
+      assert.fail(`Failure installing ZosCloudBroker: ${e}, URL:${testClusterInfo?.ocpServerUrl}, NAMESPACE:${testClusterInfo?.ocpNamespace}}`);
     }
 
     await installOperatorCollectionSDK(installSdkLogPath);
