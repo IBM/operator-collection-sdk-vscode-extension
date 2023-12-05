@@ -123,9 +123,6 @@ describe("Extension Test Suite", async () => {
     try {
       await k8s.installZosCloudBroker();
     } catch (e) {
-      if (testClusterInfo instanceof Error) {
-        assert.fail(testClusterInfo);
-      }
       assert.fail(`Failure installing ZosCloudBroker: ${e}`);
     }
 
