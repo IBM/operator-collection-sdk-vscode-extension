@@ -1097,6 +1097,7 @@ export class TestKubernetesObj extends KubernetesContext {
     if (existingBrokerInstance) {
       return undefined;
     }
+
     const zosCloudBroker = {
       apiVersion: `${zosCloudBrokerGroup}/${zosCloudBrokerApiVersion}`,
       kind: "ZosCloudBroker",
@@ -1107,15 +1108,14 @@ export class TestKubernetesObj extends KubernetesContext {
       spec: {
         catalogResources: {},
         galaxyConfig: {
-          enabled: true,
-          galaxyURL: "https://galaxy.ansible.com",
+          enabled: false,
         },
         license: {
           accept: true,
         },
         logLevel: "trace",
-        managerResources: {},
         multiNamespace: true,
+        managerResources: {},
         storage: {
           configure: false,
           enabled: false,
@@ -1125,6 +1125,7 @@ export class TestKubernetesObj extends KubernetesContext {
         uiResources: {},
       },
     };
+
     return this.customObjectsApi
       ?.createNamespacedCustomObject(zosCloudBrokerGroup, zosCloudBrokerApiVersion, this.namespace, "zoscloudbrokers", zosCloudBroker)
       .then(res => {
