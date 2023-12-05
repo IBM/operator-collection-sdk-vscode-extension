@@ -126,7 +126,7 @@ describe("Extension Test Suite", async () => {
       if (testClusterInfo instanceof Error) {
         assert.fail(testClusterInfo);
       }
-      assert.fail(`Failure installing ZosCloudBroker: ${e}, URL:${testClusterInfo?.ocpServerUrl}, NAMESPACE:${testClusterInfo?.ocpNamespace}}`);
+      assert.fail(`Failure installing ZosCloudBroker: ${e}`);
     }
 
     await installOperatorCollectionSDK(installSdkLogPath);
