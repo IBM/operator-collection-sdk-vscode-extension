@@ -1106,6 +1106,10 @@ export class TestKubernetesObj extends KubernetesContext {
       },
       spec: {
         catalogResources: {},
+        galaxyConfig: {
+          enabled: true,
+          galaxyURL: "https://galaxy.ansible.com",
+        },
         license: {
           accept: true,
         },
