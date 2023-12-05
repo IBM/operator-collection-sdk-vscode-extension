@@ -25,7 +25,6 @@ import * as util from "../../utilities/util";
 import * as k8sClient from "@kubernetes/client-node";
 import { OcSdkCommand } from "../../shellCommands/ocSdkCommands";
 import * as workspace from "../../utilities/workspace";
-import { Console } from "console";
 
 describe("Extension Test Suite", async () => {
   vscode.window.showInformationMessage("Start all tests.");
