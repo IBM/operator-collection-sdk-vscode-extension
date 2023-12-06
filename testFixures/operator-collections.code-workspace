@@ -8,9 +8,6 @@
 		},
 		{
 			"path": "custom_operator"
-		},
-		{
-			"path": "psuedo_operator"
 		}
 	],
 	"settings": {}
