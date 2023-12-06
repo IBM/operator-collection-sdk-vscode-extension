@@ -31,6 +31,7 @@ describe("Extension Test Suite", async () => {
   const ocSdkCmd = new OcSdkCommand();
   const imsOperatorItem: OperatorItem | undefined = new OperatorItem("IBM Z and Cloud Modernization Stack - IMS Operator", "zos-ims-operator", testVars.imsOperatorCollectionPath);
   const cicsOperatorItem: OperatorItem | undefined = new OperatorItem("IBM Z and Cloud Modernization Stack - CICS TS Operator", "zos-cics-ts-operator", testVars.cicsOperatorCollectionPath);
+  const pseudoOperatorItem: OperatorItem | undefined = new OperatorItem("Pseudo Operator", "pseudo-operator", testVars.pseudoCollectionPath);
   const ocLoginLogPath = path.join(__dirname, "ocLogin.log");
   const installSdkLogPath = path.join(__dirname, "installOcSdk.log");
   const updateProjectLogPath = path.join(__dirname, "updateProject.log");
@@ -274,6 +275,8 @@ describe("Extension Test Suite", async () => {
     let cicsSubOperatorConfigParent: SubOperatorConfigItem;
     let cicsCustomResourceParents: CustomResourceItem[];
 
+    let pseudoOperator: OperatorItem;
+
     let initContainerStatusFromPod: k8sClient.V1ContainerStatus | undefined;
     let containerStatusFromPod: k8sClient.V1ContainerStatus | undefined;
 
@@ -282,7 +285,8 @@ describe("Extension Test Suite", async () => {
     it("Should validate the operator items", async () => {
       operatorsTreeProvider = new OperatorsTreeProvider(session);
       const parentOperators = await operatorsTreeProvider.getChildren();
-      assert.equal(parentOperators.length, 2);
+      // assert.equal(parentOperators.length, 2);
+      assert.equal(parentOperators.length, 3); // zos_cics_operator, zos_ims_operator, pseudo_operator
       assert.equal(parentOperators[0] instanceof OperatorItem, true);
       assert.equal(parentOperators[1] instanceof OperatorItem, true);
 
@@ -303,8 +307,18 @@ describe("Extension Test Suite", async () => {
       assert.equal(cicsOperator.workspacePath, cicsOperatorItem.workspacePath);
       assert.equal(cicsOperator.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(cicsOperator.contextValue, "operator");
-      assert.ok((imsOperator.hasOwnProperty("iconPath"), "iconPath key not found int cicsOperator object"));
+      assert.ok((cicsOperator.hasOwnProperty("iconPath"), "iconPath key not found int cicsOperator object"));
       assert.equal(cicsOperator.label, `Operator: ${cicsOperatorItem.operatorDisplayName}`);
+
+      // Validate psuedo operator
+      pseudoOperator = parentOperators.find(operatorTreeItem => operatorTreeItem instanceof OperatorItem && operatorTreeItem.operatorName === pseudoOperatorItem.operatorName) as OperatorItem;
+      assert.equal(pseudoOperator.operatorDisplayName, pseudoOperatorItem.operatorDisplayName);
+      assert.equal(pseudoOperator.operatorName, pseudoOperatorItem.operatorName);
+      assert.equal(pseudoOperator.workspacePath, pseudoOperatorItem.workspacePath);
+      assert.equal(pseudoOperator.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
+      assert.equal(pseudoOperator.contextValue, "operator");
+      assert.ok((pseudoOperator.hasOwnProperty("iconPath"), "iconPath key not found int cicsOperator object"));
+      assert.equal(pseudoOperator.label, `Operator: ${pseudoOperatorItem.operatorDisplayName}`);
     });
     it("Should validate the IMS operator pod item", async () => {
       const imsOperatorPods = await operatorsTreeProvider.getChildren(imsOperator);
@@ -831,7 +845,7 @@ describe("Extension Test Suite", async () => {
   describe("When validating context-menu functions", async () => {
     const customCollectionPath = testVars.customOperatorCollectionPath;
     const customCollectionURI = vscode.Uri.file(customCollectionPath);
-    const psuedoCollectionPath = testVars.psuedoCollectionPath;
+    const pseudoCollectionPath = testVars.pseudoCollectionPath;
     const customPlaybookName = "playbooks/customPlaybook.yml";
 
     before(() => {
@@ -962,7 +976,7 @@ describe("Extension Test Suite", async () => {
       assert.equal(playbooks.length, 1);
       assert.equal(playbooks[0], customPlaybookName);
 
-      playbooks = await workspace.gatherDirectoryPlaybooks(psuedoCollectionPath);
+      playbooks = await workspace.gatherDirectoryPlaybooks(pseudoCollectionPath);
       assert.equal(playbooks.length, 0);
     });
   });
