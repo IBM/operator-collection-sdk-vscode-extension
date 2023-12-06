@@ -1114,8 +1114,8 @@ export class TestKubernetesObj extends KubernetesContext {
           accept: true,
         },
         logLevel: "trace",
-        multiNamespace: true,
         managerResources: {},
+        multiNamespace: true,
         storage: {
           configure: false,
           enabled: false,
