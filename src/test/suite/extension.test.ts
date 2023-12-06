@@ -317,7 +317,6 @@ describe("Extension Test Suite", async () => {
       assert.equal(pseudoOperator.workspacePath, pseudoOperatorItem.workspacePath);
       assert.equal(pseudoOperator.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(pseudoOperator.contextValue, "operator");
-      assert.ok((pseudoOperator.hasOwnProperty("iconPath"), "iconPath key not found int cicsOperator object"));
       assert.equal(pseudoOperator.label, `Operator: ${pseudoOperatorItem.operatorDisplayName}`);
     });
     it("Should validate the IMS operator pod item", async () => {
