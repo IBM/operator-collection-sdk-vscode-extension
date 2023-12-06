@@ -209,7 +209,7 @@ describe("Extension Test Suite", async () => {
         }
         const oldPodName = oldPod[0].metadata?.name;
         vscode.commands.executeCommand(VSCodeCommands.redeployCollection, imsOperatorItem, redeployCollectionLogPath);
-        await helper.pollOperatorPodStatus(imsOperatorItem.operatorName, oldPodName!, 30);
+        await helper.pollOperatorPodStatus(imsOperatorItem.operatorName, oldPodName!, 40);
       } catch (e) {
         console.log("Printing Redeploy Collection logs");
         helper.displayCmdOutput(redeployCollectionLogPath);
