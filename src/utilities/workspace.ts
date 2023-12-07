@@ -30,9 +30,11 @@ export async function gatherDirectoryPlaybooks(directory: string): Promise<strin
   const filteredFiles = [];
   for (let i = 0; i < files.length; i++) {
     try {
-      // If the file contains the key "hosts", it is a playbook
-      const doc = await vscode.workspace.openTextDocument(files[i]);
-      if (doc.getText().includes("hosts:")) {
+      // if the file contains the key "hosts", it is a playbook
+      const content = getValuesFromYamlFile(files[i], [""])[0];
+      if (content?.[0]?.hosts !== undefined) {
+        // playbooks must use hosts: all i.e. content?.[0]?.hosts === "all"
+        // but check is ommitted to accommodate user input error
         filteredFiles.push(files[i]);
       }
     } catch (e) {
@@ -46,7 +48,7 @@ export async function gatherDirectoryPlaybooks(directory: string): Promise<strin
 /**
  * Retrieves the values for keys specified in the given filepath
  * @param filePath - A String representing path the the YAML file.
- * @param keys - An array of Strings whose values are requested.
+ * @param keys - An array of Strings whose values are requested. Supply keys = [""] to return all data.
  * @returns — A list of values where each element corresponds to a key in the paramter keys
  */
 export function getValuesFromYamlFile(filePath: string, keys: string[]): Array<any> {
@@ -57,8 +59,12 @@ export function getValuesFromYamlFile(filePath: string, keys: string[]): Array<a
   const values = [];
   const content = fs.readFileSync(filePath, "utf8");
   const data: any = yaml.load(content);
-  for (let i = 0; i < keys.length; i++) {
-    values.push(data?.[keys[i]]);
+  if (keys.length === 1 && keys[0] === "") {
+    values.push(data);
+  } else {
+    for (let i = 0; i < keys.length; i++) {
+      values.push(data?.[keys[i]]);
+    }
   }
 
   return values;
@@ -199,13 +205,19 @@ export function pathIsAncestorOrDecendant(primary: string, candidate: string) {
  * whether that path is considered valid. A path in the "lineage" means its path is an ancestor or decendant of
  * the supplied directory. If the path is not valid the String is empty.
  * @param directory - A candidate directory to evaluate.
+ * @param workspaceRootFolderName - The root vscode workspace folder. Will be derived if not supplied.
  * @returns A String path to the nearest collection within the path's lineage or an empty String if it could not
  * be determined.
  * @returns A Boolean specifying that the nearest collection could not be determined if true.
  */
-export function findNearestCollectionInLineage(directory: string): [string, boolean] {
-  const workspaceFolder = getCurrentWorkspaceRootFolder();
-  const rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
+export function findNearestCollectionInLineage(directory: string, workspaceRootFolderName?: string): [string, boolean] {
+  let rootFolder: string | undefined = "";
+  if (workspaceRootFolderName) {
+    rootFolder = workspaceRootFolderName;
+  } else {
+    const workspaceFolder = getCurrentWorkspaceRootFolder();
+    rootFolder = workspaceFolder ? path.basename(workspaceFolder) : workspaceFolder;
+  }
 
   let collectionPath = "";
   let collectionPathIsAmbiguous = false;
