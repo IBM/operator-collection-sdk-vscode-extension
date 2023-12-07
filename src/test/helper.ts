@@ -75,7 +75,7 @@ export const zosEndpointApiVersion: string = "v2beta2";
 export const subOperatorConfigApiVersion: string = "v2beta2";
 export const operatorCollectionApiVersion: string = "v2beta2";
 export const zosCloudBrokerApiVersion: string = "v2beta1";
-export const zosCloudBrokerCsvVersion: string = "ibm-zoscb.v2.2.3";
+export const zosCloudBrokerCsvVersion: string = "ibm-zoscb.v2.2.4";
 
 export function displayCmdOutput(logPath: string) {
   if (fs.existsSync(logPath)) {
@@ -1097,6 +1097,7 @@ export class TestKubernetesObj extends KubernetesContext {
     if (existingBrokerInstance) {
       return undefined;
     }
+
     const zosCloudBroker = {
       apiVersion: `${zosCloudBrokerGroup}/${zosCloudBrokerApiVersion}`,
       kind: "ZosCloudBroker",
@@ -1106,6 +1107,9 @@ export class TestKubernetesObj extends KubernetesContext {
       },
       spec: {
         catalogResources: {},
+        galaxyConfig: {
+          enabled: false,
+        },
         license: {
           accept: true,
         },
@@ -1121,6 +1125,7 @@ export class TestKubernetesObj extends KubernetesContext {
         uiResources: {},
       },
     };
+
     return this.customObjectsApi
       ?.createNamespacedCustomObject(zosCloudBrokerGroup, zosCloudBrokerApiVersion, this.namespace, "zoscloudbrokers", zosCloudBroker)
       .then(res => {
