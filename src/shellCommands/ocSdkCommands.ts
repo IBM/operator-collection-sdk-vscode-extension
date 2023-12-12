@@ -211,16 +211,19 @@ export class OcSdkCommand {
       showErrorMessage(`Failure retrieving data from Ansible Galaxy: ${e}`);
     }
 
-    const latestVersion = getLatestCollectionVersion(jsonData);
-    const versionInstalled = await this.runOcSdkVersion(outputChannel, logPath);
-
-    return new Promise<boolean>((resolve, reject) => {
-      if (latestVersion === undefined) {
-        reject("Unable to locate latest version");
-      } else if (versionInstalled === undefined) {
-        resolve(false); // return false if OC SDK isn't installed
+    return new Promise<boolean>(async (resolve, reject) => {
+      if (!jsonData.hasOwnProperty("data")) {
+        reject("Unable to retrieve data from galaxy endpoint");
       } else {
-        resolve(!(versionInstalled.trim() === latestVersion.trim()));
+        const latestVersion = getLatestCollectionVersion(jsonData);
+        const versionInstalled = await this.runOcSdkVersion(outputChannel, logPath);
+        if (latestVersion === undefined) {
+          reject("Unable to locate latest version");
+        } else if (versionInstalled === undefined) {
+          resolve(false); // return false if OC SDK isn't installed
+        } else {
+          resolve(!(versionInstalled.trim() === latestVersion.trim()));
+        }
       }
     });
   }

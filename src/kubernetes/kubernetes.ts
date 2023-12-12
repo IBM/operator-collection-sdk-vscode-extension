@@ -597,7 +597,6 @@ export class KubernetesObj extends KubernetesContext {
         if (e.statusCode !== 403 && e.statusCode !== 401) {
           const msg = `Failure retrieving Namespace list: ${JSON.stringify(e)}`;
           console.error(msg);
-          showErrorMessage(msg);
         }
         return undefined;
       });
