@@ -45,7 +45,7 @@ jobs:
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
 
       - name: Build Pre-Release Extension
-        if: ${{ env.ORIGIN_BRANCH != origin/main }}
+        if: ${{ env.ORIGIN_BRANCH != 'origin/main' }}
         run: |
           npm run build-prerelease
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
