@@ -78,8 +78,14 @@ export class Session {
       return false;
     }
     if (this.ocSdkInstalled && !this.skipSdkUpdated) {
-      this.ocSdkOutdated = await this.ocSdkCmd.runDeterminateOcSdkIsOutdated();
-      return this.ocSdkOutdated;
+      try {
+        this.ocSdkOutdated = await this.ocSdkCmd.runDeterminateOcSdkIsOutdated();
+        return this.ocSdkOutdated;
+      } catch (e) {
+        console.log(e);
+        this.ocSdkOutdated = false;
+        return false;
+      }
     } else {
       this.ocSdkOutdated = false;
       return false;
@@ -110,7 +116,8 @@ export class Session {
    */
   async validateOpenShiftAccess(): Promise<boolean> {
     const k8s = new KubernetesObj();
-    return k8s
+
+    const result = k8s
       .getNamespaceList()
       .then(list => {
         if (list !== undefined) {
@@ -125,6 +132,30 @@ export class Session {
         this.loggedIntoOpenShift = false;
         return false;
       });
+
+    // Cancel request after 5 seconds without a response from the getNamespaceList request.
+    // This usually implies a connectivity issue with OpenShift, which could take a minute or more
+    // before receiving the timeout response.
+    const timeout: Promise<boolean> = new Promise(resolve => {
+      setTimeout(() => {
+        resolve(false);
+      }, 5000);
+    });
+
+    const done = Promise.race([result, timeout])
+      .then(value => {
+        if (value === false) {
+          this.loggedIntoOpenShift = false;
+        } else {
+          this.loggedIntoOpenShift = true;
+        }
+        return value;
+      })
+      .catch(e => {
+        this.loggedIntoOpenShift = false;
+        return false;
+      });
+    return done;
   }
 
   /**
@@ -156,6 +187,9 @@ export class Session {
    */
   async validateZosCloudBrokerInstallation(): Promise<boolean> {
     const k8s = new KubernetesObj();
+    if (this.loggedIntoOpenShift === false) {
+      return false;
+    }
     return k8s
       .zosCloudBrokerInstanceCreated()
       .then(createdSuccessfully => {
