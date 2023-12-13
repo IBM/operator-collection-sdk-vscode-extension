@@ -268,6 +268,8 @@ export async function requestOperatorInfo(workspacePath: string): Promise<string
             console.error("Failure storing variables to file");
           }
         }
+      } else {
+        return undefined;
       }
     }
     args.push(`--extra-vars "@${extraVarsFilePath}"`);
