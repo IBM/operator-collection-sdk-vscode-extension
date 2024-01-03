@@ -579,7 +579,7 @@ export class KubernetesObj extends KubernetesContext {
   public async getNamespaceList(): Promise<string[] | undefined> {
     const namespaceList: Array<string> = [];
     return this.coreV1Api
-      ?.listNamespace(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 5)
+      ?.listNamespace()
       .then(res => {
         if (res.response.statusCode === 200) {
           let namespacesString = JSON.stringify(res.body);
