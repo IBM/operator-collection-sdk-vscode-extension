@@ -617,21 +617,28 @@ export class KubernetesObj extends KubernetesContext {
         return false;
       });
 
-    // Cancel request after 5 seconds without a response from the readNamespace request.
+    // Cancel request after 5 seconds without a response from the getNamespaceList request.
     // This usually implies a connectivity issue with OpenShift, which could take a minute or more
     // before receiving the timeout response.
-    const timeout: Promise<boolean> = new Promise(resolve => {
-      setTimeout(() => {
+    let timeout: NodeJS.Timeout | undefined = undefined;
+    const timeoutPromise: Promise<boolean> = new Promise(resolve => {
+      timeout = setTimeout(() => {
+        vscode.window.showWarningMessage('Connection timed out on "validateNamespaceExists"... Please check your internet/VPN connection.');
         resolve(false);
       }, 5000);
     });
 
-    const done = Promise.race([namespaceExists, timeout])
+    const done = Promise.race([namespaceExists, timeoutPromise])
       .then(value => {
         return value;
       })
       .catch(() => {
         return false;
+      })
+      .finally(() => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
       });
     return done;
   }

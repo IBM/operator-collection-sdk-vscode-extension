@@ -8,6 +8,7 @@ import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
 import { getAnsibleGalaxySettings, AnsibleGalaxySettings, isCollectionInWorkspace } from "../utilities/util";
+import { clear } from "console";
 
 export class Session {
   public ocSdkInstalled: boolean = false;
@@ -136,13 +137,15 @@ export class Session {
     // Cancel request after 5 seconds without a response from the getNamespaceList request.
     // This usually implies a connectivity issue with OpenShift, which could take a minute or more
     // before receiving the timeout response.
-    const timeout: Promise<boolean> = new Promise(resolve => {
-      setTimeout(() => {
+    let timeout: NodeJS.Timeout | undefined = undefined;
+    const timeoutPromise: Promise<boolean> = new Promise(resolve => {
+      timeout = setTimeout(() => {
+        vscode.window.showWarningMessage('Connection timed out on "getNamespaceList"... Please check your internet/VPN connection.');
         resolve(false);
       }, 5000);
     });
 
-    const done = Promise.race([result, timeout])
+    const done = Promise.race([result, timeoutPromise])
       .then(value => {
         if (value === false) {
           this.loggedIntoOpenShift = false;
@@ -154,6 +157,11 @@ export class Session {
       .catch(e => {
         this.loggedIntoOpenShift = false;
         return false;
+      })
+      .finally(() => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
       });
     return done;
   }
