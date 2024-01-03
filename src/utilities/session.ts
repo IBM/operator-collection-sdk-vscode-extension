@@ -23,11 +23,11 @@ export class Session {
 
   async update(skipRefresh?: boolean, skipOcSdkValidation?: boolean): Promise<boolean> {
     if (skipOcSdkValidation !== undefined && skipOcSdkValidation) {
-      return Promise.all([this.validateOpenShiftAccess(), this.validateZosCloudBrokerInstallation(), this.validateNamespaceExist()]).then(() => {
+      return Promise.all([this.validateOpenShiftAccess(), this.validateZosCloudBrokerInstallation(), this.validateNamespaceExists()]).then(() => {
         return setContext(this.loggedIntoOpenShift, this.zosCloudBrokerInstalled, undefined, undefined, skipRefresh, this.validNamespace);
       });
     } else {
-      return Promise.all([this.validateOcSDKInstallation(), this.validateOpenShiftAccess(), this.validateZosCloudBrokerInstallation(), this.determinateOcSdkIsOutdated(), this.validateNamespaceExist()]).then(() => {
+      return Promise.all([this.validateOcSDKInstallation(), this.validateOpenShiftAccess(), this.validateZosCloudBrokerInstallation(), this.determinateOcSdkIsOutdated(), this.validateNamespaceExists()]).then(() => {
         return setContext(this.loggedIntoOpenShift, this.zosCloudBrokerInstalled, this.ocSdkInstalled, this.ocSdkOutdated, skipRefresh, this.validNamespace);
       });
     }
@@ -162,7 +162,7 @@ export class Session {
    * Validates the namespace exists
    * @returns - A promise containing a boolean, returning true if the namespace exist
    */
-  async validateNamespaceExist(): Promise<boolean> {
+  async validateNamespaceExists(): Promise<boolean> {
     const k8s = new KubernetesObj();
     return k8s
       .validateNamespaceExists()
