@@ -600,24 +600,6 @@ export class KubernetesObj extends KubernetesContext {
         }
         return undefined;
       });
-
-    // const namespaceList: Array<string> = [];
-
-    // const response = await this.coreV1Api?.listNamespace(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 5000);
-    // if (response?.response.statusCode === 200) {
-    //   let namespacesString = JSON.stringify(response.body);
-    //   let namespacesbjectList: ObjectList = JSON.parse(namespacesString);
-    //   for (const namespaces of namespacesbjectList.items) {
-    //     namespaceList.push(namespaces.metadata.name);
-    //   }
-    //   return namespaceList;
-    // } else if (response?.response.statusCode !== 403 && response?.response.statusCode !== 401) {
-    //   const msg = `Failure retrieving Namespace list: ${JSON.stringify(response?.response.errored?.message)}`;
-    //   console.error(msg);
-    // } else {
-    //   return undefined;
-    // }
-    //
   }
 
   /**
@@ -625,7 +607,7 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing a list of namespaces if the namespace exist in the list
    */
   public async validateNamespaceExists(): Promise<boolean | undefined> {
-    return this.coreV1Api
+    const namespaceExists = this.coreV1Api
       ?.readNamespace(this.namespace)
       ?.then(() => {
         return true;
@@ -634,6 +616,24 @@ export class KubernetesObj extends KubernetesContext {
         console.log("Failure retrieving Namespace " + this.namespace);
         return false;
       });
+
+    // Cancel request after 5 seconds without a response from the readNamespace request.
+    // This usually implies a connectivity issue with OpenShift, which could take a minute or more
+    // before receiving the timeout response.
+    const timeout: Promise<boolean> = new Promise(resolve => {
+      setTimeout(() => {
+        resolve(false);
+      }, 5000);
+    });
+
+    const done = Promise.race([namespaceExists, timeout])
+      .then(value => {
+        return value;
+      })
+      .catch(() => {
+        return false;
+      });
+    return done;
   }
 
   public async signatureValidationRequiredForOperator(operatorName: string, version: string): Promise<boolean | undefined> {

@@ -110,7 +110,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // Register Commands
   vscode.commands.executeCommand("setContext", VSCodeCommands.sdkInstalled, await session.validateOcSDKInstallation());
   vscode.commands.executeCommand("setContext", VSCodeCommands.loggedIn, await session.validateOpenShiftAccess());
-  vscode.commands.executeCommand("setContext", VSCodeCommands.validNamespace, await session.validateNamespaceExist());
+  vscode.commands.executeCommand("setContext", VSCodeCommands.validNamespace, await session.validateNamespaceExists());
   vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, await session.determinateOcSdkIsOutdated());
   vscode.commands.executeCommand("setContext", VSCodeCommands.zosCloudBrokerInstalled, await session.validateZosCloudBrokerInstallation());
   vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
