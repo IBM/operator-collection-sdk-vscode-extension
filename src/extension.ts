@@ -923,9 +923,6 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                   vscode.window.showInformationMessage("Redeploy Collection request in progress");
                   const poll = util.pollRun(30);
                   const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel, logPath);
-                  // .then(() => {
-                  //   session.operationPending = false;
-                  // });
                   Promise.all([poll, runRedeployCollectionCommand])
                     .then(() => {
                       vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
@@ -943,9 +940,6 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                   vscode.window.showInformationMessage("Redeploy Operator request in progress");
                   const poll = util.pollRun(40);
                   const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
-                  // .then(() => {
-                  //   session.operationPending = false;
-                  // });
                   Promise.all([poll, runRedeployOperatorCommand])
                     .then(() => {
                       vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
@@ -1007,13 +1001,7 @@ function executeSdkCommandWithUserInput(command: string, session: Session, outpu
                   vscode.window.showInformationMessage("Create Operator request in progress");
                 }
                 session.operationPending = true;
-                Promise.all([
-                  util.pollRun(40),
-                  ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel, logPath),
-                  // .then(() => {
-                  //   session.operationPending = false;
-                  // }),
-                ])
+                Promise.all([util.pollRun(40), ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel, logPath)])
                   .then(() => {
                     vscode.window.showInformationMessage("Create Operator command executed successfully");
                     vscode.commands.executeCommand(VSCodeCommands.refresh);
