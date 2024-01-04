@@ -129,7 +129,7 @@ export class Session {
         return false;
       })
       .catch(e => {
-        console.log("Log in to an OpenShift Cluster to use this extension: " + JSON.stringify(e));
+        vscode.window.showInformationMessage("Log in to an OpenShift Cluster to use this extension: " + JSON.stringify(e));
         this.loggedIntoOpenShift = false;
         return false;
       });
@@ -147,11 +147,7 @@ export class Session {
 
     const done = Promise.race([result, timeoutPromise])
       .then(value => {
-        if (value === false) {
-          this.loggedIntoOpenShift = false;
-        } else {
-          this.loggedIntoOpenShift = true;
-        }
+        this.loggedIntoOpenShift = Boolean(value);
         return value;
       })
       .catch(e => {
