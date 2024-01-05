@@ -8,7 +8,6 @@ import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
 import { getAnsibleGalaxySettings, AnsibleGalaxySettings, isCollectionInWorkspace } from "../utilities/util";
-import { clear } from "console";
 
 export class Session {
   public ocSdkInstalled: boolean = false;
