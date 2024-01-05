@@ -552,7 +552,7 @@ function updateOcSdkVersion(command: string, ocSdkCmd: OcSdkCommand, session: Se
 function initOperatorCollection(command: string, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
   return vscode.commands.registerCommand(command, async (uri, _, logPath?: string) => {
     if (session.operationPending) {
-      vscode.window.showWarningMessage("Another operation is processing.");
+      vscode.window.showWarningMessage("Please wait for the current operation to finish before initializing a new collection.");
       return;
     }
 
