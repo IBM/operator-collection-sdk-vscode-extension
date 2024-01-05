@@ -617,7 +617,7 @@ export class KubernetesObj extends KubernetesContext {
         return false;
       });
 
-    // Cancel request after 5 seconds without a response from the getNamespaceList request.
+    // Cancel request after 5 seconds without a response from the readNamespace request.
     // This usually implies a connectivity issue with OpenShift, which could take a minute or more
     // before receiving the timeout response.
     let timeout: NodeJS.Timeout | undefined = undefined;
