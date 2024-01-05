@@ -1,5 +1,15 @@
 # Change Log
 
+### v1.1.0
+- Prevent error messages and response delays when connectivity to OpenShift and Ansible Galaxy connectivity is disrupted
+- Added documentation note about lack of Windows OS support.
+- Added ability to copy error message from toast notification
+- Restrict redeploy collection command when signature validation is required
+- Added support for scaffolding files, an operator-sdk submenu, and quick-fix actions for the linter.
+- Local ZosEndpoint fixes
+- Added '-' and '_' as valid characters in sha256 token regex.
+- Added support for operator collection workspace initialization
+
 ### v1.0.1
 - Bypass 401 failures when extension activates but user isn't logged into OpenShift
 

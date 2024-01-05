@@ -23,6 +23,11 @@ jobs:
           fetch-depth: 0
           ref: ${{ env.RELEASE_TAG }}
 
+      - name: Git origin branch
+        run: |
+          TAG_COMMIT=$(git rev-list -n 1 ${RELEASE_TAG})
+          echo "ORIGIN_BRANCH=$(git branch -r --contains ${TAG_COMMIT} | grep -e '->' | awk '{ print $3}')" >> $GITHUB_ENV
+
       - name: Install Node.js
         uses: actions/setup-node@v3
         with: 
@@ -34,8 +39,15 @@ jobs:
         run: npm install -g @vscode/vsce
 
       - name: Build Extension
+        if: ${{ env.ORIGIN_BRANCH == 'origin/main' }}
         run: |
           npm run build
+          echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
+
+      - name: Build Pre-Release Extension
+        if: ${{ env.ORIGIN_BRANCH != 'origin/main' }}
+        run: |
+          npm run build-prerelease
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
 
       - uses: actions/upload-artifact@v2

@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "zos_cics_operator"
+		},
+		{
+			"path": "custom_operator"
 		}
 	],
 	"settings": {}
