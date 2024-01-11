@@ -17,6 +17,7 @@ export class KubernetesContext {
       if (fs.existsSync("/var/run/secrets/kubernetes.io/serviceaccount")) {
         kc.loadFromCluster();
         this.namespace = fs.readFileSync("/var/run/secrets/kubernetes.io/serviceaccount/namespace").toString();
+        console.log("namespace here ------------:", namespace);
       } else {
         kc.loadFromDefault();
         if (kc.currentContext) {
