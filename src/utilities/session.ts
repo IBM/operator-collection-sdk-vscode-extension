@@ -139,7 +139,7 @@ export class Session {
     let timeout: NodeJS.Timeout | undefined = undefined;
     const timeoutPromise: Promise<boolean> = new Promise(resolve => {
       timeout = setTimeout(() => {
-        vscode.window.showWarningMessage('Connection timed out on "getNamespaceList"... Please check your internet/VPN connection.');
+        vscode.window.showWarningMessage("Connection timed out... Please validate the connectivity to OpenShift");
         resolve(false);
       }, 5000);
     });
