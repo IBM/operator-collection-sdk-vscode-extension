@@ -39,13 +39,13 @@ jobs:
         run: npm install -g @vscode/vsce
 
       - name: Build Extension
-        if: ${{ env.ORIGIN_BRANCH == 'origin/main' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           npm run build
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
 
       - name: Build Pre-Release Extension
-        if: ${{ env.ORIGIN_BRANCH != 'origin/main' }}
+        if: ${{ github.ref != 'refs/heads/main' }}
         run: |
           npm run build-prerelease
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
