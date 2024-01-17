@@ -11,6 +11,10 @@ on:
         options:
         - release
         - pre-release
+      releaseTag:
+        description: 'Specify the Github Tag to build and release'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -21,18 +25,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Determine tag
-        run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
-
       - name: Check-out repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ inputs.releaseTag }}
 
       - name: Git origin branch
         run: |
-          TAG_COMMIT=$(git rev-list -n 1 ${RELEASE_TAG})
+          TAG_COMMIT=$(git rev-list -n 1 ${{ inputs.releaseTag }})
           echo "ORIGIN_BRANCH=$(git branch -r --contains ${TAG_COMMIT} | grep -e '->' | awk '{ print $3}')" >> $GITHUB_ENV
 
       - name: Install Node.js
@@ -69,14 +70,11 @@ jobs:
     needs: [build]
 
     steps:
-      - name: Determine tag
-        run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
-
       - name: Check-out repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ inputs.releaseTag }}
 
       - name: Create release
         uses: actions/github-script@v6
@@ -87,11 +85,11 @@ jobs:
               const response = await github.rest.repos.createRelease({
                 draft: false,
                 generate_release_notes: true,
-                name: process.env.RELEASE_TAG,
+                name: ${{ inputs.releaseTag }},
                 owner: context.repo.owner,
                 prerelease: false,
                 repo: context.repo.repo,
-                tag_name: process.env.RELEASE_TAG,
+                tag_name: ${{ inputs.releaseTag }},
               });
 
               core.exportVariable('RELEASE_ID', response.data.id);
@@ -107,7 +105,7 @@ jobs:
 
       - name: Upload Extension to GitHub
         run: |
-          gh release upload ${RELEASE_TAG} ~/download/extension/$(ls ~/download/extension)
+          gh release upload ${{ inputs.releaseTag }} ~/download/extension/$(ls ~/download/extension)
         env:
           GITHUB_TOKEN: ${{ github.TOKEN }}
 
