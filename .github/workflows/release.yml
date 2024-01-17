@@ -1,9 +1,16 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "**"
+  workflow_dispatch:
+    inputs:
+      buildType:
+        description: 'Build Type'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+        - release
+        - pre-release
 
 permissions:
   contents: write
@@ -39,13 +46,13 @@ jobs:
         run: npm install -g @vscode/vsce
 
       - name: Build Extension
-        if: ${{ github.ref == 'refs/heads/main' }}
+        if: ${{ inputs.buildType != 'release' }}
         run: |
           npm run build
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
 
       - name: Build Pre-Release Extension
-        if: ${{ github.ref != 'refs/heads/main' }}
+        if: ${{ inputs.buildType != 'pre-release' }}
         run: |
           npm run build-prerelease
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
