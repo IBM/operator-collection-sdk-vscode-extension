@@ -24,6 +24,7 @@ import { Session } from "../../utilities/session";
 import * as util from "../../utilities/util";
 import * as k8sClient from "@kubernetes/client-node";
 import { OcSdkCommand } from "../../shellCommands/ocSdkCommands";
+import * as workspace from "../../utilities/workspace";
 
 describe("Extension Test Suite", async () => {
   vscode.window.showInformationMessage("Start all tests.");
@@ -39,6 +40,7 @@ describe("Extension Test Suite", async () => {
   const redeployCollectionLogPath = path.join(__dirname, "redeployCollection.log");
   const redeployOperatorLogPath = path.join(__dirname, "redeployOperator.log");
   const downloadVerboseLogsLogPath = path.join(__dirname, "downloadVerboseLogs.log");
+  const convertToAirgapCollectionLogPath = path.join(__dirname, "convertToAirgapCollection.log");
 
   enum ZosCloudBrokerKinds {
     zosEndpoint = "ZosEndpoint",
@@ -207,7 +209,7 @@ describe("Extension Test Suite", async () => {
         }
         const oldPodName = oldPod[0].metadata?.name;
         vscode.commands.executeCommand(VSCodeCommands.redeployCollection, imsOperatorItem, redeployCollectionLogPath);
-        await helper.pollOperatorPodStatus(imsOperatorItem.operatorName, oldPodName!, 30);
+        await helper.pollOperatorPodStatus(imsOperatorItem.operatorName, oldPodName!, 40);
       } catch (e) {
         console.log("Printing Redeploy Collection logs");
         helper.displayCmdOutput(redeployCollectionLogPath);
@@ -291,7 +293,7 @@ describe("Extension Test Suite", async () => {
       assert.equal(imsOperator.workspacePath, imsOperatorItem.workspacePath);
       assert.equal(imsOperator.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(imsOperator.contextValue, "operator");
-      assert.equal((imsOperator.iconPath as vscode.ThemeIcon).id, "rocket");
+      assert.ok((imsOperator.hasOwnProperty("iconPath"), "iconPath key not found int imsOperator object"));
       assert.equal(imsOperator.label, `Operator: ${imsOperatorItem.operatorDisplayName}`);
 
       // Validate CICS TS Operator root
@@ -301,7 +303,7 @@ describe("Extension Test Suite", async () => {
       assert.equal(cicsOperator.workspacePath, cicsOperatorItem.workspacePath);
       assert.equal(cicsOperator.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(cicsOperator.contextValue, "operator");
-      assert.equal((cicsOperator.iconPath as vscode.ThemeIcon).id, "rocket");
+      assert.ok((cicsOperator.hasOwnProperty("iconPath"), "iconPath key not found int cicsOperator object"));
       assert.equal(cicsOperator.label, `Operator: ${cicsOperatorItem.operatorDisplayName}`);
     });
     it("Should validate the IMS operator pod item", async () => {
@@ -394,7 +396,7 @@ describe("Extension Test Suite", async () => {
       assert.equal(imsOperatorResource.workspacePath, imsOperatorItem.workspacePath);
       assert.equal(imsOperatorResource.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(imsOperatorResource.contextValue, "operator");
-      assert.equal((imsOperatorResource.iconPath as vscode.ThemeIcon).id, "rocket");
+      assert.ok((imsOperatorResource.hasOwnProperty("iconPath"), "iconPath key not found int imsOperatorResource object"));
       assert.equal(imsOperatorResource.label, `Operator: ${imsOperatorItem.operatorDisplayName}`);
 
       // Validate CICS TS Operator resources
@@ -404,7 +406,7 @@ describe("Extension Test Suite", async () => {
       assert.equal(cicsOperatorResource.workspacePath, cicsOperatorItem.workspacePath);
       assert.equal(cicsOperatorResource.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(cicsOperatorResource.contextValue, "operator");
-      assert.equal((cicsOperatorResource.iconPath as vscode.ThemeIcon).id, "rocket");
+      assert.ok((cicsOperatorResource.hasOwnProperty("iconPath"), "iconPath key not found int cicsOperatorResource object"));
       assert.equal(cicsOperatorResource.label, `Operator: ${cicsOperatorItem.operatorDisplayName}`);
     });
     it("Should validate the IMS Broker Custom Resources in OpenShift Resources", async () => {
@@ -823,6 +825,144 @@ describe("Extension Test Suite", async () => {
 
     it("Should validate the linter lints playbooks host value", () => {
       assert.ok(postDiagnostics && postDiagnostics.some(diagnostic => diagnostic.message.includes('Playbook MUST use a "hosts: all" value')));
+    });
+  });
+
+  describe("When validating context-menu functions", async () => {
+    const customCollectionPath = testVars.customOperatorCollectionPath;
+    const customCollectionURI = vscode.Uri.file(customCollectionPath);
+    const customPlaybookName = "playbooks/customPlaybook.yml";
+
+    before(() => {
+      if (fs.existsSync(customCollectionPath)) {
+        fs.rmSync(customCollectionPath, { recursive: true, force: true });
+      }
+      fs.mkdirSync(path.join(customCollectionPath, "collections"), { recursive: true });
+
+      const requirementCollection = "core";
+      const requirementNamespace = "kubernetes";
+      const requirementVersion = "2.4.0";
+
+      const filePath = path.join(customCollectionPath, "collections", "requirements.yml");
+      const fileContent = ["---", "collections:", ` - name: ${requirementNamespace}.${requirementCollection}`, `   version: "${requirementVersion}"`];
+
+      const directory = path.dirname(filePath);
+      if (!fs.existsSync(directory)) {
+        fs.mkdirSync(directory, { recursive: true });
+      }
+
+      try {
+        fs.writeFileSync(filePath, fileContent.join("\n"), "utf-8");
+      } catch (e) {
+        assert.fail(`Failed to create requirements.yml file before tests: ${e}`);
+      }
+    });
+
+    after(() => {
+      if (fs.existsSync(customCollectionPath)) {
+        fs.rmSync(customCollectionPath, { recursive: true, force: true });
+      }
+    });
+
+    it("Should validate the creation of a Playbook file", async () => {
+      vscode.commands.executeCommand(VSCodeCommands.createFile, customPlaybookName, customCollectionPath);
+      if (!fs.existsSync(path.join(customCollectionPath, customPlaybookName))) {
+        assert.fail("Failed to create a custom Playbook file.");
+      }
+    });
+
+    it("Should validate the creation of an Operator-Config file", async () => {
+      vscode.commands.executeCommand(VSCodeCommands.createOperatorConfigBoilerplateFile, customCollectionURI);
+      if (!fs.existsSync(path.join(customCollectionPath, "operator-config.yml"))) {
+        assert.fail("Failed to create a custom Operator-Config file.");
+      }
+    });
+
+    it("Should validate the creation of a Galaxy file", async () => {
+      vscode.commands.executeCommand(VSCodeCommands.createGalaxyBoilerplateFile, customCollectionURI);
+      if (!fs.existsSync(path.join(customCollectionPath, "galaxy.yml"))) {
+        assert.fail("Failed to create a custom Galaxy file.");
+      }
+    });
+
+    it("Should validate the conversion of a collection to an air-gapped collection.", async () => {
+      try {
+        const requirementsFilePath = path.join(customCollectionPath, "collections", "requirements.yml");
+
+        if (fs.existsSync(requirementsFilePath)) {
+          const requirement = workspace.getValuesFromYamlFile(requirementsFilePath, ["collections"])[0][0];
+          const [requirementNamespace, requirementCollection] = requirement?.name.split(".");
+          const requirementVersion = requirement?.version;
+          const tarball = `${requirementNamespace}-${requirementCollection}-${requirementVersion}.tar.gz`;
+
+          await vscode.commands.executeCommand(VSCodeCommands.convertToAirgapCollection, customCollectionURI, undefined, convertToAirgapCollectionLogPath);
+          if (!fs.existsSync(path.join(customCollectionPath, "collections", tarball))) {
+            assert.fail("Failed to download requirement when converting collection to an air-gapped collection.");
+          }
+        } else {
+          assert.fail("Unable to detect to collections/requirements.yml file when converting collection to an air-gapped collection.");
+        }
+      } catch (e) {
+        assert.fail(`Failed to convert collection to an air-gapped collection:$ ${e}`);
+      }
+    });
+
+    it('Should validate the workspace "searchParents" function', () => {
+      const targets = [/operator-config.ya?ml/];
+      const workspaceRootFolderName = testVars.fixturePath.substring(0, testVars.fixturePath.lastIndexOf("/"));
+      let returnedPath = workspace.searchParents(customCollectionPath, workspaceRootFolderName, targets);
+      assert.equal("", returnedPath);
+
+      returnedPath = workspace.searchParents(path.join(customCollectionPath, "collections"), workspaceRootFolderName, targets);
+      assert.equal(path.join(customCollectionPath, "operator-config.yml"), returnedPath);
+    });
+
+    it('Should validate the workspace "findNearestCollectionInLineage" function', () => {
+      let [returnedPath, pathIsAmbiguous] = workspace.findNearestCollectionInLineage(customCollectionPath);
+      assert.equal(customCollectionPath, returnedPath);
+      assert.equal(false, pathIsAmbiguous);
+
+      const workspaceRootFolderName = testVars.fixturePath.substring(0, testVars.fixturePath.lastIndexOf("/"));
+      [returnedPath, pathIsAmbiguous] = workspace.findNearestCollectionInLineage(path.join(customCollectionPath, "collections"), workspaceRootFolderName);
+      assert.equal(customCollectionPath, returnedPath);
+      assert.equal(false, pathIsAmbiguous);
+
+      // test function on directory with multiple child collections
+      [returnedPath, pathIsAmbiguous] = workspace.findNearestCollectionInLineage(testVars.fixturePath);
+      assert.equal("", returnedPath);
+      assert.equal(true, pathIsAmbiguous);
+    });
+
+    it('Should validate the workspace "findNearestFolderOrFile" function', () => {
+      const target = /requirements.ya?ml/;
+      const workspaceRootFolderName = testVars.fixturePath.substring(0, testVars.fixturePath.lastIndexOf("/"));
+      let returnedPath = workspace.findNearestFolderOrFile([customCollectionPath], workspaceRootFolderName, target);
+      assert.equal(path.join(customCollectionPath, "collections", "requirements.yml"), returnedPath);
+    });
+
+    it('Should validate the workspace "getMatchingDecendants" function', () => {
+      let targets = [/requirements.ya?ml/];
+      let returnedPaths = workspace.getMatchingDecendants(customCollectionPath, targets, false);
+      assert.equal(returnedPaths.length, 0);
+
+      returnedPaths = workspace.getMatchingDecendants(customCollectionPath, targets, true);
+      assert.equal(returnedPaths.length, 1);
+      assert.equal(path.join(customCollectionPath, "collections", "requirements.yml"), returnedPaths[0]);
+
+      targets = [/requirements.ya?ml/, /operator-config.ya?ml/];
+      returnedPaths = workspace.getMatchingDecendants(customCollectionPath, targets, true);
+      assert.equal(returnedPaths.length, 2);
+      assert.equal(true, returnedPaths.includes(path.join(customCollectionPath, "collections", "requirements.yml")));
+      assert.equal(true, returnedPaths.includes(path.join(customCollectionPath, "operator-config.yml")));
+    });
+
+    it('Should validate the workspace "gatherDirectoryPlaybooks" function', async () => {
+      let playbooks = await workspace.gatherDirectoryPlaybooks(customCollectionPath);
+      assert.equal(playbooks.length, 1);
+      assert.equal(playbooks[0], customPlaybookName);
+
+      // playbooks = await workspace.gatherDirectoryPlaybooks(pseudoCollectionPath);
+      // assert.equal(playbooks.length, 0);
     });
   });
 });

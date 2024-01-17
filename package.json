@@ -7,7 +7,7 @@
   },
   "icon": "resources/icons/operator-collection-sdk.png",
   "description": "IBM Operator Collection SDK VS Code extension for Operator Collection development",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/IBM/operator-collection-sdk-vscode-extension"
@@ -145,6 +145,41 @@
         "title": "Delete Custom Resource",
         "category": "OC-SDK",
         "icon": "$(trash)"
+      },
+      {
+        "command": "operator-collection-sdk.refactorInline",
+        "title": "Refactor YAML file inline",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createFile",
+        "title": "Create boilerplate YAML file",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createGalaxyBoilerplateFile",
+        "title": "New galaxy file...",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createOperatorConfigBoilerplateFile",
+        "title": "New operator-config file...",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createPlaybookBoilerplateFile",
+        "title": "New playbook file...",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.convertToAirgapCollection",
+        "title": "Convert to Airgap Collection",
+        "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.initCollection",
+        "title": "New Operator Collection...",
+        "category": "OC-SDK"
       }
     ],
     "configuration": [
@@ -220,17 +255,27 @@
       {
         "view": "operator-collection-sdk.operators",
         "contents": "A new IBM Operator Collection version is available\n[Update Now](command:operator-collection-sdk.sdkUpgradeVersion)\n[Later](command:operator-collection-sdk.sdkUpgradeVersionSkip)",
-        "when": "operator-collection-sdk.sdkInstalled && operator-collection-sdk.sdkOutdatedVersion"
+        "when": "operator-collection-sdk.sdkInstalled && operator-collection-sdk.sdkOutdatedVersion && workspaceFolderCount!=0"
       },
       {
         "view": "operator-collection-sdk.operators",
         "contents": "Install the IBM z/OS Cloud Broker Operator in the current project in OpenShift, and create a ZosCloudBroker instance to use this extension",
-        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && operator-collection-sdk.validNamespace"
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && operator-collection-sdk.validNamespace && !operator-collection-sdk.isCollectionInWorkspace"
       },
       {
         "view": "operator-collection-sdk.operators",
         "contents": "Select a valid project in Openshift and create a ZosCloudBroker instance to use this extension",
-        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && !operator-collection-sdk.validNamespace"
+        "when": "operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled && !operator-collection-sdk.validNamespace &&operator-collection-sdk.isCollectionInWorkspace"
+      },
+      {
+        "view": "operator-collection-sdk.operators",
+        "contents": "Operator Collection isn’t detected in current workspace \n[Initialize Operator Collection](command:operator-collection-sdk.initCollectionAtRoot)\n[Skip](command:operator-collection-sdk.initCollectionSkip)",
+        "when": "operator-collection-sdk.sdkInstalled && !operator-collection-sdk.sdkOutdatedVersion && operator-collection-sdk.isCollectionInWorkspace && workspaceFolderCount!=0"
+      },
+      {
+        "view": "operator-collection-sdk.operators",
+        "contents": "You have not yet opened a folder. \n[Open Folder](command:workbench.action.files.openFileFolder)\nYou can clone a repository locally.\n[Clone Repository](command:git.clone)",
+        "when": "workspaceFolderCount==0"
       },
       {
         "view": "operator-collection-sdk.resources",
@@ -253,11 +298,6 @@
         "when": "!operator-collection-sdk.loggedIn"
       },
       {
-        "view": "operator-collection-sdk.operators",
-        "contents": "Log in to an OpenShift Cluster to use this extension",
-        "when": "!operator-collection-sdk.loggedIn && operator-collection-sdk.sdkInstalled"
-      },
-      {
         "view": "operator-collection-sdk.about",
         "contents": "IBM Operator Collection SDK and IBM z/OS Cloud Broker Operator not installed",
         "when": "!operator-collection-sdk.sdkInstalled && operator-collection-sdk.loggedIn && !operator-collection-sdk.zosCloudBrokerInstalled"
@@ -272,7 +312,43 @@
         }
       ]
     },
+    "submenus": [
+      {
+        "id": "operator-collection-sdk.submenu",
+        "label": "Operator Collection SDK",
+        "group": "submenu"
+      }
+    ],
     "menus": {
+      "explorer/context": [
+        {
+          "submenu": "operator-collection-sdk.submenu",
+          "group": "navigation@100",
+          "when": "explorerResourceIsFolder"
+        }
+      ],
+      "operator-collection-sdk.submenu": [
+        {
+          "command": "operator-collection-sdk.createGalaxyBoilerplateFile",
+          "group": "ocsdk-submenu@0"
+        },
+        {
+          "command": "operator-collection-sdk.createPlaybookBoilerplateFile",
+          "group": "ocsdk-submenu@1"
+        },
+        {
+          "command": "operator-collection-sdk.createOperatorConfigBoilerplateFile",
+          "group": "ocsdk-submenu@2"
+        },
+        {
+          "command": "operator-collection-sdk.convertToAirgapCollection",
+          "group": "ocsdk-submenu@3"
+        },
+        {
+          "command": "operator-collection-sdk.initCollection",
+          "group": "ocsdk-submenu@4"
+        }
+      ],
       "view/title": [
         {
           "command": "operator-collection-sdk.refreshAll",
@@ -425,6 +501,10 @@
       {
         "fileMatch": "operator-config.yml",
         "url": "./resources/schema/operator-config.schema.json"
+      },
+      {
+        "fileMatch": ".oc-lint",
+        "url": "./resources/schema/oc-lint.schema.json"
       }
     ]
   },

@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
-import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
+import { getAnsibleGalaxySettings, AnsibleGalaxySettings, isCollectionInWorkspace } from "../utilities/util";
 
 export class Session {
   public ocSdkInstalled: boolean = false;
@@ -15,6 +15,7 @@ export class Session {
   public validNamespace: boolean = false;
   public ocSdkOutdated: boolean = false;
   public skipSdkUpdated: boolean = false;
+  public skipOCinit: boolean = false;
   public operationPending: boolean = false;
   public zosCloudBrokerInstalled: boolean = false;
 
@@ -77,8 +78,14 @@ export class Session {
       return false;
     }
     if (this.ocSdkInstalled && !this.skipSdkUpdated) {
-      this.ocSdkOutdated = await this.ocSdkCmd.runDeterminateOcSdkIsOutdated();
-      return this.ocSdkOutdated;
+      try {
+        this.ocSdkOutdated = await this.ocSdkCmd.runDeterminateOcSdkIsOutdated();
+        return this.ocSdkOutdated;
+      } catch (e) {
+        console.log(e);
+        this.ocSdkOutdated = false;
+        return false;
+      }
     } else {
       this.ocSdkOutdated = false;
       return false;
@@ -95,12 +102,22 @@ export class Session {
   }
 
   /**
+   * Set skip OC init flag
+   * @returns - A promise containing a boolean, returning the skip the oc init
+   */
+  async setSkipOCinitFlag(): Promise<boolean> {
+    this.skipOCinit = !this.skipOCinit;
+    return new Promise<boolean>((resolve: any) => resolve(this.skipOCinit));
+  }
+
+  /**
    * Validates that the user is logged in to OpenShift
    * @returns - A promise containing a boolean, returning true if the user has access
    */
   async validateOpenShiftAccess(): Promise<boolean> {
     const k8s = new KubernetesObj();
-    return k8s
+
+    const result = k8s
       .getNamespaceList()
       .then(list => {
         if (list !== undefined) {
@@ -115,6 +132,30 @@ export class Session {
         this.loggedIntoOpenShift = false;
         return false;
       });
+
+    // Cancel request after 5 seconds without a response from the getNamespaceList request.
+    // This usually implies a connectivity issue with OpenShift, which could take a minute or more
+    // before receiving the timeout response.
+    const timeout: Promise<boolean> = new Promise(resolve => {
+      setTimeout(() => {
+        resolve(false);
+      }, 5000);
+    });
+
+    const done = Promise.race([result, timeout])
+      .then(value => {
+        if (value === false) {
+          this.loggedIntoOpenShift = false;
+        } else {
+          this.loggedIntoOpenShift = true;
+        }
+        return value;
+      })
+      .catch(e => {
+        this.loggedIntoOpenShift = false;
+        return false;
+      });
+    return done;
   }
 
   /**
@@ -146,6 +187,9 @@ export class Session {
    */
   async validateZosCloudBrokerInstallation(): Promise<boolean> {
     const k8s = new KubernetesObj();
+    if (this.loggedIntoOpenShift === false) {
+      return false;
+    }
     return k8s
       .zosCloudBrokerInstanceCreated()
       .then(createdSuccessfully => {
@@ -192,7 +236,7 @@ async function setContext(loggedIntoOpenShift: boolean, zosCloudBrokerInstalled:
   }
 
   if (ocSdkOutdated !== undefined) {
-    return vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, ocSdkOutdated).then(() => {
+    return vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, ocSdkOutdated, vscode.commands.executeCommand("setContext", VSCodeCommands.zosCloudBrokerInstalled, zosCloudBrokerInstalled)).then(() => {
       if (!skipRefresh) {
         vscode.commands.executeCommand(VSCodeCommands.refreshAll);
       }
