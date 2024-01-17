@@ -47,13 +47,13 @@ jobs:
         run: npm install -g @vscode/vsce
 
       - name: Build Extension
-        if: ${{ inputs.buildType != 'release' }}
+        if: ${{ inputs.buildType == 'release' }}
         run: |
           npm run build
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
 
       - name: Build Pre-Release Extension
-        if: ${{ inputs.buildType != 'pre-release' }}
+        if: ${{ inputs.buildType == 'pre-release' }}
         run: |
           npm run build-prerelease
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
