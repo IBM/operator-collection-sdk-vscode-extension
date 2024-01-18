@@ -65,14 +65,15 @@ export class OcSdkCommand {
         return reject(error.message);
       });
       childProcess.on("close", (code: number) => {
+        if (callbackFunction !== undefined) {
+          callbackFunction(outputValue);
+        }
+
         if (code) {
           if (code !== 0) {
             return reject(code);
           }
         } else {
-          if (callbackFunction !== undefined) {
-            callbackFunction(outputValue);
-          }
           return resolve(code);
         }
       });
@@ -177,9 +178,9 @@ export class OcSdkCommand {
 
     // ansible-galaxy collection list | grep ibm.operator_collection_sdk
     const cmd: string = "ansible-galaxy";
-    let args: Array<string> = ["collection", "list", "|", "grep", `${galaxyNamespace}.operator_collection_sdk`];
+    const args: Array<string> = ["collection", "list", "|", "grep", `${galaxyNamespace}.operator_collection_sdk`];
 
-    let setVersionInstalled = (outputValue: string) => {
+    const setVersionInstalled = (outputValue: string) => {
       versionInstalled = outputValue.split(" ")?.filter(item => {
         return item.length;
       })?.[1]; // item in [1] is the version
@@ -319,10 +320,32 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  private executeSimpleCommand(command: string, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
+  private async executeSimpleCommand(command: string, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     const cmd: string = "ansible-playbook";
     let args: Array<string> = [command];
-    return this.run(cmd, args, outputChannel, logPath);
+
+    let commandOutput = "";
+    const setCommandOutput = (outputValue: string) => {
+      commandOutput = outputValue;
+    };
+
+    return new Promise(async (resolve, reject) => {
+      this.run(cmd, args, outputChannel, logPath, setCommandOutput)
+        .then(() => {
+          resolve(commandOutput);
+        })
+        .catch(returnCode => {
+          const playbookTasksFailureRegex = /FAILED! => {.*}/g;
+          const playbookTasksFailures = commandOutput.match(playbookTasksFailureRegex);
+          const finalFailureObject = playbookTasksFailures?.[playbookTasksFailures.length - 1]?.replace("FAILED! => ", "");
+          if (finalFailureObject) {
+            const error = `(RC: ${returnCode}) ${JSON.parse(finalFailureObject)?.["msg"]}`;
+            reject(error);
+          } else {
+            reject(commandOutput);
+          }
+        });
+    });
   }
 }
 
