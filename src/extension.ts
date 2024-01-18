@@ -896,7 +896,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                     })
                     .catch(e => {
                       session.operationPending = false;
-                      showErrorMessage(`Failure executing Delete Operator command: RC ${e}`);
+                      showErrorMessage(`Failure executing Delete Operator command: ${e}`);
                     });
                   break;
                 }
