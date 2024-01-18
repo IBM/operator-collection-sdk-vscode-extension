@@ -339,10 +339,11 @@ export class OcSdkCommand {
           const playbookTasksFailures = commandOutput.match(playbookTasksFailureRegex);
           const finalFailureObject = playbookTasksFailures?.[playbookTasksFailures.length - 1]?.replace("FAILED! => ", "");
           if (finalFailureObject) {
-            const error = `(RC: ${returnCode}) ${JSON.parse(finalFailureObject)?.["msg"]}`;
-            reject(error);
+            const errorMessage = `(RC: ${returnCode}) ${JSON.parse(finalFailureObject)?.["msg"]}`;
+            reject(errorMessage);
           } else {
-            reject(commandOutput);
+            const errorMessage = `(RC: ${returnCode}) ${commandOutput}`;
+            reject(errorMessage);
           }
         });
     });
