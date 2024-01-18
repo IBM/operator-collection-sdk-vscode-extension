@@ -579,7 +579,7 @@ export class KubernetesObj extends KubernetesContext {
   public async getNamespaceList(): Promise<string[] | undefined> {
     const namespaceList: Array<string> = [];
     return this.coreV1Api
-      ?.listNamespace(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 5)
+      ?.listNamespace()
       .then(res => {
         if (res.response.statusCode === 200) {
           let namespacesString = JSON.stringify(res.body);
@@ -600,23 +600,6 @@ export class KubernetesObj extends KubernetesContext {
         }
         return undefined;
       });
-
-    // const namespaceList: Array<string> = [];
-
-    // const response = await this.coreV1Api?.listNamespace(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 5000);
-    // if (response?.response.statusCode === 200) {
-    //   let namespacesString = JSON.stringify(response.body);
-    //   let namespacesbjectList: ObjectList = JSON.parse(namespacesString);
-    //   for (const namespaces of namespacesbjectList.items) {
-    //     namespaceList.push(namespaces.metadata.name);
-    //   }
-    //   return namespaceList;
-    // } else if (response?.response.statusCode !== 403 && response?.response.statusCode !== 401) {
-    //   const msg = `Failure retrieving Namespace list: ${JSON.stringify(response?.response.errored?.message)}`;
-    //   console.error(msg);
-    // } else {
-    //   return undefined;
-    // }
   }
 
   /**
