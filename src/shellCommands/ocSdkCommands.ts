@@ -268,7 +268,22 @@ export class OcSdkCommand {
     process.env.ANSIBLE_JINJA2_NATIVE = "true";
     const cmd: string = "ansible-playbook";
     args = args.concat("ibm.operator_collection_sdk.create_operator");
-    return this.run(cmd, args, outputChannel, logPath);
+
+    let commandOutput = "";
+    const setCommandOutput = (outputValue: string) => {
+      commandOutput = outputValue;
+    };
+
+    return new Promise(async (resolve, reject) => {
+      this.run(cmd, args, outputChannel, logPath, setCommandOutput)
+        .then(() => {
+          resolve(commandOutput);
+        })
+        .catch(returnCode => {
+          const errorMessage = `(RC: ${returnCode}) ${getFinalPlaybookTaskFailure(commandOutput)}`;
+          reject(errorMessage);
+        });
+    });
   }
 
   /**
@@ -335,16 +350,8 @@ export class OcSdkCommand {
           resolve(commandOutput);
         })
         .catch(returnCode => {
-          const playbookTasksFailureRegex = /FAILED! => {.*}/g;
-          const playbookTasksFailures = commandOutput.match(playbookTasksFailureRegex);
-          const finalFailureObject = playbookTasksFailures?.[playbookTasksFailures.length - 1]?.replace("FAILED! => ", "");
-          if (finalFailureObject) {
-            const errorMessage = `(RC: ${returnCode}) ${JSON.parse(finalFailureObject)?.["msg"]}`;
-            reject(errorMessage);
-          } else {
-            const errorMessage = `(RC: ${returnCode}) ${commandOutput}`;
-            reject(errorMessage);
-          }
+          const errorMessage = `(RC: ${returnCode}) ${getFinalPlaybookTaskFailure(commandOutput)}`;
+          reject(errorMessage);
         });
     });
   }
@@ -398,4 +405,14 @@ async function getRequest(apiUrl: string): Promise<string | undefined> {
 
 function getLatestCollectionVersion(jsonData: any): string | undefined {
   return jsonData?.data?.collection?.latest_version?.version ?? jsonData?.data[0]?.version;
+}
+
+function getFinalPlaybookTaskFailure(stdOutput: string): string | undefined {
+  const playbookTasksFailureRegex = /FAILED! => {.*}/g;
+  const playbookTasksFailures = stdOutput.match(playbookTasksFailureRegex);
+  const finalFailureObject = playbookTasksFailures?.[playbookTasksFailures.length - 1]?.replace("FAILED! => ", "");
+  if (finalFailureObject) {
+    return JSON.parse(finalFailureObject)?.["msg"];
+  }
+  return stdOutput;
 }
