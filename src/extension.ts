@@ -952,7 +952,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                       vscode.commands.executeCommand(VSCodeCommands.refresh);
                     })
                     .catch(e => {
-                      showErrorMessage(`Failure executing Redeploy Operator command: RC ${e}`);
+                      showErrorMessage(`Failure executing Redeploy Operator command: ${e}`);
                     })
                     .finally(() => {
                       session.operationPending = false;
