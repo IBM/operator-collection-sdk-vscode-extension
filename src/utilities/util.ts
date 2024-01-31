@@ -580,6 +580,59 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
   return args;
 }
 
+/**
+ * Prompts the user for the necessary info to create a Credential Secret
+ * @returns - A Promise containing the list of parameters to pass to the command
+ */
+export async function requestCreateCredentialSecreteInfo(): Promise<string[] | undefined> {
+  const args: Array<string> = [];
+  const singleInputRegex = /^\S*$/; // matches single input, no spaces
+
+  const validateSingleInput = (text: string): string | null => {
+    const isValid = text.trim().match(singleInputRegex)?.length;
+    return isValid ? null : "Please enter a single input for this field.";
+  };
+
+  const operatorName = await vscode.window.showInputBox({
+    prompt: 'Enter the operator name. This can be found under the "labels" field in the suboperator pod.',
+    ignoreFocusOut: true,
+    validateInput: text => {
+      return validateSingleInput(text);
+    },
+  });
+
+  const sshKey = await vscode.window.showInputBox({
+    prompt: "Enter the local path to your private SSH Key for this endpoint.",
+    value: "~/.ssh/id_ed25519",
+    ignoreFocusOut: true,
+    validateInput: text => {
+      return validateSingleInput(text);
+    },
+  });
+
+  const username = await vscode.window.showInputBox({
+    prompt: "Enter you SSH Username for this endpoint.",
+    ignoreFocusOut: true,
+    validateInput: text => {
+      return validateSingleInput(text);
+    },
+  });
+
+  const secretName = await vscode.window.showInputBox({
+    prompt: "Enter the name of the secret to create.",
+    ignoreFocusOut: true,
+    validateInput: text => {
+      return validateSingleInput(text);
+    },
+  });
+
+  args.push(`-e "operator_name=${operatorName?.trim()}"`);
+  args.push(`-e "ssh_key=${sshKey?.trim()}"`);
+  args.push(`-e "username=${username?.trim()}"`);
+  args.push(`-e "secret_name=${secretName?.trim()}"`);
+  return args;
+}
+
 export function validateOperatorConfig(document: vscode.TextDocument): boolean {
   const text = document.getText();
   if (text.includes("domain") && text.includes("name") && text.includes("version") && text.includes("displayName") && text.includes("resources") && text.includes("description")) {
