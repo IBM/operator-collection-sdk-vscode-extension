@@ -313,6 +313,19 @@ export class OcSdkCommand {
   }
 
   /**
+   * Executes the Operator Collection SDK Create Credential Secret command
+   * @param args - The arguments to pass to the command
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise container the return code of the command being executed
+   */
+  async runCreateCredentialSecret(args: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
+    const cmd: string = "ansible-playbook";
+    args = args.concat("ibm.operator_collection_sdk.create_credential_secret ");
+    return this.run(cmd, args, outputChannel, logPath);
+  }
+
+  /**
    * Executes an Operator Collection SDK command without additional arguments
    * @param command - The command to execute
    * @param outputChannel - The VS Code output channel to display command output

@@ -129,6 +129,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
   context.subscriptions.push(initOperatorCollectionSkip(VSCodeCommands.initCollectionSkip, session));
+  context.subscriptions.push(createCredentialSecret(VSCodeCommands.createCredentialSecret, ocSdkCmd, session, outputChannel));
   context.subscriptions.push(updateProject(VSCodeCommands.updateProject, ocCmd, session));
   context.subscriptions.push(executeSdkCommandWithUserInput(VSCodeCommands.createOperator, session, outputChannel));
   context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.deleteOperator, session, outputChannel));
@@ -598,6 +599,29 @@ function initOperatorCollection(command: string, session: Session, outputChannel
             vscode.window.showErrorMessage(`The collection initialization has unexpectedly failed. Please review the output logs for details. ${e}`);
           });
       }
+    }
+  });
+}
+
+function createCredentialSecret(command: string, ocSdkCmd: OcSdkCommand, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
+  return vscode.commands.registerCommand(command, async (uri, _, logPath?: string) => {
+    const args = await util.requestCreateCredentialSecreteInfo();
+    if (args) {
+      session.operationPending = true;
+      const credentialSecretName = args[3].split("=")[1].replace(/"/, "");
+      vscode.window.showInformationMessage(`Attempting to create Credential Secret \"${credentialSecretName}\".`);
+
+      ocSdkCmd
+        .runCreateCredentialSecret(args, outputChannel, logPath)
+        .then(() => {
+          vscode.window.showInformationMessage("Successfully created Credential Secret.");
+        })
+        .catch(e => {
+          showErrorMessage(`Failed to create Credential Secret: ${e}`); // Change from RC Code to stdOutput when other PRs are merged
+        })
+        .finally(() => {
+          session.operationPending = false;
+        });
     }
   });
 }
