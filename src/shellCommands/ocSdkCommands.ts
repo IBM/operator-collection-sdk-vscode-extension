@@ -174,7 +174,6 @@ export class OcSdkCommand {
    */
   async runOcSdkVersion(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string | undefined> {
     const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
-    let versionInstalled: string;
 
     // ansible-galaxy collection list | grep ibm.operator_collection_sdk
     const cmd: string = "ansible-galaxy";
@@ -182,7 +181,7 @@ export class OcSdkCommand {
 
     return this.run(cmd, args, outputChannel, logPath)
       .then(() => {
-        versionInstalled = this.commandOutput.split(" ")?.filter(item => {
+        const versionInstalled = this.commandOutput.split(" ")?.filter(item => {
           return item.length;
         })?.[1]; // item in [1] is the version
         return versionInstalled;
