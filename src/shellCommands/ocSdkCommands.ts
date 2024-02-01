@@ -17,6 +17,8 @@ type HTTPS = typeof https;
 export class OcSdkCommand {
   constructor(private pwd?: string | undefined) {}
 
+  private commandOutput: string = "";
+
   /**
    * Executes the requested command
    * @param cmd - The command to be executed
@@ -25,7 +27,7 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise containing the the return code of the executed command
    */
-  private async run(cmd: string, args?: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string, callbackFunction?: (outputValue: string) => void): Promise<any> {
+  private async run(cmd: string, args?: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     process.env.PWD = this.pwd;
     let outputValue = "";
 
@@ -65,9 +67,7 @@ export class OcSdkCommand {
         return reject(error.message);
       });
       childProcess.on("close", (code: number) => {
-        if (callbackFunction !== undefined) {
-          callbackFunction(outputValue);
-        }
+        this.commandOutput = outputValue;
 
         if (code) {
           if (code !== 0) {
@@ -180,14 +180,11 @@ export class OcSdkCommand {
     const cmd: string = "ansible-galaxy";
     const args: Array<string> = ["collection", "list", "|", "grep", `${galaxyNamespace}.operator_collection_sdk`];
 
-    const setVersionInstalled = (outputValue: string) => {
-      versionInstalled = outputValue.split(" ")?.filter(item => {
-        return item.length;
-      })?.[1]; // item in [1] is the version
-    };
-
-    return this.run(cmd, args, outputChannel, logPath, setVersionInstalled)
+    return this.run(cmd, args, outputChannel, logPath)
       .then(() => {
+        versionInstalled = this.commandOutput.split(" ")?.filter(item => {
+          return item.length;
+        })?.[1]; // item in [1] is the version
         return versionInstalled;
       })
       .catch(e => {
@@ -269,18 +266,13 @@ export class OcSdkCommand {
     const cmd: string = "ansible-playbook";
     args = args.concat("ibm.operator_collection_sdk.create_operator");
 
-    let commandOutput = "";
-    const setCommandOutput = (outputValue: string) => {
-      commandOutput = outputValue;
-    };
-
     return new Promise(async (resolve, reject) => {
-      this.run(cmd, args, outputChannel, logPath, setCommandOutput)
+      this.run(cmd, args, outputChannel, logPath)
         .then(() => {
-          resolve(commandOutput);
+          resolve(this.commandOutput);
         })
         .catch(returnCode => {
-          const errorMessage = `(RC: ${returnCode}) ${getFinalPlaybookTaskFailure(commandOutput)}`;
+          const errorMessage = `(RC: ${returnCode}) ${getFinalPlaybookTaskFailure(this.commandOutput)}`;
           reject(errorMessage);
         });
     });
@@ -339,18 +331,13 @@ export class OcSdkCommand {
     const cmd: string = "ansible-playbook";
     let args: Array<string> = [command];
 
-    let commandOutput = "";
-    const setCommandOutput = (outputValue: string) => {
-      commandOutput = outputValue;
-    };
-
     return new Promise(async (resolve, reject) => {
-      this.run(cmd, args, outputChannel, logPath, setCommandOutput)
+      this.run(cmd, args, outputChannel, logPath)
         .then(() => {
-          resolve(commandOutput);
+          resolve(this.commandOutput);
         })
         .catch(returnCode => {
-          const errorMessage = `(RC: ${returnCode}) ${getFinalPlaybookTaskFailure(commandOutput)}`;
+          const errorMessage = `(RC: ${returnCode}) ${getFinalPlaybookTaskFailure(this.commandOutput)}`;
           reject(errorMessage);
         });
     });
@@ -412,7 +399,14 @@ function getFinalPlaybookTaskFailure(stdOutput: string): string | undefined {
   const playbookTasksFailures = stdOutput.match(playbookTasksFailureRegex);
   const finalFailureObject = playbookTasksFailures?.[playbookTasksFailures.length - 1]?.replace("FAILED! => ", "");
   if (finalFailureObject) {
-    return JSON.parse(finalFailureObject)?.["msg"];
+    const defaultAnsibleErrorMessage = "non-zero return code";
+    const finalFailureMessage = JSON.parse(finalFailureObject)?.["msg"];
+
+    if (finalFailureMessage?.includes(defaultAnsibleErrorMessage)) {
+      return JSON.parse(finalFailureObject)?.["stderr_lines"];
+    }
+
+    return finalFailureMessage;
   }
   return stdOutput;
 }
