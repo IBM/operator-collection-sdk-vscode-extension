@@ -17,6 +17,8 @@ type HTTPS = typeof https;
 export class OcSdkCommand {
   constructor(private pwd?: string | undefined) {}
 
+  private commandOutput: string = "";
+
   /**
    * Executes the requested command
    * @param cmd - The command to be executed
@@ -25,7 +27,7 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise containing the the return code of the executed command
    */
-  private async run(cmd: string, args?: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string, callbackFunction?: (outputValue: string) => void): Promise<any> {
+  private async run(cmd: string, args?: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     process.env.PWD = this.pwd;
     let outputValue = "";
 
@@ -65,14 +67,13 @@ export class OcSdkCommand {
         return reject(error.message);
       });
       childProcess.on("close", (code: number) => {
+        this.commandOutput = outputValue;
+
         if (code) {
           if (code !== 0) {
             return reject(code);
           }
         } else {
-          if (callbackFunction !== undefined) {
-            callbackFunction(outputValue);
-          }
           return resolve(code);
         }
       });
@@ -173,20 +174,16 @@ export class OcSdkCommand {
    */
   async runOcSdkVersion(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string | undefined> {
     const galaxyNamespace = getAnsibleGalaxySettings(AnsibleGalaxySettings.ansibleGalaxyNamespace) as string;
-    let versionInstalled: string;
 
     // ansible-galaxy collection list | grep ibm.operator_collection_sdk
     const cmd: string = "ansible-galaxy";
-    let args: Array<string> = ["collection", "list", "|", "grep", `${galaxyNamespace}.operator_collection_sdk`];
+    const args: Array<string> = ["collection", "list", "|", "grep", `${galaxyNamespace}.operator_collection_sdk`];
 
-    let setVersionInstalled = (outputValue: string) => {
-      versionInstalled = outputValue.split(" ")?.filter(item => {
-        return item.length;
-      })?.[1]; // item in [1] is the version
-    };
-
-    return this.run(cmd, args, outputChannel, logPath, setVersionInstalled)
+    return this.run(cmd, args, outputChannel, logPath)
       .then(() => {
+        const versionInstalled = this.commandOutput.split(" ")?.filter(item => {
+          return item.length;
+        })?.[1]; // item in [1] is the version
         return versionInstalled;
       })
       .catch(e => {
@@ -267,7 +264,17 @@ export class OcSdkCommand {
     process.env.ANSIBLE_JINJA2_NATIVE = "true";
     const cmd: string = "ansible-playbook";
     args = args.concat("ibm.operator_collection_sdk.create_operator");
-    return this.run(cmd, args, outputChannel, logPath);
+
+    return new Promise(async (resolve, reject) => {
+      this.run(cmd, args, outputChannel, logPath)
+        .then(() => {
+          resolve(this.commandOutput);
+        })
+        .catch(returnCode => {
+          const errorMessage = `(RC: ${returnCode}) ${getFinalPlaybookTaskFailure(this.commandOutput)}`;
+          reject(errorMessage);
+        });
+    });
   }
 
   /**
@@ -332,10 +339,20 @@ export class OcSdkCommand {
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  private executeSimpleCommand(command: string, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
+  private async executeSimpleCommand(command: string, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     const cmd: string = "ansible-playbook";
     let args: Array<string> = [command];
-    return this.run(cmd, args, outputChannel, logPath);
+
+    return new Promise(async (resolve, reject) => {
+      this.run(cmd, args, outputChannel, logPath)
+        .then(() => {
+          resolve(this.commandOutput);
+        })
+        .catch(returnCode => {
+          const errorMessage = `(RC: ${returnCode}) ${getFinalPlaybookTaskFailure(this.commandOutput)}`;
+          reject(errorMessage);
+        });
+    });
   }
 }
 
@@ -387,4 +404,21 @@ async function getRequest(apiUrl: string): Promise<string | undefined> {
 
 function getLatestCollectionVersion(jsonData: any): string | undefined {
   return jsonData?.data?.collection?.latest_version?.version ?? jsonData?.data[0]?.version;
+}
+
+function getFinalPlaybookTaskFailure(stdOutput: string): string | undefined {
+  const playbookTasksFailureRegex = /FAILED! => {.*}/g;
+  const playbookTasksFailures = stdOutput.match(playbookTasksFailureRegex);
+  const finalFailureObject = playbookTasksFailures?.[playbookTasksFailures.length - 1]?.replace("FAILED! => ", "");
+  if (finalFailureObject) {
+    const defaultAnsibleErrorMessage = "non-zero return code";
+    const finalFailureMessage = JSON.parse(finalFailureObject)?.["msg"];
+
+    if (finalFailureMessage?.includes(defaultAnsibleErrorMessage)) {
+      return JSON.parse(finalFailureObject)?.["stderr_lines"];
+    }
+
+    return finalFailureMessage;
+  }
+  return stdOutput;
 }

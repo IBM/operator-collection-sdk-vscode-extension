@@ -920,7 +920,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                     })
                     .catch(e => {
                       session.operationPending = false;
-                      showErrorMessage(`Failure executing Delete Operator command: RC ${e}`);
+                      showErrorMessage(`Failure executing Delete Operator command: ${e}`);
                     });
                   break;
                 }
@@ -955,7 +955,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                     })
                     .catch(e => {
                       session.operationPending = false;
-                      showErrorMessage(`Failure executing Redeploy Collection command: RC ${e}`);
+                      showErrorMessage(`Failure executing Redeploy Collection command: ${e}`);
                     });
                   break;
                 }
@@ -973,7 +973,7 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                     })
                     .catch(e => {
                       session.operationPending = false;
-                      showErrorMessage(`Failure executing Redeploy Operator command: RC ${e}`);
+                      showErrorMessage(`Failure executing Redeploy Operator command: ${e}`);
                     });
                   break;
                 }
@@ -1038,7 +1038,7 @@ function executeSdkCommandWithUserInput(command: string, session: Session, outpu
                   })
                   .catch(e => {
                     session.operationPending = false;
-                    showErrorMessage(`Failure executing Create Operator command: RC ${e}`);
+                    showErrorMessage(`Failure executing Create Operator command: ${e}`);
                   });
               }
             }
