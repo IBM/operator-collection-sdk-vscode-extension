@@ -251,7 +251,7 @@ function executeInlineReplaceWith(command: string) {
       edit.replace(document.uri, range, refactorText);
       vscode.workspace.applyEdit(edit);
     } catch (e) {
-      showErrorMessage(`Failed to edit "${path.basename(document.uri.fsPath)}": ${e}`);
+      vscode.window.showErrorMessage(`Failed to edit "${path.basename(document.uri.fsPath)}": ${e}`);
     }
   });
 }
@@ -303,7 +303,7 @@ function createFile(command: string): vscode.Disposable {
     } else if (playbookRX.test(filename)) {
       content = BoilerplateContent.playbookBoilerplateContent;
     } else {
-      showErrorMessage(`Cannot create scaffold for file ${filename}. Supported file types are: .yaml/.yml`);
+      vscode.window.showErrorMessage(`Cannot create scaffold for file ${filename}. Supported file types are: .yaml/.yml`);
       return;
     }
 
@@ -373,7 +373,7 @@ function createFile(command: string): vscode.Disposable {
         callBack();
       }
     } catch (e) {
-      showErrorMessage(`Error while attempting to create file ${filename}: ${e}`);
+      vscode.window.showErrorMessage(`Error while attempting to create file ${filename}: ${e}`);
     }
   });
 }
@@ -401,7 +401,7 @@ function createGalaxyBoilerplateFile(command: string): vscode.Disposable {
       }
       vscode.commands.executeCommand(VSCodeCommands.createFile, filename, destinationDirectory);
     } else {
-      showErrorMessage(`Failed to create ${filename} file, please try again.`);
+      vscode.window.showErrorMessage(`Failed to create ${filename} file, please try again.`);
     }
   });
 }
@@ -429,7 +429,7 @@ function createOperatorConfigBoilerplateFile(command: string): vscode.Disposable
       }
       vscode.commands.executeCommand(VSCodeCommands.createFile, filename, destinationDirectory);
     } else {
-      showErrorMessage(`Failed to create ${filename} file, please try again.`);
+      vscode.window.showErrorMessage(`Failed to create ${filename} file, please try again.`);
     }
   });
 }
@@ -441,7 +441,7 @@ function createPlaybookBoilerplateFile(command: string): vscode.Disposable {
       const directory = uri.fsPath;
       vscode.commands.executeCommand(VSCodeCommands.createFile, filename, directory);
     } else {
-      showErrorMessage(`Failed to create ${filename} file, please try again.`);
+      vscode.window.showErrorMessage(`Failed to create ${filename} file, please try again.`);
     }
   });
 }
@@ -491,7 +491,7 @@ function convertToAirgapCollection(command: string, outputChannel?: vscode.Outpu
           vscode.window.showInformationMessage(`Successfully converted \"${path.basename(nearestCollection)}\" to an airgap collection`);
         });
       } catch (e) {
-        showErrorMessage('The Operator Collection SDK command "create_offline_requirements" failed convert collection. Please see output for more details.');
+        vscode.window.showErrorMessage('The Operator Collection SDK command "create_offline_requirements" failed convert collection. Please see output for more details.');
       }
     }
   });
@@ -587,16 +587,15 @@ function initOperatorCollection(command: string, session: Session, outputChannel
         ocSdkCommand
           .runInitOperatorCollection(args, outputChannel, logPath)
           .then(async () => {
+            session.operationPending = false;
             const namespace = args[0].split("=")[1].replace(/"/, "");
             vscode.window.showInformationMessage(`Initialization of Operator Collection "${namespace}" executed successfully`);
             vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
             vscode.commands.executeCommand(VSCodeCommands.refresh);
           })
           .catch(e => {
-            showErrorMessage(`The collection initialization has unexpectedly failed. Please review the output logs for details. ${e}`);
-          })
-          .finally(() => {
             session.operationPending = false;
+            vscode.window.showErrorMessage(`The collection initialization has unexpectedly failed. Please review the output logs for details. ${e}`);
           });
       }
     }
@@ -891,14 +890,13 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                   const runDeleteOperatorCommand = ocSdkCommand.runDeleteOperatorCommand(outputChannel, logPath);
                   Promise.all([poll, runDeleteOperatorCommand])
                     .then(() => {
+                      session.operationPending = false;
                       vscode.window.showInformationMessage("Delete Operator command executed successfully");
                       vscode.commands.executeCommand(VSCodeCommands.refresh);
                     })
                     .catch(e => {
-                      showErrorMessage(`Failure executing Delete Operator command: RC ${e}`);
-                    })
-                    .finally(() => {
                       session.operationPending = false;
+                      showErrorMessage(`Failure executing Delete Operator command: ${e}`);
                     });
                   break;
                 }
@@ -925,14 +923,13 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                   const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel, logPath);
                   Promise.all([poll, runRedeployCollectionCommand])
                     .then(() => {
+                      session.operationPending = false;
                       vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
                       vscode.commands.executeCommand(VSCodeCommands.refresh);
                     })
                     .catch(e => {
-                      showErrorMessage(`Failure executing Redeploy Collection command: RC ${e}`);
-                    })
-                    .finally(() => {
                       session.operationPending = false;
+                      showErrorMessage(`Failure executing Redeploy Collection command: ${e}`);
                     });
                   break;
                 }
@@ -942,14 +939,13 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                   const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
                   Promise.all([poll, runRedeployOperatorCommand])
                     .then(() => {
+                      session.operationPending = false;
                       vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
                       vscode.commands.executeCommand(VSCodeCommands.refresh);
                     })
                     .catch(e => {
-                      showErrorMessage(`Failure executing Redeploy Operator command: RC ${e}`);
-                    })
-                    .finally(() => {
                       session.operationPending = false;
+                      showErrorMessage(`Failure executing Redeploy Operator command: ${e}`);
                     });
                   break;
                 }
@@ -1003,14 +999,13 @@ function executeSdkCommandWithUserInput(command: string, session: Session, outpu
                 session.operationPending = true;
                 Promise.all([util.pollRun(40), ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel, logPath)])
                   .then(() => {
+                    session.operationPending = false;
                     vscode.window.showInformationMessage("Create Operator command executed successfully");
                     vscode.commands.executeCommand(VSCodeCommands.refresh);
                   })
                   .catch(e => {
-                    showErrorMessage(`Failure executing Create Operator command: RC ${e}`);
-                  })
-                  .finally(() => {
                     session.operationPending = false;
+                    showErrorMessage(`Failure executing Create Operator command: ${e}`);
                   });
               }
             }
