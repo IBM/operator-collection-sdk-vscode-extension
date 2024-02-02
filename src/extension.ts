@@ -923,13 +923,14 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                   const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel, logPath);
                   Promise.all([poll, runRedeployCollectionCommand])
                     .then(() => {
-                      session.operationPending = false;
                       vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
                       vscode.commands.executeCommand(VSCodeCommands.refresh);
                     })
                     .catch(e => {
-                      session.operationPending = false;
                       showErrorMessage(`Failure executing Redeploy Collection command: ${e}`);
+                    })
+                    .finally(() => {
+                      session.operationPending = false;
                     });
                   break;
                 }
@@ -939,13 +940,14 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                   const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
                   Promise.all([poll, runRedeployOperatorCommand])
                     .then(() => {
-                      session.operationPending = false;
                       vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
                       vscode.commands.executeCommand(VSCodeCommands.refresh);
                     })
                     .catch(e => {
-                      session.operationPending = false;
                       showErrorMessage(`Failure executing Redeploy Operator command: ${e}`);
+                    })
+                    .finally(() => {
+                      session.operationPending = false;
                     });
                   break;
                 }
