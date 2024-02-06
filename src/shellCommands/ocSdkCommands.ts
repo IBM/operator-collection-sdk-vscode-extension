@@ -17,7 +17,7 @@ type HTTPS = typeof https;
 export class OcSdkCommand {
   constructor(private pwd?: string | undefined) {}
 
-  private commandOutput: string = "";
+  public readonly commandOutput: string = "";
 
   /**
    * Executes the requested command
