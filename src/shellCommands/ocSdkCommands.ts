@@ -17,7 +17,11 @@ type HTTPS = typeof https;
 export class OcSdkCommand {
   constructor(private pwd?: string | undefined) {}
 
-  public readonly commandOutput: string = "";
+  private commandOutput: string = "";
+
+  public getCommandOutput = () => {
+    return this.commandOutput;
+  };
 
   /**
    * Executes the requested command
@@ -406,7 +410,7 @@ function getLatestCollectionVersion(jsonData: any): string | undefined {
   return jsonData?.data?.collection?.latest_version?.version ?? jsonData?.data[0]?.version;
 }
 
-function getFinalPlaybookTaskFailure(stdOutput: string): string | undefined {
+export function getFinalPlaybookTaskFailure(stdOutput: string): string | undefined {
   const playbookTasksFailureRegex = /FAILED! => {.*}/g;
   const playbookTasksFailures = stdOutput.match(playbookTasksFailureRegex);
   const finalFailureObject = playbookTasksFailures?.[playbookTasksFailures.length - 1]?.replace("FAILED! => ", "");
