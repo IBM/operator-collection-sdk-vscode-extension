@@ -31,7 +31,7 @@ import { LinkItem } from "./treeViews/linkItems/linkItem";
 import { initResources } from "./treeViews/icons";
 import { KubernetesObj } from "./kubernetes/kubernetes";
 import { OcCommand } from "./shellCommands/ocCommand";
-import { OcSdkCommand } from "./shellCommands/ocSdkCommands";
+import { OcSdkCommand, getFinalPlaybookTaskFailure } from "./shellCommands/ocSdkCommands";
 import { Session } from "./utilities/session";
 import { OperatorConfig } from "./linter/models";
 import { AnsibleGalaxyYmlSchema } from "./linter/galaxy";
@@ -617,7 +617,7 @@ function createCredentialSecret(command: string, ocSdkCmd: OcSdkCommand, session
           vscode.window.showInformationMessage("Successfully created Credential Secret.");
         })
         .catch(e => {
-          showErrorMessage(`Failed to create Credential Secret: ${ocSdkCmd.commandOutput}`);
+          showErrorMessage(`Failed to create Credential Secret: ${getFinalPlaybookTaskFailure(ocSdkCmd.getCommandOutput())}`);
         })
         .finally(() => {
           session.operationPending = false;
