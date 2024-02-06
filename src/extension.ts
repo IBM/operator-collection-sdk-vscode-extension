@@ -617,7 +617,7 @@ function createCredentialSecret(command: string, ocSdkCmd: OcSdkCommand, session
           vscode.window.showInformationMessage("Successfully created Credential Secret.");
         })
         .catch(e => {
-          showErrorMessage(`Failed to create Credential Secret: ${e}`); // Change from RC Code to stdOutput when other PRs are merged
+          showErrorMessage(`Failed to create Credential Secret: ${ocSdkCmd.commandOutput}`);
         })
         .finally(() => {
           session.operationPending = false;
