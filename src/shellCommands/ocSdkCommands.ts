@@ -250,7 +250,7 @@ export class OcSdkCommand {
   async runInitOperatorCollection(args: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     const cmd: string = "ansible-playbook";
     args = args.concat("ibm.operator_collection_sdk.init_collection.yml ");
-    return this.run(cmd, args, outputChannel, logPath);
+    return this.commandOutputAfterRun(cmd, args, outputChannel, logPath);
   }
 
   /**
@@ -264,17 +264,7 @@ export class OcSdkCommand {
     process.env.ANSIBLE_JINJA2_NATIVE = "true";
     const cmd: string = "ansible-playbook";
     args = args.concat("ibm.operator_collection_sdk.create_operator");
-
-    return new Promise(async (resolve, reject) => {
-      this.run(cmd, args, outputChannel, logPath)
-        .then(() => {
-          resolve(this.commandOutput);
-        })
-        .catch(returnCode => {
-          const errorMessage = `(RC: ${returnCode}) ${getFinalPlaybookTaskFailure(this.commandOutput)}`;
-          reject(errorMessage);
-        });
-    });
+    return this.commandOutputAfterRun(cmd, args, outputChannel, logPath);
   }
 
   /**
@@ -329,7 +319,10 @@ export class OcSdkCommand {
   private async executeSimpleCommand(command: string, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
     const cmd: string = "ansible-playbook";
     let args: Array<string> = [command];
+    return this.commandOutputAfterRun(cmd, args, outputChannel, logPath);
+  }
 
+  private async commandOutputAfterRun(cmd: string, args: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<string | undefined> {
     return new Promise(async (resolve, reject) => {
       this.run(cmd, args, outputChannel, logPath)
         .then(() => {
