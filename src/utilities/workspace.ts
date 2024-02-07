@@ -7,6 +7,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
 import * as vscode from "vscode";
+import { showErrorMessage } from "./toastModifiers";
 
 /**
  * Retrieves the current workspace root directory if it exists
@@ -78,41 +79,73 @@ export function getValuesFromYamlFile(filePath: string, keys: string[]): Array<a
  * @returns An array object of files and directories (i.e. const [files, subdirectories] = getDirectoryContent(...)).
  */
 export function getDirectoryContent(directory: string, recurse: boolean = false, fileExtensions: string[] = []): [string[], string[]] {
-  const directoryContent = fs.readdirSync(directory, {
-    withFileTypes: true,
-    recursive: true,
-  });
-
-  const files: string[] = [];
-  const directories: string[] = [];
-  for (let i = 0; i < directoryContent.length; i++) {
-    const item = path.join(directory, directoryContent[i].name);
-    if (fs.lstatSync(item).isDirectory()) {
-      directories.push(item);
-    } else {
-      if (fileExtensions.length) {
-        if (fileExtensions.some(extension => item.includes(extension))) {
-          files.push(item);
-        }
-      } else {
-        files.push(item);
-      }
-    }
-  }
-
-  if (recurse && directories.length) {
-    const subdirectoryContent = directories.map(subdirectory => {
-      return getDirectoryContent(subdirectory, recurse, fileExtensions);
+  try {
+    const directoryContent = fs.readdirSync(directory, {
+      withFileTypes: true,
     });
 
-    for (let i = 0; i < subdirectoryContent.length; i++) {
-      const [f, d] = subdirectoryContent[i];
-      files.push.apply(files, f); // extend array
-      directories.push.apply(directories, d); // extend array
-    }
-  }
+    const files: string[] = [];
+    const directories: string[] = [];
 
-  return [files, directories];
+    for (let i = 0; i < directoryContent.length; i++) {
+      const itemPath = path.join(directory, directoryContent[i].name);
+
+      try {
+        if (directoryContent[i].isFile()) {
+          if (fileExtensions.length) {
+            if (fileExtensions.some(extension => itemPath.includes(extension))) {
+              files.push(itemPath);
+            }
+          } else {
+            files.push(itemPath);
+          }
+        } else {
+          directories.push(itemPath);
+        }
+      } catch (_) {
+        // fs.lstatSync will fail if the file doesn't exist...
+        // Ignore discrepencies between what readdirSync relays
+        // and what lstatSync rejects
+        continue;
+      }
+
+      // try {
+      //   if (fs.lstatSync(itemPath).isFile()) {
+      //     if (fileExtensions.length) {
+      //       if (fileExtensions.some(extension => itemPath.includes(extension))) {
+      //         files.push(itemPath);
+      //       }
+      //     } else {
+      //       files.push(itemPath);
+      //     }
+      //   } else {
+      //     directories.push(itemPath);
+      //   }
+      // } catch (_) {
+      //   // fs.lstatSync will fail if the file doesn't exist...
+      //   // Ignore discrepencies between what readdirSync relays
+      //   // and what lstatSync rejects
+      //   continue;
+      // }
+    }
+
+    if (recurse && directories.length) {
+      const subdirectoryContent = directories.map(subdirectory => {
+        return getDirectoryContent(subdirectory, recurse, fileExtensions);
+      });
+
+      for (let i = 0; i < subdirectoryContent.length; i++) {
+        const [f, d] = subdirectoryContent[i];
+        files.push.apply(files, f); // extend array
+        directories.push.apply(directories, d); // extend array
+      }
+    }
+
+    return [files, directories];
+  } catch (e) {
+    showErrorMessage(`Failed to read workspace files: ${e}`);
+    return [[], []];
+  }
 }
 
 /**
