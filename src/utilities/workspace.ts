@@ -90,43 +90,17 @@ export function getDirectoryContent(directory: string, recurse: boolean = false,
     for (let i = 0; i < directoryContent.length; i++) {
       const itemPath = path.join(directory, directoryContent[i].name);
 
-      try {
-        if (directoryContent[i].isFile()) {
-          if (fileExtensions.length) {
-            if (fileExtensions.some(extension => itemPath.includes(extension))) {
-              files.push(itemPath);
-            }
-          } else {
+      if (directoryContent[i].isFile()) {
+        if (fileExtensions.length) {
+          if (fileExtensions.some(extension => itemPath.includes(extension))) {
             files.push(itemPath);
           }
         } else {
-          directories.push(itemPath);
+          files.push(itemPath);
         }
-      } catch (_) {
-        // fs.lstatSync will fail if the file doesn't exist...
-        // Ignore discrepencies between what readdirSync relays
-        // and what lstatSync rejects
-        continue;
+      } else {
+        directories.push(itemPath);
       }
-
-      // try {
-      //   if (fs.lstatSync(itemPath).isFile()) {
-      //     if (fileExtensions.length) {
-      //       if (fileExtensions.some(extension => itemPath.includes(extension))) {
-      //         files.push(itemPath);
-      //       }
-      //     } else {
-      //       files.push(itemPath);
-      //     }
-      //   } else {
-      //     directories.push(itemPath);
-      //   }
-      // } catch (_) {
-      //   // fs.lstatSync will fail if the file doesn't exist...
-      //   // Ignore discrepencies between what readdirSync relays
-      //   // and what lstatSync rejects
-      //   continue;
-      // }
     }
 
     if (recurse && directories.length) {
