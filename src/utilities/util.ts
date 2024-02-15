@@ -602,9 +602,11 @@ export async function requestCreateCredentialSecretInfo(zoscbEncryptInstalled: b
       return validateSingleInput(text);
     },
   });
-  if (!sshKey) {
+  if (sshKey === undefined) {
+    return undefined;
+  } else if (sshKey === "") {
     showErrorMessage("SSH key path is required");
-    return;
+    return undefined;
   }
 
   const username = await vscode.window.showInputBox({
@@ -614,9 +616,11 @@ export async function requestCreateCredentialSecretInfo(zoscbEncryptInstalled: b
       return validateSingleInput(text);
     },
   });
-  if (!username) {
+  if (username === undefined) {
+    return undefined;
+  } else if (username === "") {
     showErrorMessage("SSH username for endpoint is required");
-    return;
+    return undefined;
   }
 
   const secretName = await vscode.window.showInputBox({
@@ -626,9 +630,11 @@ export async function requestCreateCredentialSecretInfo(zoscbEncryptInstalled: b
       return validateSingleInput(text);
     },
   });
-  if (!secretName) {
+  if (secretName === undefined) {
+    return undefined;
+  } else if (secretName === "") {
     showErrorMessage("Secret name is required");
-    return;
+    return undefined;
   }
 
   args.push(zoscbEncryptInstalled ? `-s ${sshKey?.trim()}` : `-e "ssh_key=${sshKey?.trim()}"`);
