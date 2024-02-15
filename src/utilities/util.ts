@@ -582,9 +582,10 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
 
 /**
  * Prompts the user for the necessary info to create a Credential Secret
+ * @param
  * @returns - A Promise containing the list of parameters to pass to the command
  */
-export async function requestCreateCredentialSecreteInfo(): Promise<string[] | undefined> {
+export async function requestCreateCredentialSecretInfo(zoscbEncryptInstalled: boolean): Promise<string[] | undefined> {
   const args: Array<string> = [];
   const singleInputRegex = /^\S*$/; // matches single input, no spaces
 
@@ -592,14 +593,6 @@ export async function requestCreateCredentialSecreteInfo(): Promise<string[] | u
     const isValid = text.trim().match(singleInputRegex)?.length;
     return isValid ? null : "Please enter a single input for this field.";
   };
-
-  const operatorName = await vscode.window.showInputBox({
-    prompt: 'Enter the operator name. This can be found under the "labels" field in the suboperator pod.',
-    ignoreFocusOut: true,
-    validateInput: text => {
-      return validateSingleInput(text);
-    },
-  });
 
   const sshKey = await vscode.window.showInputBox({
     prompt: "Enter the local path to your private SSH Key for this endpoint.",
@@ -609,6 +602,10 @@ export async function requestCreateCredentialSecreteInfo(): Promise<string[] | u
       return validateSingleInput(text);
     },
   });
+  if (!sshKey) {
+    showErrorMessage("SSH key path is required");
+    return;
+  }
 
   const username = await vscode.window.showInputBox({
     prompt: "Enter you SSH Username for this endpoint.",
@@ -617,6 +614,10 @@ export async function requestCreateCredentialSecreteInfo(): Promise<string[] | u
       return validateSingleInput(text);
     },
   });
+  if (!username) {
+    showErrorMessage("SSH username for endpoint is required");
+    return;
+  }
 
   const secretName = await vscode.window.showInputBox({
     prompt: "Enter the name of the secret to create.",
@@ -625,11 +626,14 @@ export async function requestCreateCredentialSecreteInfo(): Promise<string[] | u
       return validateSingleInput(text);
     },
   });
+  if (!secretName) {
+    showErrorMessage("Secret name is required");
+    return;
+  }
 
-  args.push(`-e "operator_name=${operatorName?.trim()}"`);
-  args.push(`-e "ssh_key=${sshKey?.trim()}"`);
-  args.push(`-e "username=${username?.trim()}"`);
-  args.push(`-e "secret_name=${secretName?.trim()}"`);
+  args.push(zoscbEncryptInstalled ? `-s ${sshKey?.trim()}` : `-e "ssh_key=${sshKey?.trim()}"`);
+  args.push(zoscbEncryptInstalled ? `-u ${username?.trim()}` : `-e "username=${username?.trim()}"`);
+  args.push(zoscbEncryptInstalled ? `-n ${secretName?.trim()}` : `-e "secret_name=${secretName?.trim()}"`);
   return args;
 }
 

@@ -23,6 +23,10 @@ export class OcSdkCommand {
     return this.commandOutput;
   };
 
+  public clearCommandOutput = () => {
+    this.commandOutput = "";
+  };
+
   /**
    * Executes the requested command
    * @param cmd - The command to be executed
@@ -245,6 +249,25 @@ export class OcSdkCommand {
   }
 
   /**
+   * Determines if the zoscb-encrypt CLI is installed.
+   * @param outputChannel - The VS Code output channel to display command output
+   * @param logPath - Log path to store command output
+   * @returns - A Promise containing a the return code of the command
+   */
+  async runZoscbEncryptInstalled(outputChannel?: vscode.OutputChannel, logPath?: string): Promise<boolean> {
+    const cmd: string = "zoscb-encrypt";
+    const args: string[] = [];
+
+    try {
+      await this.run(cmd, args, outputChannel, logPath);
+      this.clearCommandOutput();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /**
    * Executes the Operator Collection SDK init Operator command
    * @param args - The arguments to pass to the command
    * @param outputChannel - The VS Code output channel to display command output
@@ -324,16 +347,25 @@ export class OcSdkCommand {
   }
 
   /**
-   * Executes the Operator Collection SDK Create Credential Secret command
+   * Executes the Operator Collection SDK Create Credential Secret command. This command will generate these encrypted
+   * credentials using the zoscb-encrypt CLI installed locally or the zoscb-encrypt CLI within the operator container.
    * @param args - The arguments to pass to the command
    * @param outputChannel - The VS Code output channel to display command output
    * @param logPath - Log path to store command output
    * @returns - A Promise container the return code of the command being executed
    */
-  async runCreateCredentialSecret(args: Array<string>, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
-    const cmd: string = "ansible-playbook";
-    args = args.concat("ibm.operator_collection_sdk.create_credential_secret ");
-    return this.run(cmd, args, outputChannel, logPath);
+  async runCreateCredentialSecret(args: Array<string>, zoscbEncryptInstalled: boolean, outputChannel?: vscode.OutputChannel, logPath?: string): Promise<any> {
+    if (zoscbEncryptInstalled) {
+      // use the zoscb-encrypt CLI
+      const cmd: string = "zoscb-encrypt";
+      args.unshift("credential-secret");
+      return this.run(cmd, args, outputChannel, logPath);
+    } else {
+      // use the operator pod
+      const cmd: string = "ansible-playbook";
+      args = args.concat("ibm.operator_collection_sdk.create_credential_secret ");
+      return this.run(cmd, args, outputChannel, logPath);
+    }
   }
 
   /**
