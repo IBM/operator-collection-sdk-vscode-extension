@@ -1,20 +1,9 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      buildType:
-        description: 'Build Type'
-        required: true
-        default: 'release'
-        type: choice
-        options:
-        - release
-        - pre-release
-      releaseTag:
-        description: 'Specify the Github Tag to build and release'
-        required: true
-        type: string
+  push:
+    tags:
+      - "**"
 
 permissions:
   contents: write
@@ -25,15 +14,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Determine tag
+        run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
+
       - name: Check-out repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{ inputs.releaseTag }}
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Git origin branch
         run: |
-          TAG_COMMIT=$(git rev-list -n 1 ${{ inputs.releaseTag }})
+          TAG_COMMIT=$(git rev-list -n 1 ${RELEASE_TAG})
           echo "ORIGIN_BRANCH=$(git branch -r --contains ${TAG_COMMIT} | grep -e '->' | awk '{ print $3}')" >> $GITHUB_ENV
 
       - name: Install Node.js
@@ -47,13 +39,13 @@ jobs:
         run: npm install -g @vscode/vsce
 
       - name: Build Extension
-        if: ${{ inputs.buildType == 'release' }}
+        if: ${{ env.ORIGIN_BRANCH == 'origin/main' }}
         run: |
           npm run build
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
 
       - name: Build Pre-Release Extension
-        if: ${{ inputs.buildType == 'pre-release' }}
+        if: ${{ env.ORIGIN_BRANCH != 'origin/main' }}
         run: |
           npm run build-prerelease
           echo "EXTENSION_LOCATION=$(ls ${GITHUB_WORKSPACE}/*.vsix)" >> $GITHUB_ENV
@@ -70,11 +62,14 @@ jobs:
     needs: [build]
 
     steps:
+      - name: Determine tag
+        run: "echo \"RELEASE_TAG=${GITHUB_REF#refs/tags/}\" >> $GITHUB_ENV"
+
       - name: Check-out repository
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{ inputs.releaseTag }}
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Create release
         uses: actions/github-script@v6
@@ -97,8 +92,6 @@ jobs:
             } catch (error) {
               core.setFailed(error.message);
             }
-        env:
-          RELEASE_TAG: ${{ inputs.releaseTag }}
         
       - uses: actions/download-artifact@v2
         with:
@@ -107,7 +100,7 @@ jobs:
 
       - name: Upload Extension to GitHub
         run: |
-          gh release upload ${{ inputs.releaseTag }} ~/download/extension/$(ls ~/download/extension)
+          gh release upload ${RELEASE_TAG} ~/download/extension/$(ls ~/download/extension)
         env:
           GITHUB_TOKEN: ${{ github.TOKEN }}
 
