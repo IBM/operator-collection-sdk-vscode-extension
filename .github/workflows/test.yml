@@ -70,6 +70,7 @@ jobs:
           OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
           OCP_NAMESPACE: vscode-${{ github.head_ref }}-${{ runner.os }}
           CLEANUP_NAMESPACE: true
+          ZOSCB_RELEASE: ${{ vars.ZOSCB_RELEASE }}
 
       - name: Execute tests on Mac OS
         run: npm run test
@@ -79,3 +80,4 @@ jobs:
           OCP_TOKEN: ${{ secrets.OCP_TOKEN }}
           OCP_NAMESPACE: vscode-${{ github.head_ref }}-${{ runner.os }}
           CLEANUP_NAMESPACE: true
+          ZOSCB_RELEASE: ${{ vars.ZOSCB_RELEASE }}
