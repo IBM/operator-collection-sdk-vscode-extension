@@ -561,7 +561,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@kubernetes/client-node": "^0.18.1",
+    "@kubernetes/client-node": "^0.20.0",
     "http": "^0.0.1-security"
   },
   "lint-staged": {
