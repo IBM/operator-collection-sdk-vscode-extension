@@ -485,14 +485,21 @@ export class KubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.listNamespacedCustomObject(request)
       .then(res => {
-        if (res.response.statusCode !== 200) {
-          return undefined;
+        if (res && res.response && res.response.statusCode) {
+          if (res.response.statusCode !== 200) {
+            return undefined;
+          }
+          else {
+            let csvInstacesString = JSON.stringify(res.body);
+            let csvInstanceList: ObjectList = JSON.parse(csvInstacesString);
+            if (csvInstanceList.items.length > 0) {
+              return csvInstanceList.items[0];
+            } else {
+              return undefined;
+            }
+          }
         }
-        let csvInstacesString = JSON.stringify(res.body);
-        let csvInstanceList: ObjectList = JSON.parse(csvInstacesString);
-        if (csvInstanceList.items.length > 0) {
-          return csvInstanceList.items[0];
-        } else {
+        else {
           return undefined;
         }
       })
