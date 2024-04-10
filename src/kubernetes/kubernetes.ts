@@ -63,8 +63,11 @@ export class KubernetesObj extends KubernetesContext {
    */
   public async isUserLoggedIntoOCP(): Promise<boolean> {
     if (this.coreV1Api) {
+      const request: k8s.CoreV1ApiListNamespacedPodRequest = {
+        namespace: this.namespace,
+      };
       return this.coreV1Api
-        .listNamespacedPod(this.namespace)
+        .listNamespacedPod(request)
         .then(() => {
           return true;
         })
@@ -83,19 +86,13 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - Promise containing a list of Pod objects
    */
   public async getOperatorPods(operatorName: string): Promise<k8s.V1Pod[] | undefined> {
-    const podList: Array<string> = [];
-    const labelSelector = `operator-name=${operatorName}`;
-    return this.coreV1Api
-      ?.listNamespacedPod(
-        this.namespace,
-        undefined, // pretty
-        undefined, // allowWatchBookmarks
-        undefined, // _continue
-        undefined, // fieldSelector
-        labelSelector
-      )
+    const request: k8s.CoreV1ApiListNamespacedPodRequest = {
+      namespace: this.namespace,
+      labelSelector: `operator-name=${operatorName}` 
+    };
+    return this.coreV1Api?.listNamespacedPod(request)
       .then(res => {
-        return res.body.items;
+        return res.items;
       })
       .catch(e => {
         const msg = `Failure retrieving Pods in namespace. ${JSON.stringify(e)}`;
@@ -178,10 +175,15 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing the path to the container log
    */
   public async downloadContainerLogs(podName: string, containerName: string): Promise<string | undefined> {
+    const request: k8s.CoreV1ApiReadNamespacedPodLogRequest = {
+      namespace: this.namespace,
+      name: podName,
+      container: containerName
+    };
     return this.coreV1Api
-      ?.readNamespacedPodLog(podName, this.namespace, containerName)
+      ?.readNamespacedPodLog(request)
       .then(res => {
-        return res.body;
+        return res;
       })
       .catch(e => {
         const errorMessage = e.body?.message as String;
@@ -234,8 +236,14 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing a list of Custom Resources found in the namespace
    */
   public async getCustomResources(apiVersion: string, kind: string): Promise<ObjectList | undefined> {
+    const request: k8s.CustomObjectsApiListNamespacedCustomObjectRequest = {
+      group: "suboperator.zoscb.ibm.com",
+      version: apiVersion,
+      namespace: this.namespace,
+      plural: `${kind.toLowerCase()}s`,
+    };
     return this.customObjectsApi
-      ?.listNamespacedCustomObject("suboperator.zoscb.ibm.com", apiVersion, this.namespace, `${kind.toLowerCase()}s`)
+      ?.listNamespacedCustomObject(request)
       .then(res => {
         let customResourcesString = JSON.stringify(res.body);
         let customResourcesList: ObjectList = JSON.parse(customResourcesString);
@@ -262,8 +270,15 @@ export class KubernetesObj extends KubernetesContext {
    */
   public async deleteCustomResource(name: string, apiVersion: string, kind: string): Promise<boolean> {
     if (this.customObjectsApi) {
+      const request: k8s.CustomObjectsApiDeleteNamespacedCustomObjectRequest = {
+        group: util.customResourceGroup,
+        version: apiVersion,
+        namespace: this.namespace,
+        name: name,
+        plural: `${kind.toLowerCase()}s`
+      };
       return this.customObjectsApi
-        ?.deleteNamespacedCustomObject(util.customResourceGroup, apiVersion, this.namespace, `${kind.toLowerCase()}s`, name)
+        ?.deleteNamespacedCustomObject(request)
         .then(() => {
           return true;
         })
@@ -313,19 +328,15 @@ export class KubernetesObj extends KubernetesContext {
   private async getBrokerObjList(objPlural: string, operatorName?: string): Promise<ObjectList | undefined> {
     let objsString: string = "";
     if (objPlural !== "zosendpoints" && operatorName) {
-      const labelSelector = `operator-name=${operatorName}`;
+      const request: k8s.CustomObjectsApiListNamespacedCustomObjectRequest = {
+        group: util.zosCloudBrokerGroup,
+        version: util.subOperatorConfigApiVersion,
+        namespace: this.namespace,
+        labelSelector: `operator-name=${operatorName}`,
+        plural: objPlural,
+      };
       return this.customObjectsApi
-        ?.listNamespacedCustomObject(
-          util.zosCloudBrokerGroup,
-          util.subOperatorConfigApiVersion,
-          this.namespace,
-          objPlural,
-          undefined, // pretty
-          undefined, // allowWatchBookmarks
-          undefined, // continue
-          undefined, // fieldSelector
-          labelSelector
-        )
+        ?.listNamespacedCustomObject(request)
         .then(res => {
           objsString = JSON.stringify(res.body);
           let objsList: ObjectList = JSON.parse(objsString);
@@ -343,8 +354,14 @@ export class KubernetesObj extends KubernetesContext {
           }
         });
     } else {
+      const request: k8s.CustomObjectsApiListNamespacedCustomObjectRequest = {
+        group: util.zosCloudBrokerGroup,
+        version: util.zosEndpointApiVersion,
+        namespace: this.namespace,
+        plural: objPlural,
+      };
       return this.customObjectsApi
-        ?.listNamespacedCustomObject(util.zosCloudBrokerGroup, util.zosEndpointApiVersion, this.namespace, objPlural)
+        ?.listNamespacedCustomObject(request)
         .then(res => {
           objsString = JSON.stringify(res.body);
           let objsList: ObjectList = JSON.parse(objsString);
@@ -373,8 +390,15 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing the custom resource object
    */
   public async getCustomResourceObj(kind: string, name: string, group: string, version: string): Promise<object | undefined> {
+    const request: k8s.CustomObjectsApiGetNamespacedCustomObjectRequest = {
+      group: group,
+      version: version,
+      namespace: this.namespace,
+      name: name,
+      plural: `${kind.toLowerCase()}s`
+    };
     return this.customObjectsApi
-      ?.getNamespacedCustomObject(group, version, this.namespace, `${kind.toLowerCase()}s`, name)
+      ?.getNamespacedCustomObject(request)
       .then(res => {
         return res.body;
       })
@@ -394,8 +418,14 @@ export class KubernetesObj extends KubernetesContext {
    */
   public async listCustomResouceInstanceNames(apiVersion: string, kind: string): Promise<string[] | undefined> {
     let crInstanceNames: Array<string> = [];
+    const request: k8s.CustomObjectsApiListNamespacedCustomObjectRequest = {
+      group: "suboperator.zoscb.ibm.com",
+      version: apiVersion,
+      namespace: this.namespace,
+      plural: `${kind.toLowerCase()}s`
+    };
     return this.customObjectsApi
-      ?.listNamespacedCustomObject("suboperator.zoscb.ibm.com", apiVersion, this.namespace, `${kind.toLowerCase()}s`)
+      ?.listNamespacedCustomObject(request)
       .then(res => {
         let crInstacesString = JSON.stringify(res.body);
         let crInstanceList: ObjectList = JSON.parse(crInstacesString);
@@ -427,7 +457,14 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing the OpenShift dashboard URL
    */
   public async getOpenshifConsoleUrl(): Promise<string> {
-    let consoleRoute = await this.customObjectsApi?.getNamespacedCustomObject("route.openshift.io", "v1", "openshift-console", "routes", "console");
+    const request: k8s.CustomObjectsApiGetNamespacedCustomObjectRequest = {
+      group: "route.openshift.io",
+      version: "v1",
+      namespace: this.namespace,
+      plural: "routes",
+      name: "console"
+    };
+    let consoleRoute = await this.customObjectsApi?.getNamespacedCustomObject(request);
     let consoleRouteString = JSON.stringify(consoleRoute ? consoleRoute.body : "");
     let routeObj: RouteObject = JSON.parse(consoleRouteString);
     return routeObj.spec.host;
@@ -438,19 +475,15 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing the z/OS Cloud Broker CSV Object
    */
   public async getZosCloudBrokerCsv(): Promise<ObjectInstance | undefined> {
-    const labelSelector = `operators.coreos.com/ibm-zoscb.${this.namespace}=`;
+    const request: k8s.CustomObjectsApiListNamespacedCustomObjectRequest = {
+      group: util.clusterServiceVersionGroup,
+      version: util.clusterServiceVersionApiVersion,
+      namespace: this.namespace,
+      plural: "clusterserviceversions",
+      labelSelector: `operators.coreos.com/ibm-zoscb.${this.namespace}=`,
+    };
     return this.customObjectsApi
-      ?.listNamespacedCustomObject(
-        util.clusterServiceVersionGroup,
-        util.clusterServiceVersionApiVersion,
-        this.namespace,
-        "clusterserviceversions",
-        undefined, // pretty
-        undefined, // allowWatchBookmarks
-        undefined, // continue
-        undefined, // fieldSelector
-        labelSelector
-      )
+      ?.listNamespacedCustomObject(request)
       .then(res => {
         if (res.response.statusCode !== 200) {
           return undefined;
@@ -511,8 +544,14 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing a boolean, return true if an instance exists
    */
   public async zosCloudBrokerInstanceCreated(): Promise<boolean | undefined> {
+    const request: k8s.CustomObjectsApiListNamespacedCustomObjectRequest = {
+      group: util.zosCloudBrokerGroup,
+      version: util.zosCloudBrokerApiVersion,
+      namespace: this.namespace,
+      plural: "zoscloudbrokers",
+    };
     return this.customObjectsApi
-      ?.listNamespacedCustomObject(util.zosCloudBrokerGroup, util.zosCloudBrokerApiVersion, this.namespace, "zoscloudbrokers")
+      ?.listNamespacedCustomObject(request)
       .then(res => {
         if (res.response.statusCode && res.response.statusCode === 200) {
           let zosCloudBrokerInstancesListString = JSON.stringify(res.body);
@@ -537,8 +576,15 @@ export class KubernetesObj extends KubernetesContext {
   }
 
   public async isCustomResourceOperatorInstalled(csvName: string): Promise<boolean | undefined> {
+    const request: k8s.CustomObjectsApiGetNamespacedCustomObjectRequest = {
+      group: util.clusterServiceVersionGroup,
+      version: util.clusterServiceVersionApiVersion,
+      namespace: this.namespace,
+      plural: "clusterserviceversions",
+      name: csvName
+    };
     return this.customObjectsApi
-      ?.getNamespacedCustomObject(util.clusterServiceVersionGroup, util.clusterServiceVersionApiVersion, this.namespace, "clusterserviceversions", csvName)
+      ?.getNamespacedCustomObject(request)
       .then(res => {
         if (res.response.statusCode && res.response.statusCode === 200) {
           return true;
@@ -581,8 +627,8 @@ export class KubernetesObj extends KubernetesContext {
     return this.coreV1Api
       ?.listNamespace()
       .then(res => {
-        if (res.response.statusCode === 200) {
-          let namespacesString = JSON.stringify(res.body);
+        if (res && res.items.length > 0) {
+          let namespacesString = JSON.stringify(res);
           let namespacesbjectList: ObjectList = JSON.parse(namespacesString);
           for (const namespaces of namespacesbjectList.items) {
             namespaceList.push(namespaces.metadata.name);
@@ -607,8 +653,11 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing a list of namespaces if the namespace exist in the list
    */
   public async validateNamespaceExists(): Promise<boolean | undefined> {
+    const request: k8s.CoreV1ApiReadNamespaceRequest = {
+      name: this.namespace,
+    };
     return this.coreV1Api
-      ?.readNamespace(this.namespace)
+      ?.readNamespace(request)
       ?.then(() => {
         return true;
       })
@@ -619,19 +668,15 @@ export class KubernetesObj extends KubernetesContext {
   }
 
   public async signatureValidationRequiredForOperator(operatorName: string, version: string): Promise<boolean | undefined> {
-    const labelSelector = `operator-name=${operatorName},operator-version=${version}`;
+    const request: k8s.CustomObjectsApiListNamespacedCustomObjectRequest = {
+      group: util.zosCloudBrokerGroup,
+      version: util.operatorCollectionApiVersion,
+      namespace: this.namespace,
+      plural: "operatorcollections",
+      labelSelector: `operator-name=${operatorName},operator-version=${version}`,
+    };
     return this.customObjectsApi
-      ?.listNamespacedCustomObject(
-        util.zosCloudBrokerGroup,
-        util.operatorCollectionApiVersion,
-        this.namespace,
-        "operatorcollections",
-        undefined, // pretty
-        undefined, // allowWatchBookmarks
-        undefined, // continue
-        undefined, // fieldSelector
-        labelSelector
-      )
+      ?.listNamespacedCustomObject(request)
       .then(res => {
         const objsString = JSON.stringify(res.body);
         const objsList: ObjectList = JSON.parse(objsString);
