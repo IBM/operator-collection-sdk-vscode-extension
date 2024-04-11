@@ -85,6 +85,8 @@ export function displayCmdOutput(logPath: string) {
 }
 export function getTestClusterInfo(): TestCluster | Error {
   const serverUrl = process.env.OCP_SERVER_URL;
+  console.log("kyle test");
+  console.log(process.env);
   let errorMessage: string = "";
   if (serverUrl === undefined) {
     errorMessage = errorMessage.concat("Please set the OCP_SERVER_URL environment variable, or login to an OCP cluster\n");
@@ -286,6 +288,8 @@ export class TestKubernetesObj extends KubernetesContext {
    * @returns - A promise containing a boolean
    */
   public async isUserLoggedIntoOCP(): Promise<boolean> {
+    console.log("kyle1");
+    console.log(this.coreV1Api);
     if (this.coreV1Api) {
       const request: k8sClient.CoreV1ApiListNamespacedPodRequest = {
         namespace: this.namespace,
@@ -296,7 +300,7 @@ export class TestKubernetesObj extends KubernetesContext {
           return true;
         })
         .catch(e => {
-          console.log(JSON.stringify(e));
+          console.error(JSON.stringify(e));
           return false;
         });
     } else {
