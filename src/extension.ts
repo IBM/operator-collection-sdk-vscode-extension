@@ -674,6 +674,7 @@ function logIn(command: string, ocCmd: OcCommand, session: Session, outputChanne
         .catch(e => {
           console.log("GOTCHA");
           session.loggedIntoOpenShift = false;
+          console.log("login error:" + e);
           showErrorMessage(`Failure logging into OpenShift cluster: ${e}`);
         });
     }
