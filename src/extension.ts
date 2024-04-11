@@ -662,6 +662,7 @@ function logIn(command: string, ocCmd: OcCommand, session: Session, outputChanne
     console.log("login args: " + args);
     if (args) {
       console.log("login if");
+      console.log("logpath: " + logPath);
       ocCmd
         .runOcLoginCommand(args, outputChannel, logPath)
         .then(() => {

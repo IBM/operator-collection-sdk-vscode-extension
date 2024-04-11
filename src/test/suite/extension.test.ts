@@ -85,6 +85,7 @@ describe("Extension Test Suite", async () => {
         console.log("login path:" + ocLoginLogPath);
         vscode.commands.executeCommand(VSCodeCommands.login, openShiftItem, args, ocLoginLogPath);
         await util.sleep(5000);
+        console.log("before cat file");
         helper.displayCmdOutput(ocLoginLogPath);
       } catch (e) {
         console.log("Printing OC Login logs");
