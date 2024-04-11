@@ -288,7 +288,7 @@ export class TestKubernetesObj extends KubernetesContext {
    * @returns - A promise containing a boolean
    */
   public async isUserLoggedIntoOCP(): Promise<boolean> {
-    console.log("kyle1");
+    console.log("kyle1 corev1api");
     console.log(this.coreV1Api);
     if (this.coreV1Api) {
       const request: k8sClient.CoreV1ApiListNamespacedPodRequest = {
