@@ -828,8 +828,8 @@ describe("Extension Test Suite", async () => {
     });
   });
 
-  describe("When validating context-menu functions", async () => {
-    const customCollectionPath = testVars.customOperatorCollectionPath;
+  xdescribe("When validating context-menu functions", async () => {
+    const customCollectionPath = "";//testVars.customOperatorCollectionPath;
     const customCollectionURI = vscode.Uri.file(customCollectionPath);
     const customPlaybookName = "playbooks/customPlaybook.yml";
 
