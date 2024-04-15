@@ -489,7 +489,7 @@ export class TestKubernetesObj extends KubernetesContext {
       })
       .catch(e => {
         console.log("helper1");
-        if (e.response.statusCode && e.response.statusCode === 404) {
+        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
           // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
           return undefined;
         } else {
@@ -522,7 +522,7 @@ export class TestKubernetesObj extends KubernetesContext {
         })
         .catch(e => {
           console.log("helper2");
-          if (e.response.statusCode && e.response.statusCode === 404) {
+          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return false;
           } else {
@@ -577,13 +577,15 @@ export class TestKubernetesObj extends KubernetesContext {
       return this.customObjectsApi
         ?.listNamespacedCustomObject(request)
         .then(res => {
+          console.log("res" + JSON.stringify(res));
           objsString = JSON.stringify(res.body);
           let objsList: ObjectList = JSON.parse(objsString);
           return objsList;
         })
         .catch(e => {
           console.log("helper3");
-          if (e.response.statusCode && e.response.statusCode === 404) {
+          console.log(e);
+          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return undefined;
           } else {
@@ -608,7 +610,7 @@ export class TestKubernetesObj extends KubernetesContext {
         })
         .catch(e => {
           console.log("helper4");
-          if (e.response.statusCode && e.response.statusCode === 404) {
+          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return undefined;
           } else {
@@ -651,7 +653,7 @@ export class TestKubernetesObj extends KubernetesContext {
       })
       .catch(e => {
         console.log("helper5");
-        if (e.response.statusCode && e.response.statusCode === 404) {
+        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
           return undefined;
         } else {
           const errorObjectString = JSON.stringify(e);
@@ -717,7 +719,7 @@ export class TestKubernetesObj extends KubernetesContext {
       ?.getNamespacedCustomObject(request)
       .then(res => {
         console.log("helper6");
-        if (res.response.statusCode && res.response.statusCode === 200) {
+        if (res.response && res.response.statusCode && res.response.statusCode === 200) {
           return true;
         }
       })
@@ -810,7 +812,7 @@ export class TestKubernetesObj extends KubernetesContext {
       })
       .catch(e => {
         console.log("helper7");
-        if (e.response.statusCode && e.response.statusCode === 404) {
+        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
           return undefined;
         }
         const errorObjectString = JSON.stringify(e);
@@ -1026,7 +1028,7 @@ export class TestKubernetesObj extends KubernetesContext {
       ?.listNamespacedCustomObject(request)
       .then(res => {
         console.log("helper7");
-        if (res.response.statusCode && res.response.statusCode === 404) {
+        if (res.response && res.response.statusCode && res.response.statusCode === 404) {
           return undefined;
         }
         const operatorGroupObjString = JSON.stringify(res.body);
@@ -1039,7 +1041,7 @@ export class TestKubernetesObj extends KubernetesContext {
       })
       .catch(e => {
         console.log("helper8");
-        if (e.response.statusCode && e.response.statusCode === 404) {
+        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
           return undefined;
         } else {
           const errorObjectString = JSON.stringify(e);
@@ -1102,7 +1104,7 @@ export class TestKubernetesObj extends KubernetesContext {
       })
       .catch(e => {
         console.log("helper9");
-        if (e.response.statusCode && e.response.statusCode === 404) {
+        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
           return undefined;
         } else {
           const errorObjectString = JSON.stringify(e);
@@ -1128,7 +1130,7 @@ export class TestKubernetesObj extends KubernetesContext {
       })
       .catch(e => {
         console.log("helper10");
-        if (e.response.statusCode && e.response.statusCode === 404) {
+        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
           return undefined;
         } else {
           const errorObjectString = JSON.stringify(e);
@@ -1249,7 +1251,7 @@ export class TestKubernetesObj extends KubernetesContext {
       })
       .catch(e => {
         console.log("helper11");
-        if (e.response.statusCode && e.response.statusCode === 404) {
+        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
           return undefined;
         }
         const errorObjectString = JSON.stringify(e);

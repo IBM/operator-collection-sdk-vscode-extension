@@ -253,7 +253,7 @@ export class KubernetesObj extends KubernetesContext {
       })
       .catch(e => {
         console.log("kubernetes 1");
-        if (e.response.statusCode && e.response.statusCode === 404) {
+        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
           // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
           return undefined;
         } else {
@@ -287,7 +287,7 @@ export class KubernetesObj extends KubernetesContext {
         })
         .catch(e => {
           console.log("kubernetes2");
-          if (e.response.statusCode && e.response.statusCode === 404) {
+          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return false;
           } else {
@@ -348,7 +348,7 @@ export class KubernetesObj extends KubernetesContext {
         })
         .catch(e => {
           console.log("kubernetes3");
-          if (e.response.statusCode && e.response.statusCode === 404) {
+          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return undefined;
           } else {
@@ -374,7 +374,7 @@ export class KubernetesObj extends KubernetesContext {
         })
         .catch(e => {
           console.log("kubernetes4");
-          if (e.response.statusCode && e.response.statusCode === 404) {
+          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return undefined;
           } else {
@@ -448,7 +448,7 @@ export class KubernetesObj extends KubernetesContext {
       })
       .catch(e => {
         console.log("kubernetes5");
-        if (e.response.statusCode && e.response.statusCode === 404) {
+        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
           return undefined;
         } else {
           const msg = `Failure retrieving Custom Resource instance names. ${JSON.stringify(e)}`;
@@ -569,7 +569,7 @@ export class KubernetesObj extends KubernetesContext {
       ?.listNamespacedCustomObject(request)
       .then(res => {
         console.log("kubernetes7");
-        if (res.response.statusCode && res.response.statusCode === 200) {
+        if (res.response && res.response.statusCode && res.response.statusCode === 200) {
           let zosCloudBrokerInstancesListString = JSON.stringify(res.body);
           let zosCloudBrokerInstanceList: ObjectList = JSON.parse(zosCloudBrokerInstancesListString);
           if (zosCloudBrokerInstanceList.items.length === 0) {
@@ -603,7 +603,7 @@ export class KubernetesObj extends KubernetesContext {
       ?.getNamespacedCustomObject(request)
       .then(res => {
         console.log("kubernetes8");
-        if (res.response.statusCode && res.response.statusCode === 200) {
+        if (res.response && res.response.statusCode && res.response.statusCode === 200) {
           return true;
         }
       })
