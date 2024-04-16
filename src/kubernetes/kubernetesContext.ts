@@ -13,7 +13,6 @@ export class KubernetesContext {
   public openshiftServerURL: string | undefined = "";
   constructor(namespace?: string) {
     const kc = new k8s.KubeConfig();
-    console.log("Namespace: " + namespace);
     if (namespace === undefined) {
       if (fs.existsSync("/var/run/secrets/kubernetes.io/serviceaccount")) {
         kc.loadFromCluster();
@@ -37,7 +36,6 @@ export class KubernetesContext {
     const homeDirPath = k8s.findHomeDir();
     const kcPath = homeDirPath ? path.join(homeDirPath, ".kube", "config") : path.join(".kube", "config");
     if (!fs.existsSync(kcPath) || !kc.currentContext || kc.currentContext === "loaded-context") {
-      console.log("inside if");
       // If kc is still empty, the Kube Config file is likely invalid
       vscode.window.showWarningMessage("Your KubeConfig file has not been properly configured.");
 
@@ -51,13 +49,10 @@ export class KubernetesContext {
         }
       });
     } else {
-      console.log("inside else");
       // validate kube config by trying to make Api Clients
       try {
         this.openshiftServerURL = kc.getCurrentCluster()?.server;
         this.coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
-        console.log("coreV1Api:");
-        console.log(this.coreV1Api);
         this.customObjectsApi = kc.makeApiClient(k8s.CustomObjectsApi);
       } catch (error) {
         showErrorMessage(`Failed to validate KubeConfig file. ${error}`);

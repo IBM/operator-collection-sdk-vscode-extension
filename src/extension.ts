@@ -659,22 +659,16 @@ function logIn(command: string, ocCmd: OcCommand, session: Session, outputChanne
     } else {
       args = params;
     }
-    console.log("login args: " + args);
     if (args) {
-      console.log("login if");
-      console.log("logpath: " + logPath);
       ocCmd
         .runOcLoginCommand(args, outputChannel, logPath)
         .then(() => {
           session.loggedIntoOpenShift = true;
-          console.log("inside then");
           vscode.window.showInformationMessage("Successfully logged into OpenShift cluster");
           vscode.commands.executeCommand(VSCodeCommands.refreshAll);
         })
         .catch(e => {
-          console.log("GOTCHA");
           session.loggedIntoOpenShift = false;
-          console.log("login error:" + e);
           showErrorMessage(`Failure logging into OpenShift cluster: ${e}`);
         });
     }

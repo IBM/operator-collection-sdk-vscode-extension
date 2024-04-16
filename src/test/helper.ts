@@ -85,8 +85,6 @@ export function displayCmdOutput(logPath: string) {
 }
 export function getTestClusterInfo(): TestCluster | Error {
   const serverUrl = process.env.OCP_SERVER_URL;
-  console.log("kyle test");
-  console.log(process.env);
   let errorMessage: string = "";
   if (serverUrl === undefined) {
     errorMessage = errorMessage.concat("Please set the OCP_SERVER_URL environment variable, or login to an OCP cluster\n");
@@ -288,8 +286,6 @@ export class TestKubernetesObj extends KubernetesContext {
    * @returns - A promise containing a boolean
    */
   public async isUserLoggedIntoOCP(): Promise<boolean> {
-    console.log("kyle1 corev1api");
-    console.log(this.coreV1Api);
     if (this.coreV1Api) {
       const request: k8sClient.CoreV1ApiListNamespacedPodRequest = {
         namespace: this.namespace,
@@ -483,13 +479,12 @@ export class TestKubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.listNamespacedCustomObject(request)
       .then(res => {
-        let customResourcesString = JSON.stringify(res.body);
+        let customResourcesString = JSON.stringify(res);
         let customResourcesList: ObjectList = JSON.parse(customResourcesString);
         return customResourcesList;
       })
       .catch(e => {
-        console.log("helper1");
-        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+        if (e.code === 404) {
           // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
           return undefined;
         } else {
@@ -521,8 +516,7 @@ export class TestKubernetesObj extends KubernetesContext {
           return true;
         })
         .catch(e => {
-          console.log("helper2");
-          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+          if (e.code === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return false;
           } else {
@@ -577,15 +571,12 @@ export class TestKubernetesObj extends KubernetesContext {
       return this.customObjectsApi
         ?.listNamespacedCustomObject(request)
         .then(res => {
-          console.log("res" + JSON.stringify(res));
-          objsString = JSON.stringify(res.body);
+          objsString = JSON.stringify(res);
           let objsList: ObjectList = JSON.parse(objsString);
           return objsList;
         })
         .catch(e => {
-          console.log("helper3");
-          console.log(e);
-          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+          if (e.code === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return undefined;
           } else {
@@ -604,13 +595,12 @@ export class TestKubernetesObj extends KubernetesContext {
       return this.customObjectsApi
         ?.listNamespacedCustomObject(request)
         .then(res => {
-          objsString = JSON.stringify(res.body);
+          objsString = JSON.stringify(res);
           let objsList: ObjectList = JSON.parse(objsString);
           return objsList;
         })
         .catch(e => {
-          console.log("helper4");
-          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+          if (e.code === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return undefined;
           } else {
@@ -639,7 +629,7 @@ export class TestKubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.listNamespacedCustomObject(request)
       .then(res => {
-        let crInstacesString = JSON.stringify(res.body);
+        let crInstacesString = JSON.stringify(res);
         let crInstanceList: ObjectList = JSON.parse(crInstacesString);
 
         if (crInstanceList.items.length === 0) {
@@ -652,8 +642,7 @@ export class TestKubernetesObj extends KubernetesContext {
         return crInstanceNames;
       })
       .catch(e => {
-        console.log("helper5");
-        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+        if (e.code === 404) {
           return undefined;
         } else {
           const errorObjectString = JSON.stringify(e);
@@ -692,7 +681,7 @@ export class TestKubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.listNamespacedCustomObject(request)
       .then(res => {
-        let csvInstacesString = JSON.stringify(res.body);
+        let csvInstacesString = JSON.stringify(res);
         let csvInstanceList: ObjectList = JSON.parse(csvInstacesString);
         if (csvInstanceList.items.length > 0) {
           return csvInstanceList.items[0].metadata.name;
@@ -718,7 +707,6 @@ export class TestKubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.getNamespacedCustomObject(request)
       .then(res => {
-        console.log("helper6");
         if (res.response && res.response.statusCode && res.response.statusCode === 200) {
           return true;
         }
@@ -811,8 +799,7 @@ export class TestKubernetesObj extends KubernetesContext {
         return res;
       })
       .catch(e => {
-        console.log("helper7");
-        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+        if (e.code === 404) {
           return undefined;
         }
         const errorObjectString = JSON.stringify(e);
@@ -1007,7 +994,7 @@ export class TestKubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.createNamespacedCustomObject(request)
       .then(res => {
-        const operatorGroupObjString = JSON.stringify(res.body);
+        const operatorGroupObjString = JSON.stringify(res);
         const operatorGroupObj: ObjectInstance = JSON.parse(operatorGroupObjString);
         return operatorGroupObj;
       })
@@ -1027,11 +1014,10 @@ export class TestKubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.listNamespacedCustomObject(request)
       .then(res => {
-        console.log("helper7");
         if (res.response && res.response.statusCode && res.response.statusCode === 404) {
           return undefined;
         }
-        const operatorGroupObjString = JSON.stringify(res.body);
+        const operatorGroupObjString = JSON.stringify(res);
         const operatorGroupList: ObjectList = JSON.parse(operatorGroupObjString);
         if (operatorGroupList.items.length > 1) {
           throw new Error("Multiple Operator Groups exists in namespace");
@@ -1040,12 +1026,11 @@ export class TestKubernetesObj extends KubernetesContext {
         }
       })
       .catch(e => {
-        console.log("helper8");
-        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+        if (e.code === 404) {
           return undefined;
         } else {
           const errorObjectString = JSON.stringify(e);
-          throw new Error(`Failure creating OperatorGroup: ${errorObjectString}`);
+          throw new Error(`Failed to creating OperatorGroup: ${errorObjectString}`);
         }
       });
   }
@@ -1098,13 +1083,12 @@ export class TestKubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.createNamespacedCustomObject(request)
       .then(res => {
-        const subscriptionObjString = JSON.stringify(res.body);
+        const subscriptionObjString = JSON.stringify(res);
         const subscriptionObj: SubscriptionObject = JSON.parse(subscriptionObjString);
         return subscriptionObj;
       })
       .catch(e => {
-        console.log("helper9");
-        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+        if (e.code === 404) {
           return undefined;
         } else {
           const errorObjectString = JSON.stringify(e);
@@ -1124,13 +1108,12 @@ export class TestKubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.getNamespacedCustomObject(request)
       .then(res => {
-        const subscriptionObjString = JSON.stringify(res.body);
+        const subscriptionObjString = JSON.stringify(res);
         const subscriptionObj: SubscriptionObject = JSON.parse(subscriptionObjString);
         return subscriptionObj;
       })
       .catch(e => {
-        console.log("helper10");
-        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+        if (e.code === 404) {
           return undefined;
         } else {
           const errorObjectString = JSON.stringify(e);
@@ -1154,7 +1137,7 @@ export class TestKubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.getNamespacedCustomObject(request)
       .then(res => {
-        const csvObjString = JSON.stringify(res.body);
+        const csvObjString = JSON.stringify(res);
         const csvObj: ObjectInstance = JSON.parse(csvObjString);
         return csvObj;
       })
@@ -1224,7 +1207,7 @@ export class TestKubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.createNamespacedCustomObject(request)
       .then(res => {
-        const zosCloudBrokerObjString = JSON.stringify(res.body);
+        const zosCloudBrokerObjString = JSON.stringify(res);
         const zosCloudBrokerObj: ObjectInstance = JSON.parse(zosCloudBrokerObjString);
         return zosCloudBrokerObj;
       })
@@ -1245,13 +1228,12 @@ export class TestKubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.getNamespacedCustomObject(request)
       .then(res => {
-        const zosCloudBrokerObjString = JSON.stringify(res.body);
+        const zosCloudBrokerObjString = JSON.stringify(res);
         const zosCloudBrokerObj: ObjectInstance = JSON.parse(zosCloudBrokerObjString);
         return zosCloudBrokerObj;
       })
       .catch(e => {
-        console.log("helper11");
-        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+        if (e.code === 404) {
           return undefined;
         }
         const errorObjectString = JSON.stringify(e);

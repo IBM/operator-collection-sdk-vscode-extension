@@ -373,7 +373,6 @@ async function getRequest(apiUrl: string): Promise<string | undefined> {
         resp.on("data", chunk => {
           data += chunk;
         });
-        console.log("ocSdkCommands-376");
         if (resp && resp.statusCode === 200) {
           resp.on("end", () => {
             resolve(JSON.parse(data));

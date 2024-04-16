@@ -62,8 +62,6 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing a boolean
    */
   public async isUserLoggedIntoOCP(): Promise<boolean> {
-    console.log("kyle2");
-    console.log(this.coreV1Api);
     if (this.coreV1Api) {
       const request: k8s.CoreV1ApiListNamespacedPodRequest = {
         namespace: this.namespace,
@@ -247,13 +245,12 @@ export class KubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.listNamespacedCustomObject(request)
       .then(res => {
-        let customResourcesString = JSON.stringify(res.body);
+        let customResourcesString = JSON.stringify(res);
         let customResourcesList: ObjectList = JSON.parse(customResourcesString);
         return customResourcesList;
       })
       .catch(e => {
-        console.log("kubernetes 1");
-        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+        if (e.code === 404) {
           // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
           return undefined;
         } else {
@@ -286,8 +283,7 @@ export class KubernetesObj extends KubernetesContext {
           return true;
         })
         .catch(e => {
-          console.log("kubernetes2");
-          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+          if (e.code === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return false;
           } else {
@@ -342,13 +338,12 @@ export class KubernetesObj extends KubernetesContext {
       return this.customObjectsApi
         ?.listNamespacedCustomObject(request)
         .then(res => {
-          objsString = JSON.stringify(res.body);
+          objsString = JSON.stringify(res);
           let objsList: ObjectList = JSON.parse(objsString);
           return objsList;
         })
         .catch(e => {
-          console.log("kubernetes3");
-          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+          if (e.code === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return undefined;
           } else {
@@ -368,13 +363,12 @@ export class KubernetesObj extends KubernetesContext {
       return this.customObjectsApi
         ?.listNamespacedCustomObject(request)
         .then(res => {
-          objsString = JSON.stringify(res.body);
+          objsString = JSON.stringify(res);
           let objsList: ObjectList = JSON.parse(objsString);
           return objsList;
         })
         .catch(e => {
-          console.log("kubernetes4");
-          if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+          if (e.code === 404) {
             // 404s are fine since there's a chance that the CRD or API Version hasn't yet been created on the cluster
             return undefined;
           } else {
@@ -406,7 +400,7 @@ export class KubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.getNamespacedCustomObject(request)
       .then(res => {
-        return res.body;
+        return res;
       })
       .catch(e => {
         const msg = `Failure retrieving custom resource object. ${JSON.stringify(e)}`;
@@ -433,7 +427,7 @@ export class KubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.listNamespacedCustomObject(request)
       .then(res => {
-        let crInstacesString = JSON.stringify(res.body);
+        let crInstacesString = JSON.stringify(res);
         let crInstanceList: ObjectList = JSON.parse(crInstacesString);
 
         if (crInstanceList.items.length === 0) {
@@ -447,8 +441,7 @@ export class KubernetesObj extends KubernetesContext {
         return crInstanceNames;
       })
       .catch(e => {
-        console.log("kubernetes5");
-        if (e.response && e.response.statusCode && e.response.statusCode === 404) {
+        if (e.code === 404) {
           return undefined;
         } else {
           const msg = `Failure retrieving Custom Resource instance names. ${JSON.stringify(e)}`;
@@ -492,13 +485,12 @@ export class KubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.listNamespacedCustomObject(request)
       .then(res => {
-        console.log("kubernetes6");
         if (res && res.response && res.response.statusCode) {
           if (res.response.statusCode !== 200) {
             return undefined;
           }
           else {
-            let csvInstacesString = JSON.stringify(res.body);
+            let csvInstacesString = JSON.stringify(res);
             let csvInstanceList: ObjectList = JSON.parse(csvInstacesString);
             if (csvInstanceList.items.length > 0) {
               return csvInstanceList.items[0];
@@ -568,9 +560,8 @@ export class KubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.listNamespacedCustomObject(request)
       .then(res => {
-        console.log("kubernetes7");
-        if (res.response && res.response.statusCode && res.response.statusCode === 200) {
-          let zosCloudBrokerInstancesListString = JSON.stringify(res.body);
+        if (res && res.items && res.items.length > 0) {
+          let zosCloudBrokerInstancesListString = JSON.stringify(res);
           let zosCloudBrokerInstanceList: ObjectList = JSON.parse(zosCloudBrokerInstancesListString);
           if (zosCloudBrokerInstanceList.items.length === 0) {
             return false;
@@ -602,7 +593,6 @@ export class KubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.getNamespacedCustomObject(request)
       .then(res => {
-        console.log("kubernetes8");
         if (res.response && res.response.statusCode && res.response.statusCode === 200) {
           return true;
         }
@@ -656,9 +646,8 @@ export class KubernetesObj extends KubernetesContext {
         }
       })
       .catch(e => {
-        console.log("kubernetes9");
         // Bypass 403 and 401 error messages since these will always occur when the user is logged out
-        if (e.statusCode !== 403 && e.statusCode !== 401) {
+        if (e.code !== 403 && e.code !== 401) {
           const msg = `Failure retrieving Namespace list: ${JSON.stringify(e)}`;
           console.error(msg);
         }
@@ -696,7 +685,7 @@ export class KubernetesObj extends KubernetesContext {
     return this.customObjectsApi
       ?.listNamespacedCustomObject(request)
       .then(res => {
-        const objsString = JSON.stringify(res.body);
+        const objsString = JSON.stringify(res);
         const objsList: ObjectList = JSON.parse(objsString);
         if (objsList.items.length === 0) {
           showErrorMessage("OperatorCollection resource not detected in namespace");

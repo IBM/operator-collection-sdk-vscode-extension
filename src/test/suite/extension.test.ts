@@ -76,16 +76,12 @@ describe("Extension Test Suite", async () => {
 
       // Login to Openshift
       const openShiftItem = new OpenShiftItem("OpenShift Cluster", k8s.openshiftServerURL, new vscode.ThemeIcon("cloud"), "openshift-cluster");
-      console.log("openshift item: " + openShiftItem.description);
 
       let args: Array<string> = [`--server="${testClusterInfo.ocpServerUrl}"`, `--token="${testClusterInfo.ocpToken}"`];
-      console.log("args: " + args);
 
       try {
-        console.log("login path:" + ocLoginLogPath);
         vscode.commands.executeCommand(VSCodeCommands.login, openShiftItem, args, ocLoginLogPath);
         await util.sleep(5000);
-        console.log("before cat file");
         helper.displayCmdOutput(ocLoginLogPath);
       } catch (e) {
         console.log("Printing OC Login logs");
@@ -93,7 +89,6 @@ describe("Extension Test Suite", async () => {
         assert.fail("Failure logging in to OCP cluster");
       }
 
-      console.log("Attempting to log in");
       // Update K8s object to retrieve config after log in
       k8s = new helper.TestKubernetesObj();
       userLoggedIn = await k8s.isUserLoggedIntoOCP();
