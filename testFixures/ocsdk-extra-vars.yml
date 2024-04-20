@@ -1,7 +1,0 @@
-zosendpoint_type: remote
-zosendpoint_name: zos-lpar
-zosendpoint_host: 0.0.0.0
-zosendpoint_port: '22'
-username: ''
-ssh_key: ''
-passphrase: ''
