@@ -31,7 +31,7 @@ import { LinkItem } from "./treeViews/linkItems/linkItem";
 import { initResources } from "./treeViews/icons";
 import { KubernetesObj } from "./kubernetes/kubernetes";
 import { OcCommand } from "./shellCommands/ocCommand";
-import { OcSdkCommand } from "./shellCommands/ocSdkCommands";
+import { OcSdkCommand, getFinalPlaybookTaskFailure } from "./shellCommands/ocSdkCommands";
 import { Session } from "./utilities/session";
 import { OperatorConfig } from "./linter/models";
 import { AnsibleGalaxyYmlSchema } from "./linter/galaxy";
@@ -129,6 +129,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
   context.subscriptions.push(initOperatorCollectionSkip(VSCodeCommands.initCollectionSkip, session));
+  context.subscriptions.push(createCredentialSecret(VSCodeCommands.createCredentialSecret, ocSdkCmd, session, operatorTreeProvider, outputChannel));
   context.subscriptions.push(updateProject(VSCodeCommands.updateProject, ocCmd, session));
   context.subscriptions.push(executeSdkCommandWithUserInput(VSCodeCommands.createOperator, session, outputChannel));
   context.subscriptions.push(executeSimpleSdkCommand(VSCodeCommands.deleteOperator, session, outputChannel));
@@ -598,6 +599,61 @@ function initOperatorCollection(command: string, session: Session, outputChannel
             vscode.window.showErrorMessage(`The collection initialization has unexpectedly failed. Please review the output logs for details. ${e}`);
           });
       }
+    }
+  });
+}
+
+function createCredentialSecret(command: string, ocSdkCmd: OcSdkCommand, session: Session, operatorTreeProvider: OperatorsTreeProvider, outputChannel?: vscode.OutputChannel): vscode.Disposable {
+  return vscode.commands.registerCommand(command, async (uri, _, logPath?: string) => {
+    let installedOperatorName = "";
+    const zoscbEncryptInstalled = await ocSdkCmd.runZoscbEncryptInstalled();
+    if (!zoscbEncryptInstalled) {
+      // find any installed operator, the command doesn't care which exactly
+      const k8s = new KubernetesObj();
+      const operatorItems = await operatorTreeProvider.getChildren();
+      for (let i = 0; i < operatorItems.length; i++) {
+        const operatorCsvName = await util.getOperatorCSVName(operatorItems[i].workspacePath);
+        if (operatorCsvName !== undefined) {
+          const operatorInstalled = await k8s.isCustomResourceOperatorInstalled(operatorCsvName);
+          if (operatorInstalled) {
+            installedOperatorName = operatorItems[i].operatorName;
+            break;
+          }
+        }
+      }
+
+      if (installedOperatorName === "") {
+        vscode.window.showWarningMessage("Missing required resources: Install either the zoscb-encrypt CLI or an Operator to create a Credential Secret.");
+        return;
+      }
+    }
+
+    const args = await util.requestCreateCredentialSecretInfo(zoscbEncryptInstalled);
+
+    if (args) {
+      if (!zoscbEncryptInstalled) {
+        args.unshift(`-e "operator_name=${installedOperatorName}"`);
+      }
+
+      session.operationPending = true;
+      const credentialSecretName = zoscbEncryptInstalled ? args[2].trim().split(" ")[1] : args[3].split("=")[1].replace(/"/, "");
+      vscode.window.showInformationMessage(`Attempting to create Credential Secret \"${credentialSecretName}\".`);
+
+      ocSdkCmd
+        .runCreateCredentialSecret(args, zoscbEncryptInstalled, outputChannel, logPath)
+        .then(() => {
+          vscode.window.showInformationMessage("Successfully created Credential Secret.");
+        })
+        .catch(e => {
+          if (ocSdkCmd.getCommandOutput()) {
+            showErrorMessage(`Failed to create Credential Secret: ${getFinalPlaybookTaskFailure(ocSdkCmd.getCommandOutput())}`);
+          } else {
+            showErrorMessage(`Failed to create Credential Secret: ${e}`);
+          }
+        })
+        .finally(() => {
+          session.operationPending = false;
+        });
     }
   });
 }

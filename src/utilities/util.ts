@@ -580,6 +580,69 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
   return args;
 }
 
+/**
+ * Prompts the user for the necessary info to create a Credential Secret
+ * @param
+ * @returns - A Promise containing the list of parameters to pass to the command
+ */
+export async function requestCreateCredentialSecretInfo(zoscbEncryptInstalled: boolean): Promise<string[] | undefined> {
+  const args: Array<string> = [];
+  const singleInputRegex = /^\S*$/; // matches single input, no spaces
+
+  const validateSingleInput = (text: string): string | null => {
+    const isValid = text.trim().match(singleInputRegex)?.length;
+    return isValid ? null : "Please enter a single input for this field.";
+  };
+
+  const sshKey = await vscode.window.showInputBox({
+    prompt: "Enter the local path to your private SSH Key for this endpoint.",
+    value: "~/.ssh/id_ed25519",
+    ignoreFocusOut: true,
+    validateInput: text => {
+      return validateSingleInput(text);
+    },
+  });
+  if (sshKey === undefined) {
+    return undefined;
+  } else if (sshKey === "") {
+    showErrorMessage("SSH key path is required");
+    return undefined;
+  }
+
+  const username = await vscode.window.showInputBox({
+    prompt: "Enter you SSH Username for this endpoint.",
+    ignoreFocusOut: true,
+    validateInput: text => {
+      return validateSingleInput(text);
+    },
+  });
+  if (username === undefined) {
+    return undefined;
+  } else if (username === "") {
+    showErrorMessage("SSH username for endpoint is required");
+    return undefined;
+  }
+
+  const secretName = await vscode.window.showInputBox({
+    prompt: "Enter the name of the secret to create.",
+    ignoreFocusOut: true,
+    validateInput: text => {
+      return validateSingleInput(text);
+    },
+  });
+  if (secretName === undefined) {
+    return undefined;
+  } else if (secretName === "") {
+    showErrorMessage("Secret name is required");
+    return undefined;
+  }
+
+  args.push(zoscbEncryptInstalled ? `-s ${sshKey?.trim()}` : `-e "ssh_key=${sshKey?.trim()}"`);
+  args.push(zoscbEncryptInstalled ? `-u ${username?.trim()}` : `-e "username=${username?.trim()}"`);
+  args.push(zoscbEncryptInstalled ? `-n ${secretName?.trim()}` : `-e "secret_name=${secretName?.trim()}"`);
+  return args;
+}
+
 export function validateOperatorConfig(document: vscode.TextDocument): boolean {
   const text = document.getText();
   if (text.includes("domain") && text.includes("name") && text.includes("version") && text.includes("displayName") && text.includes("resources") && text.includes("description")) {

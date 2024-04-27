@@ -10,6 +10,7 @@ export enum VSCodeCommands {
   initCollection = "operator-collection-sdk.initCollection",
   initCollectionAtRoot = "operator-collection-sdk.initCollectionAtRoot",
   initCollectionSkip = "operator-collection-sdk.initCollectionSkip",
+  createCredentialSecret = "operator-collection-sdk.createCredentialSecret",
   zosCloudBrokerInstalled = "operator-collection-sdk.zosCloudBrokerInstalled",
   sdkUpgradeVersion = "operator-collection-sdk.sdkUpgradeVersion",
   sdkUpgradeVersionSkip = "operator-collection-sdk.sdkUpgradeVersionSkip",
