@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 import { OcSdkCommand } from "../shellCommands/ocSdkCommands";
 import { KubernetesObj } from "../kubernetes/kubernetes";
 import { VSCodeCommands } from "../utilities/commandConstants";
-import { getAnsibleGalaxySettings, AnsibleGalaxySettings, isCollectionInWorkspace } from "../utilities/util";
+import { getAnsibleGalaxySettings, AnsibleGalaxySettings } from "../utilities/util";
 
 export class Session {
   public ocSdkInstalled: boolean = false;
@@ -23,11 +23,11 @@ export class Session {
 
   async update(skipRefresh?: boolean, skipOcSdkValidation?: boolean): Promise<boolean> {
     if (skipOcSdkValidation !== undefined && skipOcSdkValidation) {
-      return Promise.all([this.validateOpenShiftAccess(), this.validateZosCloudBrokerInstallation(), this.validateNamespaceExist()]).then(() => {
+      return Promise.all([this.validateOpenShiftAccess(), this.validateZosCloudBrokerInstallation(), this.validateNamespaceExists()]).then(() => {
         return setContext(this.loggedIntoOpenShift, this.zosCloudBrokerInstalled, undefined, undefined, skipRefresh, this.validNamespace);
       });
     } else {
-      return Promise.all([this.validateOcSDKInstallation(), this.validateOpenShiftAccess(), this.validateZosCloudBrokerInstallation(), this.determinateOcSdkIsOutdated(), this.validateNamespaceExist()]).then(() => {
+      return Promise.all([this.validateOcSDKInstallation(), this.validateOpenShiftAccess(), this.validateZosCloudBrokerInstallation(), this.determinateOcSdkIsOutdated(), this.validateNamespaceExists()]).then(() => {
         return setContext(this.loggedIntoOpenShift, this.zosCloudBrokerInstalled, this.ocSdkInstalled, this.ocSdkOutdated, skipRefresh, this.validNamespace);
       });
     }
@@ -128,7 +128,7 @@ export class Session {
         return false;
       })
       .catch(e => {
-        console.log("Log in to an OpenShift Cluster to use this extension: " + JSON.stringify(e));
+        vscode.window.showInformationMessage("Log in to an OpenShift Cluster to use this extension: " + JSON.stringify(e));
         this.loggedIntoOpenShift = false;
         return false;
       });
@@ -136,24 +136,27 @@ export class Session {
     // Cancel request after 5 seconds without a response from the getNamespaceList request.
     // This usually implies a connectivity issue with OpenShift, which could take a minute or more
     // before receiving the timeout response.
-    const timeout: Promise<boolean> = new Promise(resolve => {
-      setTimeout(() => {
+    let timeout: NodeJS.Timeout | undefined = undefined;
+    const timeoutPromise: Promise<boolean> = new Promise(resolve => {
+      timeout = setTimeout(() => {
+        vscode.window.showWarningMessage("Connection timed out... Please validate the connectivity to OpenShift");
         resolve(false);
       }, 5000);
     });
 
-    const done = Promise.race([result, timeout])
+    const done = Promise.race([result, timeoutPromise])
       .then(value => {
-        if (value === false) {
-          this.loggedIntoOpenShift = false;
-        } else {
-          this.loggedIntoOpenShift = true;
-        }
+        this.loggedIntoOpenShift = Boolean(value);
         return value;
       })
       .catch(e => {
         this.loggedIntoOpenShift = false;
         return false;
+      })
+      .finally(() => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
       });
     return done;
   }
@@ -162,7 +165,7 @@ export class Session {
    * Validates the namespace exists
    * @returns - A promise containing a boolean, returning true if the namespace exist
    */
-  async validateNamespaceExist(): Promise<boolean> {
+  async validateNamespaceExists(): Promise<boolean> {
     const k8s = new KubernetesObj();
     return k8s
       .validateNamespaceExists()
