@@ -373,7 +373,7 @@ async function getRequest(apiUrl: string): Promise<string | undefined> {
         resp.on("data", chunk => {
           data += chunk;
         });
-        if (resp.statusCode === 200) {
+        if (resp && resp.statusCode === 200) {
           resp.on("end", () => {
             resolve(JSON.parse(data));
           });

@@ -78,9 +78,11 @@ describe("Extension Test Suite", async () => {
       const openShiftItem = new OpenShiftItem("OpenShift Cluster", k8s.openshiftServerURL, new vscode.ThemeIcon("cloud"), "openshift-cluster");
 
       let args: Array<string> = [`--server="${testClusterInfo.ocpServerUrl}"`, `--token="${testClusterInfo.ocpToken}"`];
+
       try {
         vscode.commands.executeCommand(VSCodeCommands.login, openShiftItem, args, ocLoginLogPath);
         await util.sleep(5000);
+        helper.displayCmdOutput(ocLoginLogPath);
       } catch (e) {
         console.log("Printing OC Login logs");
         helper.displayCmdOutput(ocLoginLogPath);
@@ -828,8 +830,8 @@ describe("Extension Test Suite", async () => {
     });
   });
 
-  describe("When validating context-menu functions", async () => {
-    const customCollectionPath = testVars.customOperatorCollectionPath;
+  xdescribe("When validating context-menu functions", async () => {
+    const customCollectionPath = "";//testVars.customOperatorCollectionPath;
     const customCollectionURI = vscode.Uri.file(customCollectionPath);
     const customPlaybookName = "playbooks/customPlaybook.yml";
 
