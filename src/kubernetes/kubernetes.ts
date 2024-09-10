@@ -88,9 +88,10 @@ export class KubernetesObj extends KubernetesContext {
   public async getOperatorPods(operatorName: string): Promise<k8s.V1Pod[] | undefined> {
     const request: k8s.CoreV1ApiListNamespacedPodRequest = {
       namespace: this.namespace,
-      labelSelector: `operator-name=${operatorName}` 
+      labelSelector: `operator-name=${operatorName}`,
     };
-    return this.coreV1Api?.listNamespacedPod(request)
+    return this.coreV1Api
+      ?.listNamespacedPod(request)
       .then(res => {
         return res.items;
       })
@@ -178,7 +179,7 @@ export class KubernetesObj extends KubernetesContext {
     const request: k8s.CoreV1ApiReadNamespacedPodLogRequest = {
       namespace: this.namespace,
       name: podName,
-      container: containerName
+      container: containerName,
     };
     return this.coreV1Api
       ?.readNamespacedPodLog(request)
@@ -275,7 +276,7 @@ export class KubernetesObj extends KubernetesContext {
         version: apiVersion,
         namespace: this.namespace,
         name: name,
-        plural: `${kind.toLowerCase()}s`
+        plural: `${kind.toLowerCase()}s`,
       };
       return this.customObjectsApi
         ?.deleteNamespacedCustomObject(request)
@@ -395,7 +396,7 @@ export class KubernetesObj extends KubernetesContext {
       version: version,
       namespace: this.namespace,
       name: name,
-      plural: `${kind.toLowerCase()}s`
+      plural: `${kind.toLowerCase()}s`,
     };
     return this.customObjectsApi
       ?.getNamespacedCustomObject(request)
@@ -422,7 +423,7 @@ export class KubernetesObj extends KubernetesContext {
       group: "suboperator.zoscb.ibm.com",
       version: apiVersion,
       namespace: this.namespace,
-      plural: `${kind.toLowerCase()}s`
+      plural: `${kind.toLowerCase()}s`,
     };
     return this.customObjectsApi
       ?.listNamespacedCustomObject(request)
@@ -456,18 +457,26 @@ export class KubernetesObj extends KubernetesContext {
    * Retrieves the OpenShift dashboard URL
    * @returns - A promise containing the OpenShift dashboard URL
    */
-  public async getOpenshifConsoleUrl(): Promise<string> {
+  public async getOpenshifConsoleUrl(): Promise<any> {
     const request: k8s.CustomObjectsApiGetNamespacedCustomObjectRequest = {
       group: "route.openshift.io",
       version: "v1",
-      namespace: this.namespace,
+      namespace: "openshift-console",
       plural: "routes",
-      name: "console"
+      name: "console",
     };
-    let consoleRoute = await this.customObjectsApi?.getNamespacedCustomObject(request);
-    let consoleRouteString = JSON.stringify(consoleRoute ? consoleRoute.body : "");
-    let routeObj: RouteObject = JSON.parse(consoleRouteString);
-    return routeObj.spec.host;
+
+    return this.customObjectsApi
+      ?.getNamespacedCustomObject(request)
+      .then(res => {
+        return res.spec.host;
+      })
+      .catch(res => {
+        const msg: any = `Failure retrieving console URL.`;
+        console.error(msg);
+        showErrorMessage(msg.toString());
+        throw new Error(msg);
+      });
   }
 
   /**
@@ -478,7 +487,7 @@ export class KubernetesObj extends KubernetesContext {
     const request: k8s.CustomObjectsApiListNamespacedCustomObjectRequest = {
       group: util.clusterServiceVersionGroup,
       version: util.clusterServiceVersionApiVersion,
-      namespace: this.namespace,
+      namespace: "openshift-console",
       plural: "clusterserviceversions",
       labelSelector: `operators.coreos.com/ibm-zoscb.${this.namespace}=`,
     };
@@ -488,8 +497,7 @@ export class KubernetesObj extends KubernetesContext {
         if (res && res.response && res.response.statusCode) {
           if (res.response.statusCode !== 200) {
             return undefined;
-          }
-          else {
+          } else {
             let csvInstacesString = JSON.stringify(res);
             let csvInstanceList: ObjectList = JSON.parse(csvInstacesString);
             if (csvInstanceList.items.length > 0) {
@@ -498,8 +506,7 @@ export class KubernetesObj extends KubernetesContext {
               return undefined;
             }
           }
-        }
-        else {
+        } else {
           return undefined;
         }
       })
@@ -533,16 +540,28 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing the z/OS Cloud Broker CSV name string
    */
   private async getZosCloudBrokerCsvName(): Promise<string | undefined> {
-    return this.getZosCloudBrokerCsv()
-      .then(csv => {
-        if (csv === undefined) {
+    const request: k8s.CustomObjectsApiListNamespacedCustomObjectRequest = {
+      group: util.clusterServiceVersionGroup,
+      version: util.clusterServiceVersionApiVersion,
+      namespace: this.namespace,
+      plural: "clusterserviceversions",
+      labelSelector: `operators.coreos.com/ibm-zoscb.${this.namespace}=`,
+    };
+    return this.customObjectsApi
+      ?.listNamespacedCustomObject(request)
+      .then(res => {
+        let csvInstacesString = JSON.stringify(res);
+        let csvInstanceList: ObjectList = JSON.parse(csvInstacesString);
+        if (csvInstanceList.items.length > 0) {
+          return csvInstanceList.items[0].metadata.name;
+        } else {
           return undefined;
         }
-        return csv.metadata.name;
       })
       .catch(e => {
         const errorObjectString = JSON.stringify(e);
-        throw new Error(`Failure retrieving ZosCloudBroker CSV name: ${errorObjectString}`);
+        console.error(`Failure retrieving ClusterServiceVersion. ${errorObjectString}`);
+        return undefined;
       });
   }
 
@@ -588,7 +607,7 @@ export class KubernetesObj extends KubernetesContext {
       version: util.clusterServiceVersionApiVersion,
       namespace: this.namespace,
       plural: "clusterserviceversions",
-      name: csvName
+      name: csvName,
     };
     return this.customObjectsApi
       ?.getNamespacedCustomObject(request)

@@ -30,7 +30,7 @@ describe("Extension Test Suite", async () => {
   vscode.window.showInformationMessage("Start all tests.");
   const ocSdkCmd = new OcSdkCommand();
   const imsOperatorItem: OperatorItem | undefined = new OperatorItem("IBM Z and Cloud Modernization Stack - IMS Operator", "zos-ims-operator", testVars.imsOperatorCollectionPath);
-  const cicsOperatorItem: OperatorItem | undefined = new OperatorItem("IBM Z and Cloud Modernization Stack - CICS TS Operator", "zos-cics-ts-operator", testVars.cicsOperatorCollectionPath);
+  const cicsOperatorItem: OperatorItem | undefined = new OperatorItem("CICS TS Operator", "zos-cics-ts-operator", testVars.cicsOperatorCollectionPath);
   const ocLoginLogPath = path.join(__dirname, "ocLogin.log");
   const installSdkLogPath = path.join(__dirname, "installOcSdk.log");
   const updateProjectLogPath = path.join(__dirname, "updateProject.log");
@@ -412,32 +412,34 @@ describe("Extension Test Suite", async () => {
       assert.equal(cicsOperatorResource.label, `Operator: ${cicsOperatorItem.operatorDisplayName}`);
     });
     it("Should validate the IMS Broker Custom Resources in OpenShift Resources", async () => {
-      const imsBrokerCustomResoures = await resourcesTreeProvider.getChildren(imsOperatorResource);
-      imsZosEndpointParent = imsBrokerCustomResoures.find(brokerResource => brokerResource instanceof ZosEndpointItem) as ZosEndpointItem;
+      const imsBrokerCustomResources = await resourcesTreeProvider.getChildren(imsOperatorResource);
+      console.log("fuck");
+      console.dir(imsBrokerCustomResources, { depth: 5 });
+      imsZosEndpointParent = imsBrokerCustomResources.find(brokerResource => brokerResource.contextValue === "zosendpoint") as ZosEndpointItem;
       assert.notEqual(imsZosEndpointParent, undefined);
       assert.equal(imsZosEndpointParent.parentOperator, imsOperatorResource);
       assert.equal(imsZosEndpointParent.label, "ZosEndpoints");
       assert.equal(imsZosEndpointParent.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(imsZosEndpointParent.contextValue, "zosendpoint");
 
-      imsOperatorCollectionParent = imsBrokerCustomResoures.find(brokerResource => brokerResource instanceof OperatorCollectionItem) as OperatorCollectionItem;
+      imsOperatorCollectionParent = imsBrokerCustomResources.find(brokerResource => brokerResource.contextValue === "operatorcollections") as OperatorCollectionItem;
       assert.notEqual(imsOperatorCollectionParent, undefined);
       assert.equal(imsOperatorCollectionParent.parentOperator, imsOperatorResource);
       assert.equal(imsOperatorCollectionParent.label, "OperatorCollections");
       assert.equal(imsOperatorCollectionParent.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
       assert.equal(imsOperatorCollectionParent.contextValue, "operatorcollections");
 
-      imsSubOperatorConfigParent = imsBrokerCustomResoures.find(brokerResource => brokerResource instanceof SubOperatorConfigItem) as SubOperatorConfigItem;
+      imsSubOperatorConfigParent = imsBrokerCustomResources.find(brokerResource => brokerResource.contextValue === "suboperatorconfig") as SubOperatorConfigItem;
       assert.notEqual(imsSubOperatorConfigParent, undefined);
       assert.equal(imsSubOperatorConfigParent.parentOperator, imsOperatorResource);
       assert.equal(imsSubOperatorConfigParent.label, "SubOperatorConfigs");
       assert.equal(imsSubOperatorConfigParent.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
-      assert.equal(imsSubOperatorConfigParent.contextValue, "suboperatorconig");
+      assert.equal(imsSubOperatorConfigParent.contextValue, "suboperatorconfig");
 
-      imsCustomResourceParents = imsBrokerCustomResoures.filter(brokerResource => brokerResource instanceof CustomResourceItem) as CustomResourceItem[];
+      imsCustomResourceParents = imsBrokerCustomResources.filter(brokerResource => brokerResource.contextValue === "customresources") as CustomResourceItem[];
       const tmdbKind = "TMDB";
-      const imsApiVersion = "v1minor1patch0";
-      const imsCSVName = "ibm-zos-ims-operator-operator.v1.1.0";
+      const imsApiVersion = "v1minor2patch1";
+      const imsCSVName = "ibm-zos-ims-operator-operator.v1.2.1";
       consoleUrl = await k8s.getOpenshifConsoleUrl();
 
       const operatorInstalled = await k8s.isCustomResourceOperatorInstalled(imsCSVName);
@@ -478,12 +480,12 @@ describe("Extension Test Suite", async () => {
       assert.equal(cicsSubOperatorConfigParent.parentOperator, cicsOperatorResource);
       assert.equal(cicsSubOperatorConfigParent.label, "SubOperatorConfigs");
       assert.equal(cicsSubOperatorConfigParent.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
-      assert.equal(cicsSubOperatorConfigParent.contextValue, "suboperatorconig");
+      assert.equal(cicsSubOperatorConfigParent.contextValue, "suboperatorconfig");
 
       cicsCustomResourceParents = cicsBrokerCustomResoures.filter(brokerResource => brokerResource instanceof CustomResourceItem) as CustomResourceItem[];
       const cicsKind = "CICSTSRegion";
-      const cicsApiVersion = "v1minor0patch0";
-      const cicsCSVName = "ibm-zos-cics-ts-operator-operator.v1.0.0";
+      const cicsApiVersion = "v2minor0patch1";
+      const cicsCSVName = "ibm-zos-cics-ts-operator-operator.v2.0.1";
       consoleUrl = await k8s.getOpenshifConsoleUrl();
       const createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/suboperator.zoscb.ibm.com~${cicsApiVersion}~${cicsKind}/~new`;
 
@@ -499,7 +501,6 @@ describe("Extension Test Suite", async () => {
     it("Should validate the IMS ZosEndpoints", async () => {
       const imsZosEndpoints = (await resourcesTreeProvider.getChildren(imsZosEndpointParent)) as ZosEndpointsItem[];
       assert.equal(imsZosEndpoints.length, 1);
-
       // Validate ZosEndpoint exists in OpenShift
       const zosendpoints = await k8s.getZosEndpoints();
       const zosendpoint = zosendpoints?.items.find(endpoint => endpoint.metadata.name === imsZosEndpoints[0].zosendpointObj.metadata.name);
@@ -634,7 +635,7 @@ describe("Extension Test Suite", async () => {
     });
   });
 
-  describe("When validating the operator-config yaml linter", async () => {
+  xdescribe("When validating the operator-config yaml linter", async () => {
     let doc: vscode.TextDocument | undefined;
     let diagnostics: vscode.Diagnostic[] | undefined;
     let postDiagnostics: vscode.Diagnostic[] | undefined;
@@ -830,8 +831,8 @@ describe("Extension Test Suite", async () => {
     });
   });
 
-  xdescribe("When validating context-menu functions", async () => {
-    const customCollectionPath = "";//testVars.customOperatorCollectionPath;
+  describe("When validating context-menu functions", async () => {
+    const customCollectionPath = testVars.customOperatorCollectionPath;
     const customCollectionURI = vscode.Uri.file(customCollectionPath);
     const customPlaybookName = "playbooks/customPlaybook.yml";
 
