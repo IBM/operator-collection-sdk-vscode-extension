@@ -71,18 +71,20 @@ export class ResourcesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
                     let createCustomResourceUrl: string = "";
                     if (customResourceCsvInstalled) {
                       createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/clusterserviceversions/${operatorCsvName}/${util.customResourceGroup}~${apiVersion}~${kind}/~new`;
+                      resourceItems.push(new CustomResourceItem(kind, apiVersion, element.operatorName, operatorCsvName, createCustomResourceUrl));
                     } else {
                       createCustomResourceUrl = `https://${consoleUrl}/k8s/ns/${k8s.namespace}/${util.customResourceGroup}~${apiVersion}~${kind}/~new`;
+                      resourceItems.push(new CustomResourceItem(kind, apiVersion, element.operatorName, operatorCsvName, createCustomResourceUrl));
                     }
-                    resourceItems.push(new CustomResourceItem(kind, apiVersion, element.operatorName, operatorCsvName, createCustomResourceUrl));
                   }
                   return resourceItems;
                 });
               }
               return [];
             })
-            .catch(() => {
-              return [];
+            .catch(err => {
+              console.error(err);
+              return err;
             });
         } else if (element instanceof ZosEndpointItem) {
           return getZosEndpointsItem();

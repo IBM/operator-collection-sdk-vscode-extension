@@ -281,7 +281,7 @@ function createFile(command: string): vscode.Disposable {
         counterFile = "galaxy.yml";
       }
 
-      content = BoilerplateContent.operatorConfigBoilerplateContent(name, domain, version);
+      content = BoilerplateContent.operatorConfigBoilerplateContent(name.replace("_", "-"), domain.replace("_", "-"), version);
     } else if (galaxyRX.test(filename)) {
       let name = "AddNameHere";
       let namespace = "AddDomainHere";
@@ -299,7 +299,7 @@ function createFile(command: string): vscode.Disposable {
         counterFile = "operator-config.yml";
       }
 
-      content = BoilerplateContent.galaxyBoilerplateContent(name, namespace, version);
+      content = BoilerplateContent.galaxyBoilerplateContent(name.replace("-", "_"), namespace.replace("-", "_"), version);
     } else if (playbookRX.test(filename)) {
       content = BoilerplateContent.playbookBoilerplateContent;
     } else {
