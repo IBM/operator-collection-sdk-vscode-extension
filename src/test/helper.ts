@@ -75,7 +75,7 @@ export const zosEndpointApiVersion: string = "v2beta2";
 export const subOperatorConfigApiVersion: string = "v2beta2";
 export const operatorCollectionApiVersion: string = "v2beta2";
 export const zosCloudBrokerApiVersion: string = "v2beta1";
-export const zosCloudBrokerCsvVersion: string = "ibm-zoscb.v2.2.6";
+export const zosCloudBrokerCsvVersion: string = "ibm-zoscb.v2.2.9";
 
 export function displayCmdOutput(logPath: string) {
   if (fs.existsSync(logPath)) {

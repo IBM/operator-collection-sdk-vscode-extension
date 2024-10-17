@@ -520,7 +520,7 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
 
   const validateStringLettersAndNumberOnly = (text: string): boolean => {
     const ocLoginArgs = text.trimStart();
-    const validValuesRegex = /^[a-zA-Z0-9]+$/;
+    const validValuesRegex = /^[_a-zA-Z0-9]+$/;
     const isvalid = !validValuesRegex.test(text?.trimStart());
     return isvalid;
   };
