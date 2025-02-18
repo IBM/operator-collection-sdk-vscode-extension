@@ -1,4 +1,8 @@
-# IBM Operator Collection SDK for VS Code
+# DEPRECATED
+---
+## Please refer to [IBM Operator Collection SDK](https://github.com/IBM/operator-collection-sdk)
+
+# DEPRECATED IBM Operator Collection SDK for VS Code
 
 > **Note:** This extension is not supported on Windows OS.
 
