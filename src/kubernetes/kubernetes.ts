@@ -607,7 +607,7 @@ export class KubernetesObj extends KubernetesContext {
    * @returns - A promise containing a list of namespaces if the namespace exist in the list
    */
   public async validateNamespaceExists(): Promise<boolean | undefined> {
-    return this.coreV1Api
+    const namespaceExists = this.coreV1Api
       ?.readNamespace(this.namespace)
       ?.then(() => {
         return true;
@@ -616,6 +616,31 @@ export class KubernetesObj extends KubernetesContext {
         console.log("Failure retrieving Namespace " + this.namespace);
         return false;
       });
+
+    // Cancel request after 5 seconds without a response from the readNamespace request.
+    // This usually implies a connectivity issue with OpenShift, which could take a minute or more
+    // before receiving the timeout response.
+    let timeout: NodeJS.Timeout | undefined = undefined;
+    const timeoutPromise: Promise<boolean> = new Promise(resolve => {
+      timeout = setTimeout(() => {
+        vscode.window.showWarningMessage("Connection timed out... Please validate the connectivity to OpenShift");
+        resolve(false);
+      }, 5000);
+    });
+
+    const done = Promise.race([namespaceExists, timeoutPromise])
+      .then(value => {
+        return value;
+      })
+      .catch(() => {
+        return false;
+      })
+      .finally(() => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+      });
+    return done;
   }
 
   public async signatureValidationRequiredForOperator(operatorName: string, version: string): Promise<boolean | undefined> {

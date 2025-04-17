@@ -110,7 +110,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // Register Commands
   vscode.commands.executeCommand("setContext", VSCodeCommands.sdkInstalled, await session.validateOcSDKInstallation());
   vscode.commands.executeCommand("setContext", VSCodeCommands.loggedIn, await session.validateOpenShiftAccess());
-  vscode.commands.executeCommand("setContext", VSCodeCommands.validNamespace, await session.validateNamespaceExist());
+  vscode.commands.executeCommand("setContext", VSCodeCommands.validNamespace, await session.validateNamespaceExists());
   vscode.commands.executeCommand("setContext", VSCodeCommands.sdkOutdatedVersion, await session.determinateOcSdkIsOutdated());
   vscode.commands.executeCommand("setContext", VSCodeCommands.zosCloudBrokerInstalled, await session.validateZosCloudBrokerInstallation());
   vscode.commands.executeCommand("setContext", VSCodeCommands.isCollectionInWorkspace, await util.isCollectionInWorkspace(session.skipOCinit));
@@ -552,7 +552,7 @@ function updateOcSdkVersion(command: string, ocSdkCmd: OcSdkCommand, session: Se
 function initOperatorCollection(command: string, session: Session, outputChannel?: vscode.OutputChannel): vscode.Disposable {
   return vscode.commands.registerCommand(command, async (uri, _, logPath?: string) => {
     if (session.operationPending) {
-      vscode.window.showWarningMessage("Another operation is processing.");
+      vscode.window.showWarningMessage("Please wait for the current operation to finish before initializing a new collection.");
       return;
     }
 
@@ -920,36 +920,34 @@ function executeSimpleSdkCommand(command: string, session: Session, outputChanne
                   }
                   vscode.window.showInformationMessage("Redeploy Collection request in progress");
                   const poll = util.pollRun(30);
-                  const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel, logPath).then(() => {
-                    session.operationPending = false;
-                  });
+                  const runRedeployCollectionCommand = ocSdkCommand.runRedeployCollectionCommand(outputChannel, logPath);
                   Promise.all([poll, runRedeployCollectionCommand])
                     .then(() => {
-                      session.operationPending = false;
                       vscode.window.showInformationMessage("Redeploy Collection command executed successfully");
                       vscode.commands.executeCommand(VSCodeCommands.refresh);
                     })
                     .catch(e => {
-                      session.operationPending = false;
                       showErrorMessage(`Failure executing Redeploy Collection command: ${e}`);
+                    })
+                    .finally(() => {
+                      session.operationPending = false;
                     });
                   break;
                 }
                 case VSCodeCommands.redeployOperator: {
                   vscode.window.showInformationMessage("Redeploy Operator request in progress");
                   const poll = util.pollRun(40);
-                  const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath).then(() => {
-                    session.operationPending = false;
-                  });
+                  const runRedeployOperatorCommand = ocSdkCommand.runRedeployOperatorCommand(outputChannel, logPath);
                   Promise.all([poll, runRedeployOperatorCommand])
                     .then(() => {
-                      session.operationPending = false;
                       vscode.window.showInformationMessage("Redeploy Operator command executed successfully");
                       vscode.commands.executeCommand(VSCodeCommands.refresh);
                     })
                     .catch(e => {
-                      session.operationPending = false;
                       showErrorMessage(`Failure executing Redeploy Operator command: ${e}`);
+                    })
+                    .finally(() => {
+                      session.operationPending = false;
                     });
                   break;
                 }
@@ -1001,12 +999,7 @@ function executeSdkCommandWithUserInput(command: string, session: Session, outpu
                   vscode.window.showInformationMessage("Create Operator request in progress");
                 }
                 session.operationPending = true;
-                Promise.all([
-                  util.pollRun(40),
-                  ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel, logPath).then(() => {
-                    session.operationPending = false;
-                  }),
-                ])
+                Promise.all([util.pollRun(40), ocSdkCommand.runCreateOperatorCommand(playbookArgs, outputChannel, logPath)])
                   .then(() => {
                     session.operationPending = false;
                     vscode.window.showInformationMessage("Create Operator command executed successfully");

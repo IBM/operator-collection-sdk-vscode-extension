@@ -519,10 +519,9 @@ export async function requestInitOperatorCollectionInfo(): Promise<string[] | un
   const offlineInstallTitle = "Will this collection be executed in an offline environment [y/n]?";
 
   const validateStringLettersAndNumberOnly = (text: string): boolean => {
-    const ocLoginArgs = text.trimStart();
-    const validValuesRegex = /^[a-zA-Z0-9]+$/;
-    const isvalid = !validValuesRegex.test(text?.trimStart());
-    return isvalid;
+    const validInputRegex = /(?!^\d+$)^[a-zA-Z0-9]+$/;
+    const didFailRegex = !validInputRegex.test(text.trim());
+    return didFailRegex;
   };
 
   const collectionName = await vscode.window.showInputBox({
