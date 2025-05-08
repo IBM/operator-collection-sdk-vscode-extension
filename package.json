@@ -180,6 +180,11 @@
         "command": "operator-collection-sdk.initCollection",
         "title": "New Operator Collection...",
         "category": "OC-SDK"
+      },
+      {
+        "command": "operator-collection-sdk.createCredentialSecret",
+        "title": "Create Credential Secret",
+        "category": "OC-SDK"
       }
     ],
     "configuration": [
@@ -347,6 +352,10 @@
         {
           "command": "operator-collection-sdk.initCollection",
           "group": "ocsdk-submenu@4"
+        },
+        {
+          "command": "operator-collection-sdk.createCredentialSecret",
+          "group": "ocsdk-submenu@5"
         }
       ],
       "view/title": [
